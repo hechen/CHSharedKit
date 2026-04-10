@@ -23,7 +23,7 @@ Add CHSharedKit as a Swift Package Manager dependency in your `project.yml` (Xco
 packages:
   CHSharedKit:
     url: https://github.com/hechen/CHSharedKit
-    from: "1.0.0"
+    from: "1.1.1"
 ```
 
 Then add it as a target dependency:
@@ -39,7 +39,7 @@ Or in a `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/hechen/CHSharedKit", from: "1.0.0")
+    .package(url: "https://github.com/hechen/CHSharedKit", from: "1.1.1")
 ],
 targets: [
     .target(
@@ -159,6 +159,44 @@ import CHSharedKit
     DevMenuContent()
 })
 ```
+
+### Theme System
+
+A shared visual theme system with iCloud sync. Same palette across all apps so a theme picked in one app applies to the others on the next launch.
+
+| Component | Description |
+|---|---|
+| `Theme` / `ThemeColor` | Codable theme model with light + dark RGBA per token |
+| `ThemePalette` | 8 pre-designed themes: Default, Midnight, Ocean, Sunset, Forest, Paper, Aurora, Monochrome |
+| `ThemeManager` | `@MainActor` controller, persists choice in `NSUbiquitousKeyValueStore`, swaps alternate app icons |
+| `ThemePickerView` | Drop-in SwiftUI grid picker |
+| `View.themed(_:)` + `@Environment(\.theme)` | Inject + read the active resolved theme |
+
+```swift
+import CHSharedKit
+
+@main struct MyApp: App {
+    @StateObject private var themeManager = ThemeManager.shared
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(themeManager)
+                .themed(themeManager)
+        }
+    }
+}
+
+struct ContentView: View {
+    @Environment(\.theme) private var theme
+    var body: some View {
+        Text("Hello")
+            .foregroundStyle(theme.textPrimary)
+            .background(theme.background)
+    }
+}
+```
+
+To get alternate app icons working, register icon names matching `theme.associatedIconName` (e.g. `AppIcon-Midnight`) in the host app's `CFBundleAlternateIcons`.
 
 ---
 
