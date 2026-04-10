@@ -1,8 +1,10 @@
 import SwiftUI
 
-/// Grid of theme cards. Tap to apply with animation. Drop into a settings
-/// screen or present as a sheet.
+/// Grid of theme cards. Tap a card to apply that theme via `ThemeManager` —
+/// the active theme is highlighted with an accent-colored checkmark and the
+/// colors (and app icon) swap immediately and animate.
 public struct ThemePickerView: View {
+
     @ObservedObject private var manager: ThemeManager
     @Environment(\.theme) private var currentTheme
     @Environment(\.colorScheme) private var colorScheme
@@ -16,25 +18,28 @@ public struct ThemePickerView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Themes")
-                    .font(.largeTitle.bold())
-                    .padding(.horizontal, 20)
-                    .padding(.top, 12)
-
                 Text("Pick a palette — it syncs across all your devices and apps.")
                     .font(.subheadline)
                     .foregroundStyle(currentTheme.textSecondary)
                     .padding(.horizontal, 20)
+                    .padding(.top, 8)
 
                 LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(ThemePalette.all) { theme in
                         ThemeCard(
                             theme: theme,
-                            isSelected: manager.theme.id == theme.id,
-                            colorScheme: colorScheme
+                            isSelected: manager.currentTheme.id == theme.id,
+                            colorScheme: colorScheme,
+                            highlight: currentTheme.accent
                         ) {
                             manager.apply(theme)
                         }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(theme.name)
+                        .accessibilityHint(theme.description)
+                        .accessibilityAddTraits(
+                            manager.currentTheme.id == theme.id ? .isSelected : []
+                        )
                     }
                 }
                 .padding(.horizontal, 20)
@@ -42,6 +47,10 @@ public struct ThemePickerView: View {
             }
         }
         .background(currentTheme.background.ignoresSafeArea())
+        .navigationTitle("Theme")
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }
 
@@ -51,34 +60,32 @@ private struct ThemeCard: View {
     let theme: Theme
     let isSelected: Bool
     let colorScheme: ColorScheme
+    let highlight: Color
     let action: () -> Void
 
-    private var variant: Theme.Variant {
-        theme.variant(for: colorScheme)
+    private var resolved: ResolvedTheme {
+        ResolvedTheme(theme: theme, colorScheme: colorScheme)
     }
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 0) {
-                // Preview area — gradient + swatch row
+                // Preview area — gradient + symbol + swatch row
                 ZStack {
-                    LinearGradient(
-                        colors: [variant.gradientStart, variant.gradientEnd],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    resolved.gradient
 
                     VStack(spacing: 10) {
-                        Image(systemName: theme.iconName)
-                            .font(.system(size: 28, weight: .semibold))
+                        Image(systemName: theme.symbol)
+                            .font(.system(size: 26, weight: .semibold))
                             .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.20), radius: 4, y: 1)
+                            .shadow(color: .black.opacity(0.25), radius: 4, y: 1)
 
                         HStack(spacing: 6) {
-                            Swatch(color: variant.accent)
-                            Swatch(color: variant.background)
-                            Swatch(color: variant.card)
-                            Swatch(color: variant.textPrimary)
+                            Swatch(color: resolved.accent)
+                            Swatch(color: resolved.accentSecondary)
+                            Swatch(color: resolved.card)
+                            Swatch(color: resolved.textPrimary)
+                            Swatch(color: resolved.success)
                         }
                     }
                 }
@@ -89,36 +96,41 @@ private struct ThemeCard: View {
                     HStack {
                         Text(theme.name)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(variant.textPrimary)
+                            .foregroundStyle(resolved.textPrimary)
                         Spacer(minLength: 4)
                         if isSelected {
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundStyle(variant.accent)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white, highlight)
                         }
                     }
-                    Text(theme.tagline)
+                    Text(theme.description)
                         .font(.caption)
-                        .foregroundStyle(variant.textSecondary)
-                        .lineLimit(1)
+                        .foregroundStyle(resolved.textSecondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(variant.card)
+                .background(resolved.card)
             }
             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .strokeBorder(
-                        isSelected ? variant.accent : Color.black.opacity(0.06),
+                        isSelected ? highlight : Color.black.opacity(0.06),
                         lineWidth: isSelected ? 2.5 : 1
                     )
             )
-            .shadow(color: .black.opacity(isSelected ? 0.18 : 0.08),
-                    radius: isSelected ? 12 : 6,
-                    x: 0, y: isSelected ? 6 : 3)
-            .scaleEffect(isSelected ? 1.0 : 1.0)
+            .shadow(
+                color: .black.opacity(isSelected ? 0.18 : 0.08),
+                radius: isSelected ? 12 : 6,
+                x: 0,
+                y: isSelected ? 6 : 3
+            )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.spring(response: 0.35, dampingFraction: 0.8), value: isSelected)
         }
         .buttonStyle(.plain)

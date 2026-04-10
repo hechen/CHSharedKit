@@ -4,9 +4,9 @@ import UIKit
 #endif
 
 /// Central theme controller. Persists the user's choice in
-/// `NSUbiquitousKeyValueStore` so it syncs across devices, observes external
-/// KVS changes, and (on iOS) flips the alternate app icon when the theme
-/// changes.
+/// `NSUbiquitousKeyValueStore` so it syncs across devices and apps, observes
+/// external KVS changes, and (on iOS) flips the alternate app icon when the
+/// theme changes.
 ///
 /// Inject once at the app root:
 ///
@@ -16,7 +16,7 @@ import UIKit
 ///             WindowGroup {
 ///                 ContentView()
 ///                     .environmentObject(themeManager)
-///                     .themed(themeManager) // sets @Environment(\.theme)
+///                     .themed(themeManager)
 ///             }
 ///         }
 ///     }
@@ -31,7 +31,7 @@ public final class ThemeManager: ObservableObject {
     /// tests, but production code should always use `.shared`.
     public static let shared = ThemeManager()
 
-    @Published public private(set) var theme: Theme
+    @Published public private(set) var currentTheme: Theme
 
     private let cloud = NSUbiquitousKeyValueStore.default
 
@@ -40,7 +40,7 @@ public final class ThemeManager: ObservableObject {
         // user's existing choice immediately.
         let raw = NSUbiquitousKeyValueStore.default.string(forKey: Self.kvsKey)
             ?? UserDefaults.standard.string(forKey: Self.kvsKey)
-        self.theme = ThemePalette.theme(for: raw)
+        self.currentTheme = ThemePalette.theme(for: raw)
 
         cloud.synchronize()
 
@@ -60,13 +60,13 @@ public final class ThemeManager: ObservableObject {
     /// `objectWillChange` so SwiftUI redraws.
     public func apply(themeId: String, animated: Bool = true) {
         let next = ThemePalette.theme(for: themeId)
-        guard next.id != theme.id else { return }
+        guard next.id != currentTheme.id else { return }
         if animated {
             withAnimation(.easeInOut(duration: 0.25)) {
-                self.theme = next
+                self.currentTheme = next
             }
         } else {
-            self.theme = next
+            self.currentTheme = next
         }
         persist(next.id)
         updateAlternateIcon(for: next)
@@ -90,9 +90,9 @@ public final class ThemeManager: ObservableObject {
         Task { @MainActor in
             let raw = self.cloud.string(forKey: Self.kvsKey)
             let next = ThemePalette.theme(for: raw)
-            if next.id != self.theme.id {
+            if next.id != self.currentTheme.id {
                 withAnimation(.easeInOut(duration: 0.25)) {
-                    self.theme = next
+                    self.currentTheme = next
                 }
                 self.updateAlternateIcon(for: next)
             }
@@ -101,7 +101,7 @@ public final class ThemeManager: ObservableObject {
 
     /// Resolve the current theme against a color scheme.
     public func resolved(for colorScheme: ColorScheme) -> ResolvedTheme {
-        ResolvedTheme(theme: theme, colorScheme: colorScheme)
+        ResolvedTheme(theme: currentTheme, colorScheme: colorScheme)
     }
 
     // MARK: - Alternate icon
@@ -133,7 +133,7 @@ private struct ThemedModifier: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
-        let resolved = ResolvedTheme(theme: manager.theme, colorScheme: colorScheme)
+        let resolved = ResolvedTheme(theme: manager.currentTheme, colorScheme: colorScheme)
         content
             .environment(\.theme, resolved)
             .tint(resolved.accent)

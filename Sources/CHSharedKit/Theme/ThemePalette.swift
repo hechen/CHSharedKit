@@ -24,287 +24,207 @@ public enum ThemePalette {
     }
 }
 
+// Tiny helper for terser palette literals.
+private func tc(
+    _ light: (Double, Double, Double),
+    _ dark: (Double, Double, Double)
+) -> ThemeColor {
+    ThemeColor(light: light, dark: dark)
+}
+
 // MARK: - Themes
 
 public extension Theme {
 
-    // ---- Default (warm blue) ----
+    // ---------- Default — crisp blue, system look ----------
     static let `default` = Theme(
         id: "default",
         name: "Default",
-        tagline: "Crisp & familiar",
-        iconName: "circle.lefthalf.filled",
+        description: "Crisp & familiar — the system look you know.",
+        symbol: "circle.lefthalf.filled",
         associatedIconName: nil,
-        light: .init(
-            accent:        Color(red: 0.10, green: 0.45, blue: 0.95),
-            background:    Color(red: 0.97, green: 0.97, blue: 0.98),
-            card:          .white,
-            textPrimary:   Color(red: 0.08, green: 0.08, blue: 0.10),
-            textSecondary: Color(red: 0.42, green: 0.42, blue: 0.46),
-            divider:       Color(red: 0.88, green: 0.88, blue: 0.90),
-            success:       Color(red: 0.18, green: 0.70, blue: 0.40),
-            warning:       Color(red: 0.96, green: 0.65, blue: 0.14),
-            error:         Color(red: 0.93, green: 0.27, blue: 0.30),
-            gradientStart: Color(red: 0.30, green: 0.55, blue: 0.98),
-            gradientEnd:   Color(red: 0.10, green: 0.35, blue: 0.85)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.40, green: 0.66, blue: 1.00),
-            background:    Color(red: 0.06, green: 0.06, blue: 0.08),
-            card:          Color(red: 0.12, green: 0.12, blue: 0.14),
-            textPrimary:   Color(red: 0.97, green: 0.97, blue: 0.98),
-            textSecondary: Color(red: 0.65, green: 0.65, blue: 0.70),
-            divider:       Color(red: 0.22, green: 0.22, blue: 0.25),
-            success:       Color(red: 0.36, green: 0.85, blue: 0.55),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.30),
-            error:         Color(red: 1.00, green: 0.45, blue: 0.45),
-            gradientStart: Color(red: 0.20, green: 0.45, blue: 0.95),
-            gradientEnd:   Color(red: 0.05, green: 0.20, blue: 0.55)
-        )
+        accent:             tc((0.10, 0.45, 0.95), (0.40, 0.66, 1.00)),
+        accentSecondary:    tc((0.30, 0.62, 1.00), (0.60, 0.80, 1.00)),
+        background:         tc((0.97, 0.97, 0.98), (0.06, 0.06, 0.08)),
+        backgroundElevated: tc((1.00, 1.00, 1.00), (0.10, 0.10, 0.12)),
+        card:               tc((1.00, 1.00, 1.00), (0.12, 0.12, 0.14)),
+        cardElevated:       tc((0.99, 0.99, 1.00), (0.16, 0.16, 0.19)),
+        textPrimary:        tc((0.08, 0.08, 0.10), (0.97, 0.97, 0.98)),
+        textSecondary:      tc((0.42, 0.42, 0.46), (0.65, 0.65, 0.70)),
+        textTertiary:       tc((0.60, 0.60, 0.64), (0.45, 0.45, 0.50)),
+        divider:            tc((0.88, 0.88, 0.90), (0.22, 0.22, 0.25)),
+        success:            tc((0.18, 0.70, 0.40), (0.36, 0.85, 0.55)),
+        warning:            tc((0.96, 0.65, 0.14), (1.00, 0.78, 0.30)),
+        error:              tc((0.93, 0.27, 0.30), (1.00, 0.45, 0.45)),
+        gradientStart:      tc((0.30, 0.55, 0.98), (0.20, 0.45, 0.95)),
+        gradientEnd:        tc((0.10, 0.35, 0.85), (0.05, 0.20, 0.55))
     )
 
-    // ---- Midnight (deep purple/indigo) ----
+    // ---------- Midnight — pure black OLED, vibrant purple/cyan ----------
     static let midnight = Theme(
         id: "midnight",
         name: "Midnight",
-        tagline: "Deep indigo nights",
-        iconName: "moon.stars.fill",
+        description: "Pure black OLED with vibrant purple and cyan accents.",
+        symbol: "moon.stars.fill",
         associatedIconName: "AppIcon-Midnight",
-        light: .init(
-            accent:        Color(red: 0.36, green: 0.20, blue: 0.78),
-            background:    Color(red: 0.96, green: 0.96, blue: 0.99),
-            card:          .white,
-            textPrimary:   Color(red: 0.08, green: 0.06, blue: 0.16),
-            textSecondary: Color(red: 0.40, green: 0.36, blue: 0.50),
-            divider:       Color(red: 0.86, green: 0.84, blue: 0.92),
-            success:       Color(red: 0.20, green: 0.70, blue: 0.55),
-            warning:       Color(red: 0.95, green: 0.60, blue: 0.20),
-            error:         Color(red: 0.92, green: 0.25, blue: 0.45),
-            gradientStart: Color(red: 0.42, green: 0.22, blue: 0.85),
-            gradientEnd:   Color(red: 0.16, green: 0.08, blue: 0.45)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.62, green: 0.45, blue: 1.00),
-            background:    Color(red: 0.05, green: 0.04, blue: 0.10),
-            card:          Color(red: 0.11, green: 0.09, blue: 0.18),
-            textPrimary:   Color(red: 0.95, green: 0.94, blue: 1.00),
-            textSecondary: Color(red: 0.62, green: 0.58, blue: 0.74),
-            divider:       Color(red: 0.20, green: 0.17, blue: 0.30),
-            success:       Color(red: 0.34, green: 0.85, blue: 0.66),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.34),
-            error:         Color(red: 1.00, green: 0.45, blue: 0.58),
-            gradientStart: Color(red: 0.36, green: 0.18, blue: 0.78),
-            gradientEnd:   Color(red: 0.08, green: 0.04, blue: 0.32)
-        )
+        accent:             tc((0.46, 0.24, 0.92), (0.66, 0.46, 1.00)),
+        accentSecondary:    tc((0.10, 0.72, 0.92), (0.30, 0.85, 1.00)),
+        background:         tc((0.96, 0.96, 0.99), (0.00, 0.00, 0.00)),
+        backgroundElevated: tc((1.00, 1.00, 1.00), (0.04, 0.04, 0.07)),
+        card:               tc((1.00, 1.00, 1.00), (0.07, 0.06, 0.12)),
+        cardElevated:       tc((0.99, 0.99, 1.00), (0.11, 0.09, 0.18)),
+        textPrimary:        tc((0.08, 0.06, 0.16), (0.96, 0.94, 1.00)),
+        textSecondary:      tc((0.40, 0.36, 0.50), (0.66, 0.60, 0.80)),
+        textTertiary:       tc((0.60, 0.56, 0.68), (0.42, 0.38, 0.52)),
+        divider:            tc((0.86, 0.84, 0.92), (0.16, 0.13, 0.24)),
+        success:            tc((0.20, 0.70, 0.55), (0.34, 0.92, 0.66)),
+        warning:            tc((0.95, 0.60, 0.20), (1.00, 0.78, 0.34)),
+        error:              tc((0.92, 0.25, 0.45), (1.00, 0.45, 0.62)),
+        gradientStart:      tc((0.46, 0.22, 0.92), (0.56, 0.26, 1.00)),
+        gradientEnd:        tc((0.10, 0.66, 0.92), (0.10, 0.78, 1.00))
     )
 
-    // ---- Ocean (teal/cyan) ----
+    // ---------- Ocean — deep blue gradients, navy, cyan ----------
     static let ocean = Theme(
         id: "ocean",
         name: "Ocean",
-        tagline: "Tide & turquoise",
-        iconName: "water.waves",
+        description: "Deep blue depths with cyan tide accents.",
+        symbol: "water.waves",
         associatedIconName: "AppIcon-Ocean",
-        light: .init(
-            accent:        Color(red: 0.04, green: 0.55, blue: 0.62),
-            background:    Color(red: 0.95, green: 0.98, blue: 0.99),
-            card:          .white,
-            textPrimary:   Color(red: 0.05, green: 0.16, blue: 0.20),
-            textSecondary: Color(red: 0.32, green: 0.46, blue: 0.50),
-            divider:       Color(red: 0.82, green: 0.92, blue: 0.94),
-            success:       Color(red: 0.16, green: 0.72, blue: 0.50),
-            warning:       Color(red: 0.96, green: 0.66, blue: 0.18),
-            error:         Color(red: 0.94, green: 0.30, blue: 0.36),
-            gradientStart: Color(red: 0.20, green: 0.72, blue: 0.78),
-            gradientEnd:   Color(red: 0.04, green: 0.42, blue: 0.55)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.30, green: 0.85, blue: 0.90),
-            background:    Color(red: 0.02, green: 0.08, blue: 0.10),
-            card:          Color(red: 0.06, green: 0.14, blue: 0.16),
-            textPrimary:   Color(red: 0.94, green: 0.99, blue: 1.00),
-            textSecondary: Color(red: 0.55, green: 0.75, blue: 0.78),
-            divider:       Color(red: 0.14, green: 0.24, blue: 0.27),
-            success:       Color(red: 0.36, green: 0.88, blue: 0.65),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.32),
-            error:         Color(red: 1.00, green: 0.46, blue: 0.50),
-            gradientStart: Color(red: 0.10, green: 0.55, blue: 0.65),
-            gradientEnd:   Color(red: 0.02, green: 0.20, blue: 0.30)
-        )
+        accent:             tc((0.04, 0.50, 0.78), (0.30, 0.78, 1.00)),
+        accentSecondary:    tc((0.10, 0.66, 0.82), (0.20, 0.92, 0.98)),
+        background:         tc((0.94, 0.97, 1.00), (0.02, 0.06, 0.12)),
+        backgroundElevated: tc((1.00, 1.00, 1.00), (0.04, 0.10, 0.18)),
+        card:               tc((1.00, 1.00, 1.00), (0.06, 0.14, 0.22)),
+        cardElevated:       tc((0.97, 0.99, 1.00), (0.09, 0.18, 0.28)),
+        textPrimary:        tc((0.04, 0.12, 0.22), (0.92, 0.98, 1.00)),
+        textSecondary:      tc((0.30, 0.44, 0.54), (0.58, 0.76, 0.90)),
+        textTertiary:       tc((0.50, 0.62, 0.72), (0.36, 0.50, 0.66)),
+        divider:            tc((0.80, 0.90, 0.96), (0.12, 0.22, 0.32)),
+        success:            tc((0.16, 0.72, 0.50), (0.36, 0.88, 0.65)),
+        warning:            tc((0.96, 0.66, 0.18), (1.00, 0.78, 0.32)),
+        error:              tc((0.94, 0.30, 0.36), (1.00, 0.46, 0.50)),
+        gradientStart:      tc((0.20, 0.72, 0.92), (0.10, 0.62, 0.92)),
+        gradientEnd:        tc((0.02, 0.22, 0.55), (0.02, 0.10, 0.35))
     )
 
-    // ---- Sunset (warm orange/pink) ----
+    // ---------- Sunset — warm orange-pink, cream, coral ----------
     static let sunset = Theme(
         id: "sunset",
         name: "Sunset",
-        tagline: "Golden hour glow",
-        iconName: "sun.horizon.fill",
+        description: "Warm orange-pink horizon with coral accents.",
+        symbol: "sun.horizon.fill",
         associatedIconName: "AppIcon-Sunset",
-        light: .init(
-            accent:        Color(red: 0.92, green: 0.42, blue: 0.30),
-            background:    Color(red: 1.00, green: 0.97, blue: 0.95),
-            card:          .white,
-            textPrimary:   Color(red: 0.20, green: 0.10, blue: 0.05),
-            textSecondary: Color(red: 0.50, green: 0.36, blue: 0.30),
-            divider:       Color(red: 0.96, green: 0.88, blue: 0.82),
-            success:       Color(red: 0.32, green: 0.72, blue: 0.45),
-            warning:       Color(red: 0.96, green: 0.66, blue: 0.18),
-            error:         Color(red: 0.90, green: 0.20, blue: 0.30),
-            gradientStart: Color(red: 1.00, green: 0.62, blue: 0.34),
-            gradientEnd:   Color(red: 0.92, green: 0.28, blue: 0.42)
-        ),
-        dark: .init(
-            accent:        Color(red: 1.00, green: 0.58, blue: 0.40),
-            background:    Color(red: 0.10, green: 0.05, blue: 0.05),
-            card:          Color(red: 0.18, green: 0.10, blue: 0.10),
-            textPrimary:   Color(red: 1.00, green: 0.96, blue: 0.92),
-            textSecondary: Color(red: 0.78, green: 0.62, blue: 0.55),
-            divider:       Color(red: 0.30, green: 0.18, blue: 0.18),
-            success:       Color(red: 0.45, green: 0.85, blue: 0.55),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.34),
-            error:         Color(red: 1.00, green: 0.40, blue: 0.45),
-            gradientStart: Color(red: 0.95, green: 0.45, blue: 0.30),
-            gradientEnd:   Color(red: 0.55, green: 0.10, blue: 0.20)
-        )
+        accent:             tc((0.92, 0.36, 0.34), (1.00, 0.56, 0.46)),
+        accentSecondary:    tc((0.96, 0.56, 0.30), (1.00, 0.72, 0.40)),
+        background:         tc((1.00, 0.97, 0.93), (0.10, 0.05, 0.05)),
+        backgroundElevated: tc((1.00, 0.99, 0.96), (0.16, 0.09, 0.08)),
+        card:               tc((1.00, 1.00, 0.99), (0.20, 0.11, 0.10)),
+        cardElevated:       tc((1.00, 0.97, 0.92), (0.24, 0.14, 0.13)),
+        textPrimary:        tc((0.20, 0.08, 0.04), (1.00, 0.96, 0.92)),
+        textSecondary:      tc((0.50, 0.34, 0.28), (0.80, 0.64, 0.56)),
+        textTertiary:       tc((0.66, 0.52, 0.46), (0.55, 0.42, 0.36)),
+        divider:            tc((0.96, 0.86, 0.78), (0.30, 0.18, 0.16)),
+        success:            tc((0.32, 0.72, 0.45), (0.45, 0.85, 0.55)),
+        warning:            tc((0.96, 0.66, 0.18), (1.00, 0.78, 0.34)),
+        error:              tc((0.90, 0.20, 0.30), (1.00, 0.40, 0.45)),
+        gradientStart:      tc((1.00, 0.62, 0.34), (1.00, 0.50, 0.32)),
+        gradientEnd:        tc((0.92, 0.28, 0.42), (0.66, 0.14, 0.30))
     )
 
-    // ---- Forest (sage green) ----
+    // ---------- Forest — deep green, sage, earthy ----------
     static let forest = Theme(
         id: "forest",
         name: "Forest",
-        tagline: "Sage & moss",
-        iconName: "leaf.fill",
+        description: "Deep moss greens with earthy sage accents.",
+        symbol: "leaf.fill",
         associatedIconName: "AppIcon-Forest",
-        light: .init(
-            accent:        Color(red: 0.20, green: 0.52, blue: 0.30),
-            background:    Color(red: 0.96, green: 0.98, blue: 0.95),
-            card:          .white,
-            textPrimary:   Color(red: 0.07, green: 0.16, blue: 0.10),
-            textSecondary: Color(red: 0.34, green: 0.44, blue: 0.36),
-            divider:       Color(red: 0.86, green: 0.92, blue: 0.85),
-            success:       Color(red: 0.18, green: 0.68, blue: 0.34),
-            warning:       Color(red: 0.92, green: 0.66, blue: 0.18),
-            error:         Color(red: 0.86, green: 0.32, blue: 0.32),
-            gradientStart: Color(red: 0.40, green: 0.72, blue: 0.42),
-            gradientEnd:   Color(red: 0.12, green: 0.40, blue: 0.20)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.50, green: 0.85, blue: 0.55),
-            background:    Color(red: 0.04, green: 0.08, blue: 0.05),
-            card:          Color(red: 0.09, green: 0.14, blue: 0.10),
-            textPrimary:   Color(red: 0.95, green: 0.99, blue: 0.94),
-            textSecondary: Color(red: 0.58, green: 0.74, blue: 0.60),
-            divider:       Color(red: 0.16, green: 0.24, blue: 0.18),
-            success:       Color(red: 0.38, green: 0.85, blue: 0.50),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.34),
-            error:         Color(red: 0.98, green: 0.45, blue: 0.45),
-            gradientStart: Color(red: 0.22, green: 0.55, blue: 0.32),
-            gradientEnd:   Color(red: 0.04, green: 0.20, blue: 0.10)
-        )
+        accent:             tc((0.20, 0.52, 0.30), (0.50, 0.85, 0.55)),
+        accentSecondary:    tc((0.46, 0.66, 0.30), (0.70, 0.90, 0.50)),
+        background:         tc((0.96, 0.98, 0.94), (0.04, 0.08, 0.05)),
+        backgroundElevated: tc((1.00, 1.00, 0.98), (0.07, 0.12, 0.08)),
+        card:               tc((1.00, 1.00, 1.00), (0.09, 0.14, 0.10)),
+        cardElevated:       tc((0.97, 0.99, 0.95), (0.12, 0.18, 0.13)),
+        textPrimary:        tc((0.07, 0.16, 0.10), (0.94, 0.99, 0.92)),
+        textSecondary:      tc((0.34, 0.46, 0.36), (0.60, 0.78, 0.62)),
+        textTertiary:       tc((0.52, 0.64, 0.54), (0.40, 0.54, 0.42)),
+        divider:            tc((0.86, 0.92, 0.84), (0.14, 0.22, 0.16)),
+        success:            tc((0.18, 0.68, 0.34), (0.38, 0.85, 0.50)),
+        warning:            tc((0.92, 0.66, 0.18), (1.00, 0.78, 0.34)),
+        error:              tc((0.86, 0.32, 0.32), (0.98, 0.45, 0.45)),
+        gradientStart:      tc((0.40, 0.72, 0.42), (0.22, 0.55, 0.32)),
+        gradientEnd:        tc((0.10, 0.34, 0.18), (0.04, 0.18, 0.08))
     )
 
-    // ---- Paper (warm beige/cream) ----
+    // ---------- Paper — warm cream, sepia, book-like ----------
     static let paper = Theme(
         id: "paper",
         name: "Paper",
-        tagline: "Linen & ink",
-        iconName: "doc.text.fill",
+        description: "Warm cream with sepia ink — like a well-worn book.",
+        symbol: "book.fill",
         associatedIconName: "AppIcon-Paper",
-        light: .init(
-            accent:        Color(red: 0.36, green: 0.28, blue: 0.18),
-            background:    Color(red: 0.98, green: 0.96, blue: 0.92),
-            card:          Color(red: 1.00, green: 0.99, blue: 0.96),
-            textPrimary:   Color(red: 0.16, green: 0.12, blue: 0.08),
-            textSecondary: Color(red: 0.46, green: 0.40, blue: 0.30),
-            divider:       Color(red: 0.92, green: 0.88, blue: 0.78),
-            success:       Color(red: 0.32, green: 0.62, blue: 0.36),
-            warning:       Color(red: 0.85, green: 0.58, blue: 0.18),
-            error:         Color(red: 0.78, green: 0.28, blue: 0.20),
-            gradientStart: Color(red: 0.96, green: 0.90, blue: 0.78),
-            gradientEnd:   Color(red: 0.78, green: 0.66, blue: 0.46)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.86, green: 0.78, blue: 0.62),
-            background:    Color(red: 0.10, green: 0.08, blue: 0.06),
-            card:          Color(red: 0.16, green: 0.13, blue: 0.10),
-            textPrimary:   Color(red: 0.98, green: 0.95, blue: 0.88),
-            textSecondary: Color(red: 0.72, green: 0.66, blue: 0.54),
-            divider:       Color(red: 0.26, green: 0.22, blue: 0.16),
-            success:       Color(red: 0.46, green: 0.82, blue: 0.50),
-            warning:       Color(red: 1.00, green: 0.80, blue: 0.40),
-            error:         Color(red: 0.98, green: 0.45, blue: 0.40),
-            gradientStart: Color(red: 0.36, green: 0.28, blue: 0.18),
-            gradientEnd:   Color(red: 0.12, green: 0.08, blue: 0.04)
-        )
+        accent:             tc((0.42, 0.30, 0.18), (0.92, 0.84, 0.66)),
+        accentSecondary:    tc((0.62, 0.46, 0.26), (0.78, 0.66, 0.46)),
+        background:         tc((0.98, 0.95, 0.88), (0.10, 0.08, 0.06)),
+        backgroundElevated: tc((1.00, 0.98, 0.92), (0.14, 0.11, 0.08)),
+        card:               tc((1.00, 0.99, 0.94), (0.16, 0.13, 0.10)),
+        cardElevated:       tc((1.00, 0.97, 0.90), (0.20, 0.16, 0.12)),
+        textPrimary:        tc((0.16, 0.12, 0.06), (0.98, 0.95, 0.86)),
+        textSecondary:      tc((0.46, 0.40, 0.28), (0.74, 0.66, 0.52)),
+        textTertiary:       tc((0.62, 0.56, 0.42), (0.50, 0.44, 0.32)),
+        divider:            tc((0.92, 0.86, 0.74), (0.26, 0.22, 0.16)),
+        success:            tc((0.32, 0.62, 0.36), (0.46, 0.82, 0.50)),
+        warning:            tc((0.85, 0.58, 0.18), (1.00, 0.80, 0.40)),
+        error:              tc((0.78, 0.28, 0.20), (0.98, 0.45, 0.40)),
+        gradientStart:      tc((0.96, 0.90, 0.74), (0.42, 0.32, 0.20)),
+        gradientEnd:        tc((0.78, 0.62, 0.40), (0.16, 0.10, 0.04))
     )
 
-    // ---- Aurora (vibrant pink/violet/teal) ----
+    // ---------- Aurora — purple-teal gradient, neon, rich blacks ----------
     static let aurora = Theme(
         id: "aurora",
         name: "Aurora",
-        tagline: "Northern lights",
-        iconName: "sparkles",
+        description: "Northern lights — purple to teal across rich blacks.",
+        symbol: "sparkles",
         associatedIconName: "AppIcon-Aurora",
-        light: .init(
-            accent:        Color(red: 0.62, green: 0.18, blue: 0.78),
-            background:    Color(red: 0.97, green: 0.96, blue: 0.99),
-            card:          .white,
-            textPrimary:   Color(red: 0.10, green: 0.06, blue: 0.16),
-            textSecondary: Color(red: 0.42, green: 0.36, blue: 0.50),
-            divider:       Color(red: 0.90, green: 0.86, blue: 0.94),
-            success:       Color(red: 0.18, green: 0.78, blue: 0.62),
-            warning:       Color(red: 0.96, green: 0.62, blue: 0.20),
-            error:         Color(red: 0.94, green: 0.22, blue: 0.50),
-            gradientStart: Color(red: 0.96, green: 0.30, blue: 0.62),
-            gradientEnd:   Color(red: 0.20, green: 0.40, blue: 0.96)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.96, green: 0.42, blue: 0.86),
-            background:    Color(red: 0.04, green: 0.04, blue: 0.10),
-            card:          Color(red: 0.10, green: 0.08, blue: 0.18),
-            textPrimary:   Color(red: 0.98, green: 0.96, blue: 1.00),
-            textSecondary: Color(red: 0.66, green: 0.60, blue: 0.78),
-            divider:       Color(red: 0.20, green: 0.16, blue: 0.30),
-            success:       Color(red: 0.36, green: 0.96, blue: 0.72),
-            warning:       Color(red: 1.00, green: 0.78, blue: 0.34),
-            error:         Color(red: 1.00, green: 0.40, blue: 0.62),
-            gradientStart: Color(red: 0.96, green: 0.30, blue: 0.62),
-            gradientEnd:   Color(red: 0.10, green: 0.20, blue: 0.86)
-        )
+        accent:             tc((0.62, 0.18, 0.78), (0.96, 0.42, 0.92)),
+        accentSecondary:    tc((0.16, 0.74, 0.74), (0.30, 0.96, 0.86)),
+        background:         tc((0.97, 0.95, 0.99), (0.03, 0.02, 0.08)),
+        backgroundElevated: tc((1.00, 1.00, 1.00), (0.06, 0.04, 0.12)),
+        card:               tc((1.00, 1.00, 1.00), (0.09, 0.07, 0.16)),
+        cardElevated:       tc((0.98, 0.96, 1.00), (0.13, 0.10, 0.22)),
+        textPrimary:        tc((0.10, 0.06, 0.16), (0.98, 0.96, 1.00)),
+        textSecondary:      tc((0.42, 0.36, 0.50), (0.68, 0.62, 0.80)),
+        textTertiary:       tc((0.62, 0.56, 0.68), (0.42, 0.38, 0.55)),
+        divider:            tc((0.90, 0.86, 0.94), (0.18, 0.14, 0.30)),
+        success:            tc((0.18, 0.78, 0.62), (0.36, 0.96, 0.72)),
+        warning:            tc((0.96, 0.62, 0.20), (1.00, 0.78, 0.34)),
+        error:              tc((0.94, 0.22, 0.50), (1.00, 0.40, 0.62)),
+        gradientStart:      tc((0.96, 0.30, 0.62), (0.96, 0.20, 0.78)),
+        gradientEnd:        tc((0.10, 0.66, 0.86), (0.10, 0.86, 0.96))
     )
 
-    // ---- Monochrome (pure grayscale) ----
+    // ---------- Monochrome — grayscale, charcoal, white accents ----------
     static let monochrome = Theme(
         id: "monochrome",
         name: "Monochrome",
-        tagline: "Pure grayscale",
-        iconName: "circle.fill",
+        description: "Pure grayscale — charcoal canvas, white accents.",
+        symbol: "circle.fill",
         associatedIconName: "AppIcon-Monochrome",
-        light: .init(
-            accent:        Color(red: 0.10, green: 0.10, blue: 0.10),
-            background:    Color(red: 0.96, green: 0.96, blue: 0.96),
-            card:          .white,
-            textPrimary:   Color(red: 0.06, green: 0.06, blue: 0.06),
-            textSecondary: Color(red: 0.42, green: 0.42, blue: 0.42),
-            divider:       Color(red: 0.86, green: 0.86, blue: 0.86),
-            success:       Color(red: 0.30, green: 0.30, blue: 0.30),
-            warning:       Color(red: 0.55, green: 0.55, blue: 0.55),
-            error:         Color(red: 0.20, green: 0.20, blue: 0.20),
-            gradientStart: Color(red: 0.65, green: 0.65, blue: 0.65),
-            gradientEnd:   Color(red: 0.18, green: 0.18, blue: 0.18)
-        ),
-        dark: .init(
-            accent:        Color(red: 0.95, green: 0.95, blue: 0.95),
-            background:    Color(red: 0.02, green: 0.02, blue: 0.02),
-            card:          Color(red: 0.10, green: 0.10, blue: 0.10),
-            textPrimary:   Color(red: 0.98, green: 0.98, blue: 0.98),
-            textSecondary: Color(red: 0.65, green: 0.65, blue: 0.65),
-            divider:       Color(red: 0.22, green: 0.22, blue: 0.22),
-            success:       Color(red: 0.85, green: 0.85, blue: 0.85),
-            warning:       Color(red: 0.65, green: 0.65, blue: 0.65),
-            error:         Color(red: 0.95, green: 0.95, blue: 0.95),
-            gradientStart: Color(red: 0.40, green: 0.40, blue: 0.40),
-            gradientEnd:   Color(red: 0.05, green: 0.05, blue: 0.05)
-        )
+        accent:             tc((0.10, 0.10, 0.10), (0.98, 0.98, 0.98)),
+        accentSecondary:    tc((0.32, 0.32, 0.32), (0.78, 0.78, 0.78)),
+        background:         tc((0.96, 0.96, 0.96), (0.02, 0.02, 0.02)),
+        backgroundElevated: tc((1.00, 1.00, 1.00), (0.06, 0.06, 0.06)),
+        card:               tc((1.00, 1.00, 1.00), (0.10, 0.10, 0.10)),
+        cardElevated:       tc((0.98, 0.98, 0.98), (0.14, 0.14, 0.14)),
+        textPrimary:        tc((0.06, 0.06, 0.06), (0.98, 0.98, 0.98)),
+        textSecondary:      tc((0.42, 0.42, 0.42), (0.70, 0.70, 0.70)),
+        textTertiary:       tc((0.60, 0.60, 0.60), (0.45, 0.45, 0.45)),
+        divider:            tc((0.86, 0.86, 0.86), (0.22, 0.22, 0.22)),
+        success:            tc((0.30, 0.30, 0.30), (0.85, 0.85, 0.85)),
+        warning:            tc((0.45, 0.45, 0.45), (0.65, 0.65, 0.65)),
+        error:              tc((0.20, 0.20, 0.20), (0.95, 0.95, 0.95)),
+        gradientStart:      tc((0.65, 0.65, 0.65), (0.40, 0.40, 0.40)),
+        gradientEnd:        tc((0.18, 0.18, 0.18), (0.05, 0.05, 0.05))
     )
 }

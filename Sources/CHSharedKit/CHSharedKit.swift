@@ -22,3 +22,12 @@
 //
 // Backup:
 //   - ClawdBackupKit: Backup and restore utilities
+//
+// Theme System:
+//   - Theme / ThemeColor: Codable theme + per-mode color tokens
+//   - ThemePalette: 8 pre-designed themes (Default, Midnight, Ocean, Sunset,
+//     Forest, Paper, Aurora, Monochrome)
+//   - ThemeManager: @MainActor controller, syncs via NSUbiquitousKeyValueStore,
+//     swaps alternate app icons via UIApplication.setAlternateIconName
+//   - ThemePickerView: drop-in SwiftUI grid picker
+//   - View.themed(_:) modifier + @Environment(\.theme) access

@@ -1,52 +1,56 @@
 import SwiftUI
 
-/// A complete visual theme. Tokens map directly to SwiftUI `Color` so callers
-/// can write `theme.background` instead of duct-taping their own palette.
-///
-/// Each `Theme` carries both a light and dark variant; the active variant is
-/// chosen by `ThemeManager` from the current `ColorScheme`.
-public struct Theme: Identifiable, Sendable, Equatable {
+// MARK: - ThemeColor
 
-    /// One half of a `Theme` (light or dark). Holds the actual `Color` tokens.
-    public struct Variant: Sendable, Equatable {
-        public var accent: Color
-        public var background: Color
-        public var card: Color
-        public var textPrimary: Color
-        public var textSecondary: Color
-        public var divider: Color
-        public var success: Color
-        public var warning: Color
-        public var error: Color
-        public var gradientStart: Color
-        public var gradientEnd: Color
+/// A color that carries both a light-mode and dark-mode variant. Stored as
+/// raw sRGB components so the whole `Theme` graph is `Codable` (SwiftUI's
+/// `Color` is not).
+public struct ThemeColor: Sendable, Equatable, Codable, Hashable {
 
-        public init(
-            accent: Color,
-            background: Color,
-            card: Color,
-            textPrimary: Color,
-            textSecondary: Color,
-            divider: Color,
-            success: Color,
-            warning: Color,
-            error: Color,
-            gradientStart: Color,
-            gradientEnd: Color
-        ) {
-            self.accent = accent
-            self.background = background
-            self.card = card
-            self.textPrimary = textPrimary
-            self.textSecondary = textSecondary
-            self.divider = divider
-            self.success = success
-            self.warning = warning
-            self.error = error
-            self.gradientStart = gradientStart
-            self.gradientEnd = gradientEnd
+    /// sRGB component triplet with alpha.
+    public struct RGBA: Sendable, Equatable, Codable, Hashable {
+        public var r: Double
+        public var g: Double
+        public var b: Double
+        public var a: Double
+
+        public init(_ r: Double, _ g: Double, _ b: Double, _ a: Double = 1) {
+            self.r = r; self.g = g; self.b = b; self.a = a
+        }
+
+        public var color: Color {
+            Color(.sRGB, red: r, green: g, blue: b, opacity: a)
         }
     }
+
+    public var light: RGBA
+    public var dark: RGBA
+
+    public init(light: RGBA, dark: RGBA) {
+        self.light = light
+        self.dark = dark
+    }
+
+    /// Convenience: build from `(r, g, b)` tuples in 0…1 sRGB space.
+    public init(
+        light: (Double, Double, Double),
+        dark: (Double, Double, Double)
+    ) {
+        self.light = .init(light.0, light.1, light.2)
+        self.dark = .init(dark.0, dark.1, dark.2)
+    }
+
+    /// Resolve to a SwiftUI `Color` for the given color scheme.
+    public func color(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? dark.color : light.color
+    }
+}
+
+// MARK: - Theme
+
+/// A complete visual theme. Every color token is a `ThemeColor` so the whole
+/// theme is `Codable` and round-trips through KVS / disk without loss.
+public struct Theme: Identifiable, Sendable, Equatable, Codable, Hashable {
 
     /// Stable identifier persisted in iCloud KVS. Lowercase, no spaces.
     public let id: String
@@ -54,44 +58,78 @@ public struct Theme: Identifiable, Sendable, Equatable {
     /// Display name shown in pickers ("Midnight", "Ocean", …).
     public let name: String
 
-    /// Short marketing-style tagline shown beneath the name in the picker.
-    public let tagline: String
+    /// One-line description shown beneath the name in the picker.
+    public let description: String
 
     /// SF Symbol used to represent the theme in the picker grid.
-    public let iconName: String
+    public let symbol: String
 
     /// Bundle name of the alternate app icon to set when this theme is
     /// applied. `nil` means "primary AppIcon — use `setAlternateIconName(nil)`".
     public let associatedIconName: String?
 
-    public let light: Variant
-    public let dark: Variant
+    public let accent: ThemeColor
+    public let accentSecondary: ThemeColor
+    public let background: ThemeColor
+    public let backgroundElevated: ThemeColor
+    public let card: ThemeColor
+    public let cardElevated: ThemeColor
+    public let textPrimary: ThemeColor
+    public let textSecondary: ThemeColor
+    public let textTertiary: ThemeColor
+    public let divider: ThemeColor
+    public let success: ThemeColor
+    public let warning: ThemeColor
+    public let error: ThemeColor
+    public let gradientStart: ThemeColor
+    public let gradientEnd: ThemeColor
 
     public init(
         id: String,
         name: String,
-        tagline: String,
-        iconName: String,
+        description: String,
+        symbol: String,
         associatedIconName: String?,
-        light: Variant,
-        dark: Variant
+        accent: ThemeColor,
+        accentSecondary: ThemeColor,
+        background: ThemeColor,
+        backgroundElevated: ThemeColor,
+        card: ThemeColor,
+        cardElevated: ThemeColor,
+        textPrimary: ThemeColor,
+        textSecondary: ThemeColor,
+        textTertiary: ThemeColor,
+        divider: ThemeColor,
+        success: ThemeColor,
+        warning: ThemeColor,
+        error: ThemeColor,
+        gradientStart: ThemeColor,
+        gradientEnd: ThemeColor
     ) {
         self.id = id
         self.name = name
-        self.tagline = tagline
-        self.iconName = iconName
+        self.description = description
+        self.symbol = symbol
         self.associatedIconName = associatedIconName
-        self.light = light
-        self.dark = dark
-    }
-
-    /// Resolve the variant to use for a given color scheme.
-    public func variant(for colorScheme: ColorScheme) -> Variant {
-        colorScheme == .dark ? dark : light
+        self.accent = accent
+        self.accentSecondary = accentSecondary
+        self.background = background
+        self.backgroundElevated = backgroundElevated
+        self.card = card
+        self.cardElevated = cardElevated
+        self.textPrimary = textPrimary
+        self.textSecondary = textSecondary
+        self.textTertiary = textTertiary
+        self.divider = divider
+        self.success = success
+        self.warning = warning
+        self.error = error
+        self.gradientStart = gradientStart
+        self.gradientEnd = gradientEnd
     }
 }
 
-// MARK: - Resolved theme (variant + colorScheme)
+// MARK: - ResolvedTheme
 
 /// A `Theme` resolved against the current color scheme. Views read this
 /// through `@Environment(\.theme)` and access tokens directly:
@@ -109,29 +147,32 @@ public struct ResolvedTheme: Sendable, Equatable {
         self.colorScheme = colorScheme
     }
 
-    private var v: Theme.Variant { theme.variant(for: colorScheme) }
-
     public var id: String { theme.id }
     public var name: String { theme.name }
-    public var iconName: String { theme.iconName }
+    public var description: String { theme.description }
+    public var symbol: String { theme.symbol }
     public var associatedIconName: String? { theme.associatedIconName }
 
-    public var accent: Color { v.accent }
-    public var background: Color { v.background }
-    public var card: Color { v.card }
-    public var textPrimary: Color { v.textPrimary }
-    public var textSecondary: Color { v.textSecondary }
-    public var divider: Color { v.divider }
-    public var success: Color { v.success }
-    public var warning: Color { v.warning }
-    public var error: Color { v.error }
-    public var gradientStart: Color { v.gradientStart }
-    public var gradientEnd: Color { v.gradientEnd }
+    public var accent: Color { theme.accent.color(for: colorScheme) }
+    public var accentSecondary: Color { theme.accentSecondary.color(for: colorScheme) }
+    public var background: Color { theme.background.color(for: colorScheme) }
+    public var backgroundElevated: Color { theme.backgroundElevated.color(for: colorScheme) }
+    public var card: Color { theme.card.color(for: colorScheme) }
+    public var cardElevated: Color { theme.cardElevated.color(for: colorScheme) }
+    public var textPrimary: Color { theme.textPrimary.color(for: colorScheme) }
+    public var textSecondary: Color { theme.textSecondary.color(for: colorScheme) }
+    public var textTertiary: Color { theme.textTertiary.color(for: colorScheme) }
+    public var divider: Color { theme.divider.color(for: colorScheme) }
+    public var success: Color { theme.success.color(for: colorScheme) }
+    public var warning: Color { theme.warning.color(for: colorScheme) }
+    public var error: Color { theme.error.color(for: colorScheme) }
+    public var gradientStart: Color { theme.gradientStart.color(for: colorScheme) }
+    public var gradientEnd: Color { theme.gradientEnd.color(for: colorScheme) }
 
     /// Convenience: linear gradient between gradientStart → gradientEnd.
     public var gradient: LinearGradient {
         LinearGradient(
-            colors: [v.gradientStart, v.gradientEnd],
+            colors: [gradientStart, gradientEnd],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
@@ -142,7 +183,7 @@ public struct ResolvedTheme: Sendable, Equatable {
 
 private struct ThemeEnvironmentKey: EnvironmentKey {
     static let defaultValue: ResolvedTheme = ResolvedTheme(
-        theme: .default,
+        theme: Theme.default,
         colorScheme: .light
     )
 }
