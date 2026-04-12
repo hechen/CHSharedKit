@@ -40,7 +40,7 @@ public final class LocalModelStore {
     public private(set) var activeModelID: String? = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey)
 
     // Configuration — apps can override appGroupID before first use
-    public var appGroupID: String = "group.app.chen.distill"
+    public var appGroupID: String = "group.app.chen.sharedllm"
 
     /// Identifies the consuming app. Drives the default onboarding copy and
     /// the local notification fired when a model finishes downloading, so
@@ -284,8 +284,7 @@ public final class LocalModelStore {
 public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
 
     /// Session identifier — derived from appGroupID so each app gets a unique background session.
-    /// e.g. "group.app.chen.distill" → "app.chen.distill.llm-download"
-    /// e.g. "group.app.chen.eatwisely" → "app.chen.eatwisely.llm-download"
+    /// e.g. "group.app.chen.sharedllm" → "app.chen.sharedllm.llm-download"
     public let sessionIdentifier: String
 
     /// Set by AppDelegate.handleEventsForBackgroundURLSession; called in urlSessionDidFinishEvents.
@@ -304,10 +303,10 @@ public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDeleg
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
 
-    init(resolveModelsDir: @escaping () -> URL, appGroupID: String = "group.app.chen.distill") {
+    init(resolveModelsDir: @escaping () -> URL, appGroupID: String = "group.app.chen.sharedllm") {
         self.resolveModelsDir = resolveModelsDir
         // Derive a per-app session ID from the app group, e.g.:
-        // "group.app.chen.distill" → "app.chen.distill.llm-download"
+        // "group.app.chen.sharedllm" → "app.chen.sharedllm.llm-download"
         let stripped = appGroupID.hasPrefix("group.") ? String(appGroupID.dropFirst("group.".count)) : appGroupID
         self.sessionIdentifier = "\(stripped).llm-download"
     }
