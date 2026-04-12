@@ -102,6 +102,7 @@ public final class LocalModelStore {
         content.title = downloadCompletionTitle ?? appIdentifier.defaultDownloadCompletionTitle
         content.body = downloadCompletionBody ?? appIdentifier.defaultDownloadCompletionBody
         content.sound = .default
+        content.userInfo = ["destination": "ai-settings"]
         let request = UNNotificationRequest(
             identifier: appIdentifier.downloadCompletionNotificationIdentifier,
             content: content,

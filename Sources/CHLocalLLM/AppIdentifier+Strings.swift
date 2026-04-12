@@ -10,7 +10,6 @@ import Foundation
 public extension AppIdentifier {
 
     /// Body paragraph shown under "On-Device AI" on the onboarding card.
-    /// Replaces what used to be a hard-coded "Distill summarizes articles…" line.
     var onboardingBlurb: String {
         switch self {
         case .distill:
@@ -21,23 +20,27 @@ public extension AppIdentifier {
             return "Download a small AI model once. After that, SpendWisely categorizes transactions and analyzes your spending with no API key, no account, and no network connection required."
         case .eatwisely:
             return "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required."
+        case .traininsight:
+            return "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required."
         }
     }
 
     /// Default title for the local notification fired when a model finishes downloading.
-    var defaultDownloadCompletionTitle: String { "On-Device AI Ready" }
+    var defaultDownloadCompletionTitle: String { "On-device AI ready" }
 
     /// Default body for the local notification fired when a model finishes downloading.
     var defaultDownloadCompletionBody: String {
         switch self {
         case .distill:
-            return "Distill can now summarize articles offline."
+            return "Distill can now summarize articles without a network."
         case .closet:
-            return "Closet can now categorize items privately on your device."
+            return "Closet can now categorize items, detect brands, and suggest outfits privately on your device."
         case .spendwisely:
-            return "SpendWisely can now categorize transactions privately on your device."
+            return "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone."
         case .eatwisely:
-            return "EatWisely can now generate nutrition insights privately on your device."
+            return "AI Quick Add and daily insights now run on your iPhone. Photo meal scanning still uses cloud AI."
+        case .traininsight:
+            return "TrainInsight can now generate your daily readiness advice privately on your iPhone."
         }
     }
 

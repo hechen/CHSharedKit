@@ -4,7 +4,7 @@ import Foundation
 
 /// Identifies which app is using CHLocalLLM, so models can be ranked per-app.
 public enum AppIdentifier: String, Sendable {
-    case closet, eatwisely, spendwisely, distill
+    case closet, eatwisely, spendwisely, distill, traininsight
 
     public var displayName: String {
         switch self {
@@ -12,6 +12,7 @@ public enum AppIdentifier: String, Sendable {
         case .eatwisely: return "EatWisely"
         case .spendwisely: return "SpendWisely"
         case .distill: return "Distill"
+        case .traininsight: return "TrainInsight"
         }
     }
 }
