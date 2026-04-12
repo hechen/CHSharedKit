@@ -83,7 +83,7 @@ public final class ThemeManager: ObservableObject {
         UserDefaults.standard.set(id, forKey: Self.kvsKey)
     }
 
-    @objc private func externalKVSChange(_ note: Notification) {
+    @objc nonisolated private func externalKVSChange(_ note: Notification) {
         guard let userInfo = note.userInfo,
               let keys = userInfo[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String],
               keys.contains(Self.kvsKey) else { return }
