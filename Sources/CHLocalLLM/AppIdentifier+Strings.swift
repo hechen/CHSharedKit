@@ -22,6 +22,8 @@ public extension AppIdentifier {
             return "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required."
         case .traininsight:
             return "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required."
+        case .gymlog:
+            return "Download a small AI model once. After that, GymLog suggests workouts, gives form tips, detects plateaus, and writes your weekly training summaries with no API key, no account, and no network connection required."
         }
     }
 
@@ -41,6 +43,8 @@ public extension AppIdentifier {
             return "AI Quick Add and daily insights now run on your iPhone. Photo meal scanning still uses cloud AI."
         case .traininsight:
             return "TrainInsight can now generate your daily readiness advice privately on your iPhone."
+        case .gymlog:
+            return "GymLog can now suggest workouts, detect plateaus, and write training summaries privately on your device. Your workout data never leaves this iPhone."
         }
     }
 

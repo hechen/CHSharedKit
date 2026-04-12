@@ -4,7 +4,7 @@ import Foundation
 
 /// Identifies which app is using CHLocalLLM, so models can be ranked per-app.
 public enum AppIdentifier: String, Sendable {
-    case closet, eatwisely, spendwisely, distill, traininsight
+    case closet, eatwisely, spendwisely, distill, traininsight, gymlog
 
     public var displayName: String {
         switch self {
@@ -13,6 +13,7 @@ public enum AppIdentifier: String, Sendable {
         case .spendwisely: return "SpendWisely"
         case .distill: return "Distill"
         case .traininsight: return "TrainInsight"
+        case .gymlog: return "GymLog"
         }
     }
 }
@@ -124,6 +125,12 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         case (.distill, "llama3.2-3b-q4km"):   return 8
         case (.distill, "qwen2.5-1.5b-q4km"):  return 7
         case (.distill, "qwen2.5-0.5b-q4km"):  return 4
+        // gymlog
+        case (.gymlog, "qwen2.5-3b-q4km"):     return 10
+        case (.gymlog, "llama3.2-3b-q4km"):    return 9
+        case (.gymlog, "phi3-mini-4k-q4"):     return 8
+        case (.gymlog, "qwen2.5-1.5b-q4km"):   return 7
+        case (.gymlog, "qwen2.5-0.5b-q4km"):   return 5
         default: return 0
         }
     }
@@ -156,6 +163,12 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         case (.spendwisely, "phi3-mini-4k-q4"):   return "Great for financial reasoning"
         case (.spendwisely, "llama3.2-3b-q4km"):  return "Good for budget analysis"
         case (.spendwisely, "qwen2.5-0.5b-q4km"): return "Good for simple transaction tagging"
+        // gymlog
+        case (.gymlog, "qwen2.5-3b-q4km"):     return "Best for workout suggestions and weekly summaries"
+        case (.gymlog, "llama3.2-3b-q4km"):    return "Great for form tips and training analysis"
+        case (.gymlog, "phi3-mini-4k-q4"):     return "Best reasoning for plateau detection and coaching"
+        case (.gymlog, "qwen2.5-1.5b-q4km"):   return "Fast workout suggestions, lighter quality"
+        case (.gymlog, "qwen2.5-0.5b-q4km"):   return "Limited — better options available for coaching"
         default: return description
         }
     }
