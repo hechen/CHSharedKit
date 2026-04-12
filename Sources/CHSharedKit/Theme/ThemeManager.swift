@@ -25,7 +25,7 @@ public final class ThemeManager: ObservableObject {
 
     /// iCloud KVS key. Shared across all CHSharedKit-using apps so the
     /// user's theme preference travels with them.
-    public static let kvsKey = "chs.theme.id"
+    nonisolated public static let kvsKey = "chs.theme.id"
 
     /// Process-wide singleton. Apps may construct their own instance for
     /// tests, but production code should always use `.shared`.
