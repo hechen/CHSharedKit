@@ -58,11 +58,20 @@ public final class LocalModelStore {
     public var downloadCompletionBody: String?
 
     private static let activeModelKey = "chlocallm.activeModelID"
+    private static let customModelsKey = "chlocallm.customModels"
+
+    // Custom models added by the user
+    public private(set) var customModels: [CustomModelEntry] = []
 
     // Background session delegate — persists for app lifetime so iOS can reconnect downloads
     let bgDelegate: BackgroundDownloadDelegate
 
     private init() {
+        // Load persisted custom models
+        if let data = UserDefaults.standard.data(forKey: LocalModelStore.customModelsKey),
+           let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: data) {
+            customModels = entries
+        }
         // BackgroundDownloadDelegate resolves its models directory lazily so appGroupID overrides
         // (set after init but before the first download) are respected. Using LocalModelStore.shared
         // inside the closure is safe: by the time any download completes, the singleton exists.
@@ -148,6 +157,37 @@ public final class LocalModelStore {
         LocalModelCatalog.all.filter { !isInstalled($0) }
     }
 
+    /// All models: catalog + user-added custom models.
+    public var allModels: [LocalModelInfo] {
+        LocalModelCatalog.all + customModels.map { localModelInfo(for: $0) }
+    }
+
+    /// Convert a CustomModelEntry to a LocalModelInfo for use in the download/install flow.
+    public func localModelInfo(for entry: CustomModelEntry) -> LocalModelInfo {
+        let minRAM = max(2, Int(Double(entry.sizeBytes) * 1.5 / 1_073_741_824) + 1)
+        return LocalModelInfo(
+            id: entry.id,
+            displayName: entry.displayName,
+            description: "Custom model · \(formattedSize(entry.sizeBytes))",
+            sizeBytes: entry.sizeBytes,
+            quantization: "Custom",
+            downloadURL: entry.downloadURL,
+            minRAM_GB: minRAM,
+            license: .apache2,
+            quality: .balanced,
+            chatTemplate: entry.chatTemplate,
+            languages: [],
+            strengths: [],
+            isCustom: true
+        )
+    }
+
+    private func formattedSize(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb >= 1 { return String(format: "%.1f GB", gb) }
+        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
+    }
+
     /// The default catalog model if already installed, else nil.
     public var installedDefaultModel: LocalModelInfo? {
         isInstalled(LocalModelCatalog.default) ? LocalModelCatalog.default : nil
@@ -210,6 +250,36 @@ public final class LocalModelStore {
         if activeModelID == model.id {
             clearActiveModel()
         }
+        if model.isCustom {
+            customModels.removeAll { $0.id == model.id }
+            persistCustomModels()
+        }
+    }
+
+    // MARK: - Custom models
+
+    /// Register a new custom model. Caller should then call downloadModel(_:) with localModelInfo(for:).
+    public func addCustomModel(
+        id: String = UUID().uuidString,
+        displayName: String,
+        downloadURL: URL,
+        sizeBytes: Int64,
+        chatTemplate: LocalModelInfo.ChatTemplate
+    ) {
+        let entry = CustomModelEntry(
+            id: id,
+            displayName: displayName,
+            downloadURL: downloadURL,
+            sizeBytes: sizeBytes,
+            chatTemplate: chatTemplate
+        )
+        customModels.append(entry)
+        persistCustomModels()
+    }
+
+    private func persistCustomModels() {
+        let data = try? JSONEncoder().encode(customModels)
+        UserDefaults.standard.set(data, forKey: LocalModelStore.customModelsKey)
     }
 
     // MARK: - Active model
@@ -275,6 +345,17 @@ public final class LocalModelStore {
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
+}
+
+// MARK: - CustomModelEntry
+
+/// A user-supplied model added via URL. Persisted in UserDefaults as JSON.
+public struct CustomModelEntry: Codable, Sendable, Identifiable, Equatable {
+    public let id: String
+    public let displayName: String
+    public let downloadURL: URL
+    public let sizeBytes: Int64
+    public let chatTemplate: LocalModelInfo.ChatTemplate
 }
 
 // MARK: - BackgroundDownloadDelegate

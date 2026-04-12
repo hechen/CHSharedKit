@@ -181,6 +181,14 @@ private extension ClawdLocalLLMProvider {
             }
             out += "\(user) [/INST]"
             return out
+
+        case .gemma:
+            // Gemma 2 instruct (no dedicated system turn; prepend to user if provided)
+            var out = ""
+            let userContent = (system.map { "\($0)\n\n" } ?? "") + user
+            out += "<start_of_turn>user\n\(userContent)<end_of_turn>\n"
+            out += "<start_of_turn>model\n"
+            return out
         }
     }
 
@@ -200,6 +208,14 @@ private extension ClawdLocalLLMProvider {
             return Template.chatML(systemPrompt)
         case .llama2:
             return Template.llama(systemPrompt)
+        case .gemma:
+            return Template(
+                system: nil,
+                user: ("<start_of_turn>user\n", "<end_of_turn>\n"),
+                bot: ("<start_of_turn>model\n", "<end_of_turn>\n"),
+                stopSequence: "<end_of_turn>",
+                systemPrompt: systemPrompt
+            )
         }
     }
 }

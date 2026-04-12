@@ -4,7 +4,7 @@ import CHSharedKit
 // MARK: - ModelPickerView
 
 /// Scrollable model picker with per-app recommendations, device compatibility badges,
-/// license chips, and download/activate actions.
+/// license chips, and download/activate actions. Includes custom model support.
 public struct ModelPickerView: View {
     public let appIdentifier: AppIdentifier
     public var onDismiss: (() -> Void)?
@@ -12,18 +12,32 @@ public struct ModelPickerView: View {
     @State private var store = LocalModelStore.shared
     @State private var showAcknowledgmentFor: LocalModelInfo?
     @State private var showPreDownloadFor: LocalModelInfo?
+    @State private var showAddCustomModel = false
 
     private var deviceRAM_GB: Int {
         Int(ProcessInfo.processInfo.physicalMemory / 1_073_741_824)
     }
 
-    private var sortedModels: [LocalModelInfo] {
+    /// Catalog models sorted by recommendation score descending.
+    private var sortedCatalogModels: [LocalModelInfo] {
         LocalModelCatalog.all.sorted {
             let sa = $0.recommendationScore(for: appIdentifier)
             let sb = $1.recommendationScore(for: appIdentifier)
             if sa != sb { return sa > sb }
-            return $0.sizeBytes < $1.sizeBytes // tie-break: prefer smaller
+            return $0.sizeBytes < $1.sizeBytes
         }
+    }
+
+    private var recommendedModels: [LocalModelInfo] {
+        Array(sortedCatalogModels.prefix(3))
+    }
+
+    private var otherCatalogModels: [LocalModelInfo] {
+        Array(sortedCatalogModels.dropFirst(3))
+    }
+
+    private var customModelInfos: [LocalModelInfo] {
+        store.customModels.map { store.localModelInfo(for: $0) }
     }
 
     public init(appIdentifier: AppIdentifier, onDismiss: (() -> Void)? = nil) {
@@ -33,21 +47,40 @@ public struct ModelPickerView: View {
 
     public var body: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(Array(sortedModels.enumerated()), id: \.element.id) { index, model in
-                    ModelCard(
-                        model: model,
-                        appIdentifier: appIdentifier,
-                        isTopRecommendation: index == 0,
-                        deviceRAM_GB: deviceRAM_GB,
-                        store: store,
-                        onDownloadTapped: { handleDownloadTapped(model) },
-                        onUse: { store.setActiveModel(model) },
-                        onRemove: { store.deleteModel(model) }
-                    )
+            LazyVStack(alignment: .leading, spacing: 0) {
+                // Recommended section
+                sectionHeader("Recommended for \(appIdentifier.displayName)")
+                ForEach(Array(recommendedModels.enumerated()), id: \.element.id) { index, model in
+                    modelCard(model, isTopRecommendation: index == 0)
+                        .padding(.horizontal)
+                        .padding(.bottom, 10)
                 }
+
+                // All Models section
+                sectionHeader("All Models")
+                ForEach(otherCatalogModels, id: \.id) { model in
+                    modelCard(model, isTopRecommendation: false)
+                        .padding(.horizontal)
+                        .padding(.bottom, 10)
+                }
+
+                // Custom Models section
+                if !customModelInfos.isEmpty {
+                    sectionHeader("Custom Models")
+                    ForEach(customModelInfos, id: \.id) { model in
+                        modelCard(model, isTopRecommendation: false)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
+                }
+
+                // Add Custom Model row
+                addCustomRow
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .padding(.bottom, 24)
             }
-            .padding()
+            .padding(.top, 8)
         }
         .navigationTitle("Choose a Model")
         .navigationBarTitleDisplayMode(.inline)
@@ -75,6 +108,74 @@ public struct ModelPickerView: View {
                 showPreDownloadFor = nil
             }
         }
+        .sheet(isPresented: $showAddCustomModel) {
+            AddCustomModelSheet { entry in
+                store.addCustomModel(
+                    id: entry.id,
+                    displayName: entry.displayName,
+                    downloadURL: entry.downloadURL,
+                    sizeBytes: entry.sizeBytes,
+                    chatTemplate: entry.chatTemplate
+                )
+                let modelInfo = store.localModelInfo(for: entry)
+                showPreDownloadFor = modelInfo
+            }
+        }
+    }
+
+    // MARK: Helpers
+
+    @ViewBuilder
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.horizontal)
+            .padding(.top, 16)
+            .padding(.bottom, 6)
+    }
+
+    @ViewBuilder
+    private func modelCard(_ model: LocalModelInfo, isTopRecommendation: Bool) -> some View {
+        ModelCard(
+            model: model,
+            appIdentifier: appIdentifier,
+            isTopRecommendation: isTopRecommendation,
+            deviceRAM_GB: deviceRAM_GB,
+            store: store,
+            onDownloadTapped: { handleDownloadTapped(model) },
+            onUse: { store.setActiveModel(model) },
+            onRemove: { store.deleteModel(model) }
+        )
+    }
+
+    @ViewBuilder
+    private var addCustomRow: some View {
+        Button {
+            showAddCustomModel = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.indigo)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Add Custom Model")
+                        .font(.subheadline.weight(.medium))
+                    Text("Paste any HuggingFace GGUF URL")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
     }
 
     private func handleDownloadTapped(_ model: LocalModelInfo) {
@@ -110,9 +211,14 @@ private struct ModelCard: View {
         VStack(alignment: .leading, spacing: 10) {
             headerRow
             chipsRow
-            Text(model.taskHint(for: appIdentifier))
-                .font(.caption)
-                .foregroundStyle(.indigo)
+            if !model.strengths.isEmpty {
+                strengthsRow
+            }
+            if !model.isCustom {
+                Text(model.taskHint(for: appIdentifier))
+                    .font(.caption)
+                    .foregroundStyle(.indigo)
+            }
             Divider()
             actionRow
             if isDownloadingThisModel, case .downloading(let p, _, _) = store.downloadState {
@@ -138,6 +244,7 @@ private struct ModelCard: View {
                 HStack(spacing: 6) {
                     Text(model.displayName).font(.headline)
                     qualityChip
+                    sizeCategoryChip
                 }
                 Text(model.description)
                     .font(.caption)
@@ -175,6 +282,30 @@ private struct ModelCard: View {
     }
 
     @ViewBuilder
+    private var strengthsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(model.strengths, id: \.self) { strength in
+                    Text(strength)
+                        .font(.caption2)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Color.indigo.opacity(0.08))
+                        .foregroundStyle(.indigo)
+                        .clipShape(Capsule())
+                }
+                if model.languages.count > 1 {
+                    Text("\(model.languages.count) languages")
+                        .font(.caption2)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Color(.systemGray5))
+                        .foregroundStyle(.secondary)
+                        .clipShape(Capsule())
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
     private var qualityChip: some View {
         let color: Color = {
             switch model.quality {
@@ -193,12 +324,23 @@ private struct ModelCard: View {
     }
 
     @ViewBuilder
+    private var sizeCategoryChip: some View {
+        Text(model.sizeCategory.rawValue)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Color(.systemGray5))
+            .foregroundStyle(.secondary)
+            .clipShape(Capsule())
+    }
+
+    @ViewBuilder
     private var licenseChip: some View {
         let color: Color = {
             switch model.license {
             case .apache2: return .green
             case .mit: return .blue
             case .llamaCommunity: return .orange
+            case .gemma: return .teal
             }
         }()
         Text(model.license.rawValue)
@@ -229,7 +371,6 @@ private struct ModelCard: View {
     @ViewBuilder
     private var actionRow: some View {
         HStack {
-            // Left: status label
             Group {
                 if isActive {
                     Label("Active", systemImage: "checkmark.circle.fill")
@@ -243,7 +384,6 @@ private struct ModelCard: View {
 
             Spacer()
 
-            // Right: action buttons
             if !isCompatible && !isBorderline {
                 Text("Not supported").font(.caption).foregroundStyle(.tertiary)
             } else if isDownloadingThisModel {
@@ -278,6 +418,148 @@ private struct ModelCard: View {
             Text(label).font(.caption.weight(.medium)).foregroundStyle(.secondary)
             Button("Cancel") { store.cancelDownload() }
                 .buttonStyle(.bordered).controlSize(.small)
+        }
+    }
+
+    private func formattedSize(_ bytes: Int64) -> String {
+        let gb = Double(bytes) / 1_073_741_824
+        if gb >= 1 { return String(format: "%.1f GB", gb) }
+        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
+    }
+}
+
+// MARK: - AddCustomModelSheet
+
+struct AddCustomModelSheet: View {
+    let onAdd: (CustomModelEntry) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var urlText = ""
+    @State private var modelName = ""
+    @State private var selectedTemplate: LocalModelInfo.ChatTemplate = .chatML
+    @State private var fetchedSize: Int64?
+    @State private var isFetching = false
+    @State private var fetchError: String?
+
+    private var urlIsValid: Bool {
+        guard let url = URL(string: urlText) else { return false }
+        return url.scheme == "https"
+            && url.host == "huggingface.co"
+            && urlText.contains("/resolve/main/")
+            && urlText.hasSuffix(".gguf")
+    }
+
+    private var canAdd: Bool {
+        urlIsValid && !modelName.trimmingCharacters(in: .whitespaces).isEmpty && fetchedSize != nil
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("https://huggingface.co/.../resolve/main/model.gguf", text: $urlText)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .onChange(of: urlText) { _, _ in
+                            fetchedSize = nil
+                            fetchError = nil
+                        }
+                } header: {
+                    Text("HuggingFace GGUF URL")
+                } footer: {
+                    if let error = fetchError {
+                        Text(error).foregroundStyle(.red)
+                    } else if let size = fetchedSize {
+                        Text("File size: \(formattedSize(size))").foregroundStyle(.secondary)
+                    } else {
+                        Text("Must be a direct .gguf file URL from huggingface.co")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section {
+                    Button(isFetching ? "Checking…" : "Check URL") {
+                        Task { await checkURL() }
+                    }
+                    .disabled(!urlIsValid || isFetching)
+                }
+
+                Section("Model Name") {
+                    TextField("e.g. My Custom 7B", text: $modelName)
+                }
+
+                Section("Chat Template") {
+                    Picker("Template", selection: $selectedTemplate) {
+                        Text("ChatML (Qwen, Phi, SmolLM)").tag(LocalModelInfo.ChatTemplate.chatML)
+                        Text("Llama 3").tag(LocalModelInfo.ChatTemplate.llama3)
+                        Text("Llama 2 / Mistral").tag(LocalModelInfo.ChatTemplate.llama2)
+                        Text("Gemma 2").tag(LocalModelInfo.ChatTemplate.gemma)
+                    }
+                } footer: {
+                    Text("Match the template to the model family. Most HuggingFace GGUF models are ChatML.")
+                }
+            }
+            .navigationTitle("Add Custom Model")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Add") {
+                        guard let url = URL(string: urlText),
+                              let size = fetchedSize else { return }
+                        let entry = CustomModelEntry(
+                            id: UUID().uuidString,
+                            displayName: modelName.trimmingCharacters(in: .whitespaces),
+                            downloadURL: url,
+                            sizeBytes: size,
+                            chatTemplate: selectedTemplate
+                        )
+                        dismiss()
+                        onAdd(entry)
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(!canAdd)
+                }
+            }
+        }
+    }
+
+    private func checkURL() async {
+        guard let url = URL(string: urlText) else { return }
+        isFetching = true
+        fetchError = nil
+        defer { isFetching = false }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 15
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            if let http = response as? HTTPURLResponse {
+                if http.statusCode == 200 || http.statusCode == 206 {
+                    let size = http.value(forHTTPHeaderField: "Content-Length")
+                        .flatMap { Int64($0) }
+                        ?? http.value(forHTTPHeaderField: "x-linked-size")
+                        .flatMap { Int64($0) }
+                    if let size, size > 0 {
+                        fetchedSize = size
+                    } else {
+                        fetchError = "Could not determine file size. Try downloading anyway?"
+                        fetchedSize = 0 // allow proceeding
+                    }
+                } else if http.statusCode == 401 || http.statusCode == 403 {
+                    fetchError = "This file requires authentication and cannot be downloaded."
+                } else {
+                    fetchError = "HTTP \(http.statusCode) — file may not exist."
+                }
+            }
+        } catch {
+            fetchError = "Network error: \(error.localizedDescription)"
         }
     }
 
@@ -361,7 +643,6 @@ private struct PreDownloadSheet: View {
 
     private var ramUsagePercent: Int {
         guard deviceRAM_GB > 0 else { return 0 }
-        // Estimate ~1.5× file size for inference overhead
         let inferenceGB = Double(model.sizeBytes) * 1.5 / 1_073_741_824
         return min(100, Int((inferenceGB / Double(deviceRAM_GB)) * 100))
     }
