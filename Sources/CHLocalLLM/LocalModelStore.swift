@@ -63,8 +63,12 @@ public final class LocalModelStore {
     let bgDelegate: BackgroundDownloadDelegate
 
     private init() {
-        let modelsDir = Self.resolveModelsDirectory(appGroupID: "group.app.chen.distill")
-        bgDelegate = BackgroundDownloadDelegate(modelsDirectory: modelsDir)
+        // BackgroundDownloadDelegate resolves its models directory lazily so appGroupID overrides
+        // (set after init but before the first download) are respected. Using LocalModelStore.shared
+        // inside the closure is safe: by the time any download completes, the singleton exists.
+        bgDelegate = BackgroundDownloadDelegate(
+            resolveModelsDir: { LocalModelStore.shared.modelsDirectory }
+        )
         // Eagerly create the session — must happen before iOS delivers background events
         _ = bgDelegate.session
 
@@ -239,7 +243,7 @@ public final class LocalModelStore {
     /// Called by AppDelegate.handleEventsForBackgroundURLSession. Stores the system-provided
     /// completion handler so it can be called after all delegate callbacks have fired.
     public func handleBackgroundEvents(identifier: String, completionHandler: @escaping () -> Void) {
-        guard identifier == BackgroundDownloadDelegate.sessionIdentifier else {
+        guard identifier == bgDelegate.sessionIdentifier else {
             completionHandler()
             return
         }
@@ -278,7 +282,10 @@ public final class LocalModelStore {
 /// A single instance lives for the app's lifetime to ensure iOS can always deliver callbacks.
 public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
 
-    public static let sessionIdentifier = "app.chen.distill.llm-download"
+    /// Session identifier — derived from appGroupID so each app gets a unique background session.
+    /// e.g. "group.app.chen.distill" → "app.chen.distill.llm-download"
+    /// e.g. "group.app.chen.eatwisely" → "app.chen.eatwisely.llm-download"
+    public let sessionIdentifier: String
 
     /// Set by AppDelegate.handleEventsForBackgroundURLSession; called in urlSessionDidFinishEvents.
     public var backgroundCompletionHandler: (() -> Void)?
@@ -286,17 +293,22 @@ public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDeleg
     /// Callback bridge to LocalModelStore (set at store init).
     var onStateChange: ((ModelDownloadState, String?) -> Void)?
 
-    private let modelsDirectory: URL
+    /// Closure that resolves the models directory lazily — called when a download finishes.
+    private let resolveModelsDir: () -> URL
 
     public private(set) lazy var session: URLSession = {
-        let config = URLSessionConfiguration.background(withIdentifier: Self.sessionIdentifier)
+        let config = URLSessionConfiguration.background(withIdentifier: sessionIdentifier)
         config.isDiscretionary = false
         config.sessionSendsLaunchEvents = true
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
 
-    init(modelsDirectory: URL) {
-        self.modelsDirectory = modelsDirectory
+    init(resolveModelsDir: @escaping () -> URL, appGroupID: String = "group.app.chen.distill") {
+        self.resolveModelsDir = resolveModelsDir
+        // Derive a per-app session ID from the app group, e.g.:
+        // "group.app.chen.distill" → "app.chen.distill.llm-download"
+        let stripped = appGroupID.hasPrefix("group.") ? String(appGroupID.dropFirst("group.".count)) : appGroupID
+        self.sessionIdentifier = "\(stripped).llm-download"
     }
 
     // MARK: Helpers
@@ -307,7 +319,7 @@ public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDeleg
     }
 
     private func destURL(for model: LocalModelInfo) -> URL {
-        modelsDirectory.appendingPathComponent("\(model.id).gguf")
+        resolveModelsDir().appendingPathComponent("\(model.id).gguf")
     }
 
     // MARK: URLSessionDownloadDelegate
