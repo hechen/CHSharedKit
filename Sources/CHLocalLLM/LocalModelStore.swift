@@ -42,6 +42,21 @@ public final class LocalModelStore {
     // Configuration — apps can override appGroupID before first use
     public var appGroupID: String = "group.app.chen.distill"
 
+    /// Identifies the consuming app. Drives the default onboarding copy and
+    /// the local notification fired when a model finishes downloading, so
+    /// each app shows text that matches its own use case instead of the
+    /// Distill-flavored defaults that shipped in 1.2.0/1.3.0.
+    /// Set this at app launch, before the first download starts.
+    public var appIdentifier: AppIdentifier = .distill
+
+    /// Optional override for the "download complete" notification title.
+    /// When nil, uses ``AppIdentifier/defaultDownloadCompletionTitle``.
+    public var downloadCompletionTitle: String?
+
+    /// Optional override for the "download complete" notification body.
+    /// When nil, uses ``AppIdentifier/defaultDownloadCompletionBody``.
+    public var downloadCompletionBody: String?
+
     private static let activeModelKey = "chlocallm.activeModelID"
 
     // Background session delegate — persists for app lifetime so iOS can reconnect downloads
@@ -58,7 +73,10 @@ public final class LocalModelStore {
                 guard let self else { return }
                 self.downloadState = state
                 switch state {
-                case .installed, .failed:
+                case .installed:
+                    self.activeDownloadModelID = nil
+                    self.fireCompletionNotification()
+                case .failed:
                     self.activeDownloadModelID = nil
                 case .downloading, .installing, .paused, .idle:
                     if let modelID { self.activeDownloadModelID = modelID }
@@ -68,6 +86,24 @@ public final class LocalModelStore {
 
         // Reconnect any in-flight background download (e.g. after app relaunch)
         reconnectPendingTasks()
+    }
+
+    // MARK: - Completion notification
+
+    /// Fires a local "download complete" notification using app-specific copy.
+    /// Title/body default to the active ``appIdentifier``'s strings and can be
+    /// overridden via ``downloadCompletionTitle`` / ``downloadCompletionBody``.
+    private func fireCompletionNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = downloadCompletionTitle ?? appIdentifier.defaultDownloadCompletionTitle
+        content.body = downloadCompletionBody ?? appIdentifier.defaultDownloadCompletionBody
+        content.sound = .default
+        let request = UNNotificationRequest(
+            identifier: appIdentifier.downloadCompletionNotificationIdentifier,
+            content: content,
+            trigger: nil // deliver immediately
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Storage
@@ -305,7 +341,6 @@ public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDeleg
             try? FileManager.default.removeItem(at: dest)
             try FileManager.default.moveItem(at: location, to: dest)
             onStateChange?(.installed, model.id)
-            fireCompletionNotification()
         } catch {
             onStateChange?(.failed("Failed to save model: \(error.localizedDescription)"), model.id)
         }
@@ -328,20 +363,5 @@ public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDeleg
             self?.backgroundCompletionHandler?()
             self?.backgroundCompletionHandler = nil
         }
-    }
-
-    // MARK: Notification
-
-    private func fireCompletionNotification() {
-        let content = UNMutableNotificationContent()
-        content.title = "Model Ready"
-        content.body = "On-device AI is ready. Distill can now summarize articles offline."
-        content.sound = .default
-        let request = UNNotificationRequest(
-            identifier: "app.chen.distill.llm.ready",
-            content: content,
-            trigger: nil  // deliver immediately
-        )
-        UNUserNotificationCenter.current().add(request)
     }
 }

@@ -5,15 +5,18 @@ import CHSharedKit
 /// Tapping "Download Model" triggers the download flow.
 public struct OnDeviceLLMOnboardingView: View {
     let model: LocalModelInfo
+    let appIdentifier: AppIdentifier
     let onDownload: () -> Void
     let onDismiss: (() -> Void)?
 
     public init(
         model: LocalModelInfo = LocalModelCatalog.default,
+        appIdentifier: AppIdentifier = .distill,
         onDownload: @escaping () -> Void,
         onDismiss: (() -> Void)? = nil
     ) {
         self.model = model
+        self.appIdentifier = appIdentifier
         self.onDownload = onDownload
         self.onDismiss = onDismiss
     }
@@ -31,7 +34,7 @@ public struct OnDeviceLLMOnboardingView: View {
                 Text("On-Device AI")
                     .font(.title2.weight(.bold))
 
-                Text("Download a small AI model once. After that, Distill summarizes articles with no API key, no account, and no network connection required.")
+                Text(appIdentifier.onboardingBlurb)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
