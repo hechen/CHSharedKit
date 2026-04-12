@@ -490,13 +490,15 @@ struct AddCustomModelSheet: View {
                     TextField("e.g. My Custom 7B", text: $modelName)
                 }
 
-                Section("Chat Template") {
+                Section {
                     Picker("Template", selection: $selectedTemplate) {
                         Text("ChatML (Qwen, Phi, SmolLM)").tag(LocalModelInfo.ChatTemplate.chatML)
                         Text("Llama 3").tag(LocalModelInfo.ChatTemplate.llama3)
                         Text("Llama 2 / Mistral").tag(LocalModelInfo.ChatTemplate.llama2)
                         Text("Gemma 2").tag(LocalModelInfo.ChatTemplate.gemma)
                     }
+                } header: {
+                    Text("Chat Template")
                 } footer: {
                     Text("Match the template to the model family. Most HuggingFace GGUF models are ChatML.")
                 }
