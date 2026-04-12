@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import UserNotifications
+import CHSharedKit
 
 // MARK: - Download state
 
@@ -35,9 +36,13 @@ public final class LocalModelStore {
     // Published state
     public private(set) var downloadState: ModelDownloadState = .idle
     public private(set) var activeDownloadModelID: String?
+    /// ID of the model the user has chosen as active (persisted across launches).
+    public private(set) var activeModelID: String? = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey)
 
     // Configuration — apps can override appGroupID before first use
     public var appGroupID: String = "group.app.chen.distill"
+
+    private static let activeModelKey = "chlocallm.activeModelID"
 
     // Background session delegate — persists for app lifetime so iOS can reconnect downloads
     let bgDelegate: BackgroundDownloadDelegate
@@ -91,7 +96,7 @@ public final class LocalModelStore {
         let url = modelURL(for: model)
         guard FileManager.default.fileExists(atPath: url.path) else { return false }
         let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-        return Int64(fileSize) > model.fileSizeBytes * 4 / 5
+        return Int64(fileSize) > model.sizeBytes * 4 / 5
     }
 
     public var installedModels: [LocalModelInfo] {
@@ -119,9 +124,12 @@ public final class LocalModelStore {
     // MARK: - Download
 
     public func downloadModel(_ model: LocalModelInfo) {
-        guard case .idle = downloadState else { return }
+        switch downloadState {
+        case .idle, .installed, .failed: break
+        default: return  // don't interrupt an active download
+        }
         activeDownloadModelID = model.id
-        downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.fileSizeBytes)
+        downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
 
         requestNotificationPermission()
 
@@ -150,7 +158,7 @@ public final class LocalModelStore {
     public func resumeDownload(model: LocalModelInfo, resumeData: Data) {
         guard case .paused = downloadState else { return }
         activeDownloadModelID = model.id
-        downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.fileSizeBytes)
+        downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
 
         let task = bgDelegate.session.downloadTask(withResumeData: resumeData)
         task.resume()
@@ -158,6 +166,30 @@ public final class LocalModelStore {
 
     public func deleteModel(_ model: LocalModelInfo) {
         try? FileManager.default.removeItem(at: modelURL(for: model))
+        if activeModelID == model.id {
+            clearActiveModel()
+        }
+    }
+
+    // MARK: - Active model
+
+    /// Make `model` the active on-device provider. Registers `ClawdLocalLLMProvider` and persists the choice.
+    public func setActiveModel(_ model: LocalModelInfo) {
+        guard isInstalled(model) else { return }
+        activeModelID = model.id
+        UserDefaults.standard.set(model.id, forKey: Self.activeModelKey)
+        let provider = ClawdLocalLLMProvider(
+            modelURL: modelURL(for: model),
+            modelInfo: model
+        )
+        ClawdAIManager.shared.registerProvider(provider)
+        ClawdAIManager.shared.activeProviderID = ClawdLocalLLMProvider.providerID
+    }
+
+    /// Clear the active model selection (e.g. after deleting it).
+    public func clearActiveModel() {
+        activeModelID = nil
+        UserDefaults.standard.removeObject(forKey: Self.activeModelKey)
     }
 
     /// Reset download state to idle (call after a failed download to allow retry).
@@ -192,7 +224,7 @@ public final class LocalModelStore {
                 self.activeDownloadModelID = model.id
                 let written = task.countOfBytesReceived
                 let expected = task.countOfBytesExpectedToReceive
-                let total = expected > 0 ? expected : model.fileSizeBytes
+                let total = expected > 0 ? expected : model.sizeBytes
                 let progress = total > 0 ? Double(written) / Double(total) : 0
                 self.downloadState = .downloading(progress: progress, bytesReceived: written, totalBytes: total)
             }

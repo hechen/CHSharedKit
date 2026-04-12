@@ -57,7 +57,7 @@ public struct OnDeviceLLMOnboardingView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Text(formattedSize(model.fileSizeBytes))
+                    Text(formattedSize(model.sizeBytes))
                         .font(.caption.weight(.medium))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -77,7 +77,7 @@ public struct OnDeviceLLMOnboardingView: View {
             // CTA
             VStack(spacing: 10) {
                 Button(action: onDownload) {
-                    Label("Download Model (\(formattedSize(model.fileSizeBytes)))", systemImage: "arrow.down.circle.fill")
+                    Label("Download Model (\(formattedSize(model.sizeBytes)))", systemImage: "arrow.down.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)

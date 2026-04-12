@@ -49,7 +49,7 @@ public struct LocalModelDownloadView: View {
             Button {
                 store.downloadModel(model)
             } label: {
-                Label("Download \(formattedSize(model.fileSizeBytes))", systemImage: "arrow.down.circle.fill")
+                Label("Download \(formattedSize(model.sizeBytes))", systemImage: "arrow.down.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
