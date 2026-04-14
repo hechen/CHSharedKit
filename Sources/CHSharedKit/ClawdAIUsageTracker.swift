@@ -57,7 +57,8 @@ public final class ClawdAIUsageTracker: ObservableObject {
     
     // MARK: - Log a Request
     
-    public func logRequest(provider: String, model: String, inputTokens: Int, outputTokens: Int, imageTokens: Int = 0, isVision: Bool = false) {
+    @discardableResult
+    public func logRequest(provider: String, model: String, inputTokens: Int, outputTokens: Int, imageTokens: Int = 0, isVision: Bool = false) -> Double {
         let pricing = Self.pricing[model] ?? ModelPricing(inputPerMillion: 5.0, outputPerMillion: 15.0, imageInputPerMillion: 5.0)
         
         let cost = Double(inputTokens) * pricing.inputPerToken +
@@ -87,6 +88,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
         }
         
         saveStats()
+        return cost
     }
     
     // MARK: - Computed

@@ -91,14 +91,13 @@ public final class ClawdAIManager: ObservableObject {
             let inputTokens = (prompt.count + (systemPrompt?.count ?? 0)) / 4
             let outputTokens = result.count / 4
             let tracker = ClawdAIUsageTracker.shared
-            tracker.logRequest(
+            let cost = tracker.logRequest(
                 provider: provider.displayName,
                 model: provider.id,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens
             )
             // Log cost to activity log for visibility
-            let cost = tracker.requestHistory.first?.estimatedCost ?? 0
             logAICost(provider: provider.displayName, model: provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: false)
             return result
         } catch {
@@ -125,7 +124,7 @@ public final class ClawdAIManager: ObservableObject {
             let outputTokens = result.count / 4
             let imageTokens = imageData.count / 750
             let tracker = ClawdAIUsageTracker.shared
-            tracker.logRequest(
+            let cost = tracker.logRequest(
                 provider: provider.displayName,
                 model: provider.id,
                 inputTokens: inputTokens,
@@ -133,7 +132,6 @@ public final class ClawdAIManager: ObservableObject {
                 imageTokens: imageTokens,
                 isVision: true
             )
-            let cost = tracker.requestHistory.first?.estimatedCost ?? 0
             logAICost(provider: provider.displayName, model: provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: true)
             return result
         } catch {
