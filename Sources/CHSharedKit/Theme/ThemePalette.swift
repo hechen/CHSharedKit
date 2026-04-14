@@ -7,6 +7,9 @@ public enum ThemePalette {
     /// All themes in display order.
     public static let all: [Theme] = [
         .default,
+        .editorial,
+        .luxe,
+        .boutique,
         .midnight,
         .ocean,
         .sunset,
@@ -35,6 +38,78 @@ private func tc(
 // MARK: - Themes
 
 public extension Theme {
+
+    // ---------- Editorial — airy fashion spread, soft stone ----------
+    static let editorial = Theme(
+        id: "editorial",
+        name: "Editorial",
+        description: "Airy neutrals with soft contrast, like a magazine spread.",
+        symbol: "square.stack.3d.up.fill",
+        associatedIconName: nil,
+        accent:             tc((0.24, 0.24, 0.28), (0.90, 0.88, 0.84)),
+        accentSecondary:    tc((0.58, 0.56, 0.52), (0.72, 0.70, 0.66)),
+        background:         tc((0.97, 0.96, 0.95), (0.09, 0.09, 0.10)),
+        backgroundElevated: tc((0.99, 0.985, 0.975), (0.12, 0.12, 0.13)),
+        card:               tc((1.00, 0.995, 0.99), (0.14, 0.14, 0.16)),
+        cardElevated:       tc((0.985, 0.98, 0.97), (0.18, 0.18, 0.20)),
+        textPrimary:        tc((0.12, 0.12, 0.13), (0.96, 0.95, 0.93)),
+        textSecondary:      tc((0.42, 0.41, 0.40), (0.72, 0.70, 0.68)),
+        textTertiary:       tc((0.65, 0.63, 0.60), (0.48, 0.47, 0.45)),
+        divider:            tc((0.90, 0.88, 0.85), (0.24, 0.24, 0.26)),
+        success:            tc((0.28, 0.62, 0.46), (0.44, 0.82, 0.60)),
+        warning:            tc((0.84, 0.60, 0.24), (0.96, 0.78, 0.38)),
+        error:              tc((0.78, 0.30, 0.30), (0.94, 0.48, 0.48)),
+        gradientStart:      tc((0.92, 0.90, 0.87), (0.30, 0.29, 0.30)),
+        gradientEnd:        tc((0.74, 0.72, 0.68), (0.15, 0.15, 0.17))
+    )
+
+    // ---------- Luxe — warm stone, espresso, muted gold ----------
+    static let luxe = Theme(
+        id: "luxe",
+        name: "Luxe",
+        description: "Warm stone and espresso with a subtle luxury glow.",
+        symbol: "sparkle",
+        associatedIconName: nil,
+        accent:             tc((0.56, 0.42, 0.22), (0.92, 0.78, 0.52)),
+        accentSecondary:    tc((0.72, 0.60, 0.40), (0.74, 0.60, 0.40)),
+        background:         tc((0.965, 0.945, 0.92), (0.08, 0.06, 0.05)),
+        backgroundElevated: tc((0.99, 0.975, 0.95), (0.12, 0.09, 0.08)),
+        card:               tc((1.00, 0.99, 0.975), (0.15, 0.11, 0.10)),
+        cardElevated:       tc((0.985, 0.96, 0.93), (0.20, 0.15, 0.13)),
+        textPrimary:        tc((0.18, 0.12, 0.08), (0.98, 0.94, 0.88)),
+        textSecondary:      tc((0.47, 0.38, 0.30), (0.78, 0.68, 0.58)),
+        textTertiary:       tc((0.64, 0.54, 0.46), (0.52, 0.44, 0.38)),
+        divider:            tc((0.90, 0.84, 0.76), (0.28, 0.21, 0.18)),
+        success:            tc((0.28, 0.62, 0.42), (0.44, 0.84, 0.58)),
+        warning:            tc((0.86, 0.60, 0.18), (1.00, 0.78, 0.34)),
+        error:              tc((0.76, 0.24, 0.22), (0.96, 0.44, 0.40)),
+        gradientStart:      tc((0.84, 0.72, 0.50), (0.55, 0.40, 0.20)),
+        gradientEnd:        tc((0.44, 0.28, 0.16), (0.16, 0.10, 0.08))
+    )
+
+    // ---------- Boutique — bright boutique retail, blush + sand ----------
+    static let boutique = Theme(
+        id: "boutique",
+        name: "Boutique",
+        description: "Bright retail polish with blush, sand, and soft cocoa.",
+        symbol: "bag.fill",
+        associatedIconName: nil,
+        accent:             tc((0.82, 0.47, 0.54), (1.00, 0.68, 0.74)),
+        accentSecondary:    tc((0.86, 0.70, 0.58), (0.96, 0.82, 0.68)),
+        background:         tc((0.995, 0.975, 0.97), (0.11, 0.09, 0.10)),
+        backgroundElevated: tc((1.00, 0.99, 0.985), (0.15, 0.13, 0.14)),
+        card:               tc((1.00, 1.00, 0.995), (0.18, 0.15, 0.17)),
+        cardElevated:       tc((0.99, 0.96, 0.95), (0.22, 0.18, 0.20)),
+        textPrimary:        tc((0.20, 0.14, 0.16), (0.98, 0.94, 0.95)),
+        textSecondary:      tc((0.50, 0.38, 0.40), (0.76, 0.66, 0.68)),
+        textTertiary:       tc((0.68, 0.56, 0.57), (0.52, 0.44, 0.46)),
+        divider:            tc((0.94, 0.86, 0.86), (0.30, 0.24, 0.27)),
+        success:            tc((0.28, 0.68, 0.50), (0.44, 0.88, 0.66)),
+        warning:            tc((0.90, 0.62, 0.20), (1.00, 0.80, 0.36)),
+        error:              tc((0.82, 0.28, 0.34), (0.98, 0.46, 0.54)),
+        gradientStart:      tc((0.98, 0.84, 0.86), (0.48, 0.24, 0.34)),
+        gradientEnd:        tc((0.92, 0.76, 0.64), (0.24, 0.16, 0.18))
+    )
 
     // ---------- Default — crisp blue, system look ----------
     static let `default` = Theme(
