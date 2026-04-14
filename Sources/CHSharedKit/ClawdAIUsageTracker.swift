@@ -19,6 +19,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
     
     private init() {
         loadStats()
+        migrateFreeProviderHistoryIfNeeded()
     }
     
     // MARK: - Pricing (per 1M tokens, updated periodically)
@@ -150,6 +151,31 @@ public final class ClawdAIUsageTracker: ObservableObject {
             requestHistory = history
         }
     }
+
+    private func migrateFreeProviderHistoryIfNeeded() {
+        let migrationKey = "clawd_ai_free_provider_history_migrated_v1"
+        let freeProviderModels = Set(Self.pricing.compactMap { key, pricing in
+            pricing.inputPerMillion == 0 && pricing.outputPerMillion == 0 && pricing.imageInputPerMillion == 0 ? key : nil
+        })
+
+        var didChangeHistory = false
+        requestHistory = requestHistory.map { log in
+            guard freeProviderModels.contains(log.model), log.estimatedCost != 0 else {
+                return log
+            }
+            didChangeHistory = true
+            return log.withEstimatedCost(0)
+        }
+
+        let recalculatedCost = requestHistory.reduce(0) { $0 + $1.estimatedCost }
+        let storedCost = defaults.double(forKey: "clawd_ai_total_estimated_cost_legacy")
+
+        if didChangeHistory || storedCost != recalculatedCost || !defaults.bool(forKey: migrationKey) {
+            defaults.set(recalculatedCost, forKey: "clawd_ai_total_estimated_cost_legacy")
+            defaults.set(true, forKey: migrationKey)
+            saveStats()
+        }
+    }
 }
 
 // MARK: - Request Log
@@ -175,5 +201,31 @@ public struct ClawdAIRequestLog: Identifiable, Codable, Sendable {
         self.imageTokens = imageTokens
         self.estimatedCost = estimatedCost
         self.isVision = isVision
+    }
+
+    private init(id: UUID, date: Date, provider: String, model: String, inputTokens: Int, outputTokens: Int, imageTokens: Int, estimatedCost: Double, isVision: Bool) {
+        self.id = id
+        self.date = date
+        self.provider = provider
+        self.model = model
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.imageTokens = imageTokens
+        self.estimatedCost = estimatedCost
+        self.isVision = isVision
+    }
+
+    func withEstimatedCost(_ estimatedCost: Double) -> Self {
+        Self(
+            id: id,
+            date: date,
+            provider: provider,
+            model: model,
+            inputTokens: inputTokens,
+            outputTokens: outputTokens,
+            imageTokens: imageTokens,
+            estimatedCost: estimatedCost,
+            isVision: isVision
+        )
     }
 }
