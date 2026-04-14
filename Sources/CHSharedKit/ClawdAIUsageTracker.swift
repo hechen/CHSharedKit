@@ -60,7 +60,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
     
     @discardableResult
     public func logRequest(provider: String, model: String, inputTokens: Int, outputTokens: Int, imageTokens: Int = 0, isVision: Bool = false) -> Double {
-        let pricing = Self.pricing[model] ?? ModelPricing(inputPerMillion: 5.0, outputPerMillion: 15.0, imageInputPerMillion: 5.0)
+        let pricing = pricingForLog(provider: provider, model: model)
         
         let cost = Double(inputTokens) * pricing.inputPerToken +
                    Double(outputTokens) * pricing.outputPerToken +
@@ -153,14 +153,14 @@ public final class ClawdAIUsageTracker: ObservableObject {
     }
 
     private func migrateFreeProviderHistoryIfNeeded() {
-        let migrationKey = "clawd_ai_free_provider_history_migrated_v1"
-        let freeProviderModels = Set(Self.pricing.compactMap { key, pricing in
-            pricing.inputPerMillion == 0 && pricing.outputPerMillion == 0 && pricing.imageInputPerMillion == 0 ? key : nil
-        })
+        let migrationKey = "clawd_ai_free_provider_history_migrated_v2"
 
         var didChangeHistory = false
         requestHistory = requestHistory.map { log in
-            guard freeProviderModels.contains(log.model), log.estimatedCost != 0 else {
+            let shouldBeFree = pricingForLog(provider: log.provider, model: log.model).inputPerMillion == 0 &&
+                pricingForLog(provider: log.provider, model: log.model).outputPerMillion == 0 &&
+                pricingForLog(provider: log.provider, model: log.model).imageInputPerMillion == 0
+            guard shouldBeFree, log.estimatedCost != 0 else {
                 return log
             }
             didChangeHistory = true
@@ -175,6 +175,30 @@ public final class ClawdAIUsageTracker: ObservableObject {
             defaults.set(true, forKey: migrationKey)
             saveStats()
         }
+    }
+
+    private func pricingForLog(provider: String, model: String) -> ModelPricing {
+        if let pricing = Self.pricing[model] {
+            return pricing
+        }
+
+        let normalizedProvider = provider.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedModel = model.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let freeMarkers = [
+            "apple-intelligence",
+            "on-device",
+            "on device",
+            "on-device-llm",
+            "local-llm",
+            "local llm",
+            "offline"
+        ]
+
+        if freeMarkers.contains(where: { normalizedProvider.contains($0) || normalizedModel.contains($0) }) {
+            return ModelPricing(inputPerMillion: 0, outputPerMillion: 0, imageInputPerMillion: 0)
+        }
+
+        return ModelPricing(inputPerMillion: 5.0, outputPerMillion: 15.0, imageInputPerMillion: 5.0)
     }
 }
 
