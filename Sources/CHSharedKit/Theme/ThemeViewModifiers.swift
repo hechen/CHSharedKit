@@ -108,9 +108,19 @@ public extension View {
 
 // MARK: - .themedNavigationBar()
 
-/// Configures inline navigation bar title color to `theme.textPrimary`
-/// via `UINavigationBar` appearance. Call once at the root of a
-/// `NavigationStack` or `NavigationView`.
+/// Configures the navigation bar background and title colors to match the
+/// active theme. Call once at the root of a `NavigationStack`.
+///
+/// **Why UINavigationBarAppearance instead of `.toolbarColorScheme`:**
+/// `.toolbarColorScheme` mirrors the *system* color scheme, not the
+/// *theme's* background brightness. If the user picks a dark-background
+/// theme while the system is in light mode, `.toolbarColorScheme(.light)`
+/// would render dark title text on a dark background — invisible.
+/// It also doesn't reliably control large-title text color on all iOS
+/// versions. Instead we drive `UINavigationBarAppearance` directly with
+/// explicit text attributes keyed to `UIColor.label` (which adapts to
+/// light/dark automatically) so titles always contrast against the
+/// themed background.
 ///
 /// **Usage:**
 /// ```swift
@@ -121,22 +131,67 @@ public extension View {
 /// ```
 private struct ThemedNavigationBarModifier: ViewModifier {
     @Environment(\.theme) private var theme
-    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         #if os(iOS)
         content
             .toolbarBackground(theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarColorScheme(colorScheme == .dark ? .dark : .light, for: .navigationBar)
+            .onAppear { applyNavBarAppearance(theme.background) }
+            .onChange(of: theme.background) { _, bg in applyNavBarAppearance(bg) }
         #else
         content
         #endif
     }
+
+    #if os(iOS)
+    private func applyNavBarAppearance(_ background: Color) {
+        let titleAttrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: UIColor.label,
+        ]
+        let uiBg = UIColor(background)
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = uiBg
+        appearance.titleTextAttributes = titleAttrs
+        appearance.largeTitleTextAttributes = titleAttrs
+
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().compactAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+        UINavigationBar.appearance().compactScrollEdgeAppearance = appearance
+
+        // Refresh any live navigation bars
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                refreshNavBarsInView(window)
+            }
+        }
+    }
+
+    private func refreshNavBarsInView(_ view: UIView) {
+        if let navBar = view as? UINavigationBar {
+            navBar.standardAppearance = UINavigationBar.appearance().standardAppearance
+            navBar.compactAppearance = UINavigationBar.appearance().compactAppearance
+            if let se = UINavigationBar.appearance().scrollEdgeAppearance {
+                navBar.scrollEdgeAppearance = se
+            }
+            if let cse = UINavigationBar.appearance().compactScrollEdgeAppearance {
+                navBar.compactScrollEdgeAppearance = cse
+            }
+        }
+        for subview in view.subviews { refreshNavBarsInView(subview) }
+    }
+    #endif
 }
 
 public extension View {
     /// Style the navigation bar to match the active theme.
+    ///
+    /// Applies `theme.background` as the nav bar fill and explicitly sets
+    /// title text to `UIColor.label` so large titles are always visible
+    /// regardless of which theme or system color scheme is active.
     func themedNavigationBar() -> some View {
         modifier(ThemedNavigationBarModifier())
     }
