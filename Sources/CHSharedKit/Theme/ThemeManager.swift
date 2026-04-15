@@ -137,6 +137,15 @@ private struct ThemedModifier: ViewModifier {
         content
             .environment(\.theme, resolved)
             .tint(resolved.accent)
+            .onAppear { syncTabBar(resolved) }
+            .onChange(of: manager.currentTheme.id) { _, _ in syncTabBar(resolved) }
+            .onChange(of: colorScheme) { _, _ in syncTabBar(resolved) }
+    }
+
+    private func syncTabBar(_ resolved: ResolvedTheme) {
+        #if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
+        applyTabBarAppearance(UIColor(resolved.accent))
+        #endif
     }
 }
 
@@ -148,3 +157,55 @@ public extension View {
         modifier(ThemedModifier(manager: manager))
     }
 }
+
+// MARK: - Tab bar appearance
+
+/// Configures `UITabBarAppearance` so only the selected tab uses the accent
+/// color. Without this, `.tint()` at the root makes ALL tab items render in
+/// the accent color, losing the selected/unselected distinction.
+///
+/// Sets `standardAppearance` AND `scrollEdgeAppearance` (the iOS 15 scroll-
+/// edge variant that otherwise falls back to defaults and causes the bug to
+/// reappear when the user scrolls).  Also refreshes any tab bars already
+/// on screen so a runtime theme change is immediately visible.
+#if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
+private func applyTabBarAppearance(_ selected: UIColor) {
+    let unselected = UIColor.secondaryLabel
+
+    let appearance = UITabBarAppearance()
+    appearance.configureWithDefaultBackground()
+
+    for layout in [appearance.stackedLayoutAppearance,
+                   appearance.inlineLayoutAppearance,
+                   appearance.compactInlineLayoutAppearance] {
+        layout.normal.iconColor = unselected
+        layout.normal.titleTextAttributes = [.foregroundColor: unselected]
+        layout.selected.iconColor = selected
+        layout.selected.titleTextAttributes = [.foregroundColor: selected]
+    }
+
+    UITabBar.appearance().standardAppearance = appearance
+    UITabBar.appearance().scrollEdgeAppearance = appearance
+
+    // Push updated appearance to tab bars already on screen (appearance proxies
+    // only affect future instances; live instances need an explicit refresh).
+    for scene in UIApplication.shared.connectedScenes {
+        guard let windowScene = scene as? UIWindowScene else { continue }
+        for window in windowScene.windows {
+            refreshTabBarsInView(window)
+        }
+    }
+}
+
+private func refreshTabBarsInView(_ view: UIView) {
+    if let tabBar = view as? UITabBar {
+        tabBar.standardAppearance = UITabBar.appearance().standardAppearance
+        if let scrollEdge = UITabBar.appearance().scrollEdgeAppearance {
+            tabBar.scrollEdgeAppearance = scrollEdge
+        }
+    }
+    for subview in view.subviews {
+        refreshTabBarsInView(subview)
+    }
+}
+#endif
