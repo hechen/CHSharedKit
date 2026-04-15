@@ -1,25 +1,65 @@
 import SwiftUI
 import CHSharedKit
 
-// MARK: - ClawdAISettingsContent
+// MARK: - ClawdAIProviderPickerView
 
-/// Canonical AI provider settings sections for any CHSharedKit-using app.
+/// Full-screen standalone AI provider picker.
 ///
-/// Renders as List sections — embed directly inside a `List {}`. The view
-/// owns the entire provider-selection flow, including the on-device model
-/// picker and all cloud provider configuration rows.
-///
-/// **Bug fix (vs per-app copies):** tapping the On-Device row when a model
-/// is already installed opens a management sheet instead of immediately
-/// reopening the download picker. The download picker only auto-launches
-/// when no model is installed.
+/// A ready-to-push navigation destination — has its own `List {}` and
+/// `navigationTitle`. Use this when you want a dedicated "AI Provider"
+/// screen with no extra sections.
 ///
 /// ```swift
-/// // App AI settings screen:
+/// NavigationLink {
+///     ClawdAIProviderPickerView(appIdentifier: .gymlog)
+/// } label: {
+///     Label("AI Provider", systemImage: "sparkles")
+/// }
+/// ```
+public struct ClawdAIProviderPickerView: View {
+    public let appIdentifier: AppIdentifier
+
+    public init(appIdentifier: AppIdentifier) {
+        self.appIdentifier = appIdentifier
+    }
+
+    public var body: some View {
+        List {
+            ClawdAISettingsContent(appIdentifier: appIdentifier)
+        }
+        .navigationTitle("AI Provider")
+        .navigationBarTitleDisplayMode(.inline)
+        .scrollDismissesKeyboard(.interactively)
+        #if os(iOS)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil, from: nil, for: nil)
+                }
+            }
+        }
+        #endif
+    }
+}
+
+// MARK: - ClawdAISettingsContent
+
+/// Canonical AI provider settings sections — embed directly inside a `List {}`.
+///
+/// Renders the provider list + per-provider config as List sections.
+/// Use this when you need to mix in additional sections (e.g. a custom
+/// prompt editor) alongside the provider picker.
+///
+/// **Bug fix:** tapping the On-Device row when a model is already installed
+/// opens a management sheet instead of immediately reopening the download
+/// picker. The download picker only auto-launches when no model is installed.
+///
+/// ```swift
 /// List {
 ///     ClawdAISettingsContent(appIdentifier: .distill)
-///
-///     // App-specific sections below:
 ///     Section("Custom Prompt") { ... }
 /// }
 /// ```
@@ -47,28 +87,31 @@ public struct ClawdAISettingsContent: View {
         self.appIdentifier = appIdentifier
     }
 
-    // Active installed model (prefers custom models too, not just catalog)
+    // Active installed model — checks allModels so custom models are found too
     private var activeModel: LocalModelInfo? {
         guard let id = modelStore.activeModelID else { return nil }
         return modelStore.allModels.first { $0.id == id && modelStore.isInstalled($0) }
     }
 
     public var body: some View {
-        Section("Provider") {
+        Section {
+            // On-Device — smart tap: management sheet if installed, picker if not
+            onDeviceProviderRow
+
             // Apple Intelligence
             providerRow(
-                ClawdAppleIntelligenceProvider.providerID,
+                id: ClawdAppleIntelligenceProvider.providerID,
+                icon: "apple.intelligence",
+                iconColor: .blue,
                 name: "Apple Intelligence",
                 badge: "Free",
                 badgeColor: .green,
+                subtitle: aiManager.isAppleIntelligenceAvailable ? "On-device · iOS 26+" : nil,
                 available: aiManager.isAppleIntelligenceAvailable,
                 unavailableReason: "Requires iOS 26+"
             )
 
-            // On-Device LLM — smart tap: management if installed, picker if not
-            onDeviceProviderRow
-
-            // Cloud providers
+            // Cloud providers (excluding Apple + On-Device which are listed above)
             ForEach(
                 aiManager.availableProviders.filter {
                     $0.id != ClawdAppleIntelligenceProvider.providerID &&
@@ -76,8 +119,12 @@ public struct ClawdAISettingsContent: View {
                 },
                 id: \.id
             ) { provider in
-                providerRow(provider.id, name: provider.name, badge: nil, badgeColor: .clear, available: true)
+                cloudProviderRow(id: provider.id, name: provider.name)
             }
+        } header: {
+            Text("AI Provider")
+        } footer: {
+            Text("On-Device runs fully offline. No data leaves your device.")
         }
 
         // On-Device detail section (when selected)
@@ -101,25 +148,8 @@ public struct ClawdAISettingsContent: View {
         // OpenAI settings
         if selectedProvider == ClawdOpenAIProvider.providerID {
             Section {
-                HStack {
-                    if showingAPIKey {
-                        TextField("sk-...", text: $openaiKey)
-                            .textContentType(.password)
-                            #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                            #endif
-                            .autocorrectionDisabled()
-                    } else {
-                        SecureField("API Key", text: $openaiKey)
-                            .textContentType(.password)
-                    }
-                    Button { showingAPIKey.toggle() } label: {
-                        Image(systemName: showingAPIKey ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .onSubmit { ClawdOpenAIProvider.apiKey = openaiKey }
+                keyField("sk-...", key: $openaiKey)
+                    .onSubmit { ClawdOpenAIProvider.apiKey = openaiKey }
 
                 Picker("Model", selection: $openaiModel) {
                     ForEach(ClawdOpenAIProvider.availableModels) { model in
@@ -137,7 +167,7 @@ public struct ClawdAISettingsContent: View {
                             Link("platform.openai.com", destination: url)
                         }
                     }
-                    Text("Your API key is stored securely in the device Keychain.")
+                    Text("API key stored securely in Keychain.")
                 }
             }
         }
@@ -145,25 +175,8 @@ public struct ClawdAISettingsContent: View {
         // Claude settings
         if selectedProvider == ClawdClaudeProvider.providerID {
             Section {
-                HStack {
-                    if showingAPIKey {
-                        TextField("sk-ant-...", text: $claudeKey)
-                            .textContentType(.password)
-                            #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                            #endif
-                            .autocorrectionDisabled()
-                    } else {
-                        SecureField("API Key", text: $claudeKey)
-                            .textContentType(.password)
-                    }
-                    Button { showingAPIKey.toggle() } label: {
-                        Image(systemName: showingAPIKey ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .onSubmit { ClawdClaudeProvider.apiKey = claudeKey }
+                keyField("sk-ant-...", key: $claudeKey)
+                    .onSubmit { ClawdClaudeProvider.apiKey = claudeKey }
 
                 Picker("Model", selection: $claudeModel) {
                     ForEach(ClawdClaudeProvider.availableModels) { model in
@@ -181,7 +194,7 @@ public struct ClawdAISettingsContent: View {
                             Link("console.anthropic.com", destination: url)
                         }
                     }
-                    Text("Your API key is stored securely in the device Keychain.")
+                    Text("API key stored securely in Keychain.")
                 }
             }
         }
@@ -189,54 +202,46 @@ public struct ClawdAISettingsContent: View {
         // Custom endpoint settings
         if selectedProvider == ClawdCustomEndpointProvider.providerID {
             Section {
-                HStack {
-                    Text("Base URL")
-                    Spacer()
+                #if os(iOS)
+                LabeledContent("Base URL") {
                     TextField("http://localhost:11434/v1", text: $customURL)
                         .multilineTextAlignment(.trailing)
-                        #if os(iOS)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
-                        #endif
                         .autocorrectionDisabled()
                         .onSubmit { ClawdCustomEndpointProvider.baseURL = customURL }
                 }
-                HStack {
-                    Text("Model")
-                    Spacer()
-                    TextField("llava", text: $customModel)
+                LabeledContent("Model") {
+                    TextField("llama3", text: $customModel)
                         .multilineTextAlignment(.trailing)
-                        #if os(iOS)
                         .textInputAutocapitalization(.never)
-                        #endif
                         .autocorrectionDisabled()
                         .onSubmit { ClawdCustomEndpointProvider.model = customModel }
                 }
-                HStack {
-                    if showingAPIKey {
-                        TextField("API Key (optional)", text: $customKey)
-                            #if os(iOS)
-                            .textInputAutocapitalization(.never)
-                            #endif
-                            .autocorrectionDisabled()
-                    } else {
-                        SecureField("API Key (optional)", text: $customKey)
-                    }
-                    Button { showingAPIKey.toggle() } label: {
-                        Image(systemName: showingAPIKey ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
+                #else
+                LabeledContent("Base URL") {
+                    TextField("http://localhost:11434/v1", text: $customURL)
+                        .multilineTextAlignment(.trailing)
+                        .autocorrectionDisabled()
+                        .onSubmit { ClawdCustomEndpointProvider.baseURL = customURL }
                 }
-                .onSubmit { ClawdCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
+                LabeledContent("Model") {
+                    TextField("llama3", text: $customModel)
+                        .multilineTextAlignment(.trailing)
+                        .autocorrectionDisabled()
+                        .onSubmit { ClawdCustomEndpointProvider.model = customModel }
+                }
+                #endif
+                keyField("API Key (optional)", key: $customKey)
+                    .onSubmit { ClawdCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
             } header: {
                 Text("Custom Endpoint")
             } footer: {
-                Text("OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.")
+                Text("OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.")
             }
         }
 
-        // Test Connection (cloud providers only — not Apple/on-device)
+        // Test Connection (cloud providers only)
         let isCloudProvider = selectedProvider != ClawdAppleIntelligenceProvider.providerID
                            && selectedProvider != ClawdLocalLLMProvider.providerID
         if isCloudProvider {
@@ -275,30 +280,28 @@ public struct ClawdAISettingsContent: View {
                 showModelPicker = true
             }
         } label: {
-            HStack {
+            HStack(spacing: 12) {
+                providerIcon("cpu", color: .indigo, available: true)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text("On-Device AI")
-                        badge("Free", color: .indigo)
+                            .font(.system(size: 16))
+                        badge("Private", color: .indigo)
                         badge("Offline", color: .orange)
                     }
-                    Text(activeModel.map { $0.displayName } ?? "Tap to choose a model")
+                    Text(activeModel.map { $0.displayName } ?? "Runs fully offline · No API key")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 if selectedProvider == ClawdLocalLLMProvider.providerID {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.tint)
                         .fontWeight(.semibold)
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
             }
         }
-        // Management sheet — shown when a model is already installed.
+        // Management sheet — shown when a model is already installed
         .sheet(isPresented: $showModelManagement, onDismiss: {
             selectedProvider = aiManager.activeProviderID
         }) {
@@ -307,8 +310,6 @@ public struct ClawdAISettingsContent: View {
                     store: modelStore,
                     onChangeTapped: {
                         showModelManagement = false
-                        // Brief delay so the management sheet fully dismisses
-                        // before the picker sheet appears.
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                             showModelPicker = true
                         }
@@ -316,7 +317,7 @@ public struct ClawdAISettingsContent: View {
                 )
             }
         }
-        // Download/browse picker sheet.
+        // Download/browse picker sheet
         .sheet(isPresented: $showModelPicker, onDismiss: {
             selectedProvider = aiManager.activeProviderID
         }) {
@@ -341,41 +342,67 @@ public struct ClawdAISettingsContent: View {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(model.displayName).font(.subheadline.weight(.medium))
-                        Text("Running on your device. No network used.")
+                        Text("Active · Runs offline on this device")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                HStack {
-                    Label(formattedSize(modelStore.totalStorageUsed), systemImage: "internaldrive")
-                        .font(.subheadline).foregroundStyle(.secondary)
-                    Spacer()
-                    Button("Change Model") { showModelManagement = true }
-                        .font(.caption).buttonStyle(.bordered).controlSize(.mini)
-                }
+                Button("Change Model") { showModelManagement = true }
+                    .foregroundStyle(.tint)
             } else if modelStore.activeDownloadModelID != nil {
-                // Download in progress — show inline progress
                 LocalModelDownloadView()
             } else {
-                // No model yet — explicit button, never auto-opens the picker
-                Button {
-                    showModelPicker = true
-                } label: {
-                    Label("Browse Models", systemImage: "cpu").font(.subheadline)
+                HStack {
+                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                    Text("No model downloaded yet")
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
+                Button("Download a Model") { showModelPicker = true }
+                    .foregroundStyle(.tint)
             }
         } header: {
-            Text("On-Device Model")
+            Text("On-Device")
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - Provider row helpers
+
+    @ViewBuilder
+    private func cloudProviderRow(id: String, name: String) -> some View {
+        let (icon, iconColor, subtitle) = cloudProviderMeta(id)
+        providerRow(
+            id: id,
+            icon: icon,
+            iconColor: iconColor,
+            name: name,
+            badge: nil,
+            badgeColor: .clear,
+            subtitle: subtitle,
+            available: true
+        )
+    }
+
+    private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?) {
+        switch id {
+        case ClawdOpenAIProvider.providerID:
+            return ("brain", .mint, "GPT-4o, GPT-4o mini")
+        case ClawdClaudeProvider.providerID:
+            return ("sparkles", .orange, "Sonnet, Haiku")
+        case ClawdCustomEndpointProvider.providerID:
+            return ("server.rack", .gray, "Ollama, LM Studio, vLLM")
+        default:
+            return ("network", .blue, nil)
+        }
+    }
 
     @ViewBuilder
     private func providerRow(
-        _ id: String,
+        id: String,
+        icon: String,
+        iconColor: Color,
         name: String,
         badge: String?,
         badgeColor: Color,
+        subtitle: String?,
         available: Bool,
         unavailableReason: String? = nil
     ) -> some View {
@@ -383,22 +410,32 @@ public struct ClawdAISettingsContent: View {
             guard available else { return }
             selectedProvider = id
             aiManager.activeProviderID = id
+            #if os(iOS)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            #endif
         } label: {
-            HStack {
+            HStack(spacing: 12) {
+                providerIcon(icon, color: iconColor, available: available)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(name).foregroundStyle(available ? .primary : .secondary)
+                        Text(name)
+                            .font(.system(size: 16))
+                            .foregroundStyle(available ? .primary : .secondary)
                         if let badge {
                             self.badge(badge, color: badgeColor)
                         }
                     }
                     if let reason = unavailableReason, !available {
                         Text(reason).font(.caption).foregroundStyle(.tertiary)
+                    } else if let sub = subtitle {
+                        Text(sub).font(.caption).foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
                 if selectedProvider == id {
-                    Image(systemName: "checkmark").foregroundStyle(.tint).fontWeight(.semibold)
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.tint)
+                        .fontWeight(.semibold)
                 }
             }
         }
@@ -406,15 +443,51 @@ public struct ClawdAISettingsContent: View {
     }
 
     @ViewBuilder
+    private func providerIcon(_ systemName: String, color: Color, available: Bool) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(color.opacity(available ? 0.15 : 0.08))
+                .frame(width: 36, height: 36)
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(available ? color : .gray)
+        }
+    }
+
+    @ViewBuilder
     private func badge(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.caption2.weight(.semibold))
+            .font(.caption2.weight(.bold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(color.opacity(0.15))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }
+
+    @ViewBuilder
+    private func keyField(_ placeholder: String, key: Binding<String>) -> some View {
+        HStack {
+            if showingAPIKey {
+                TextField(placeholder, text: key)
+                    .textContentType(.password)
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    #endif
+                    .autocorrectionDisabled()
+            } else {
+                SecureField(placeholder, text: key)
+                    .textContentType(.password)
+            }
+            Button { showingAPIKey.toggle() } label: {
+                Image(systemName: showingAPIKey ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    // MARK: - Actions
 
     private func saveKeys() {
         if !openaiKey.isEmpty { ClawdOpenAIProvider.apiKey = openaiKey }
@@ -439,19 +512,12 @@ public struct ClawdAISettingsContent: View {
             isValidating = false
         }
     }
-
-    private func formattedSize(_ bytes: Int64) -> String {
-        let gb = Double(bytes) / 1_073_741_824
-        if gb >= 1 { return String(format: "%.1f GB", gb) }
-        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
-    }
 }
 
 // MARK: - OnDeviceModelManagementView
 
-/// Sheet shown when the user taps the On-Device row and a model is already
-/// installed. Lets the user inspect the current model and optionally switch
-/// to a different one (which opens the full ModelPickerView).
+/// Sheet shown when the user taps On-Device and a model is already installed.
+/// Lets the user inspect the active model and optionally switch to a different one.
 private struct OnDeviceModelManagementView: View {
     let store: LocalModelStore
     let onChangeTapped: () -> Void
@@ -478,7 +544,7 @@ private struct OnDeviceModelManagementView: View {
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                             Text(model.displayName).font(.headline)
                         }
-                        Text("Running on your device. No network used.")
+                        Text("Active · Runs offline on this device")
                             .font(.caption).foregroundStyle(.secondary)
                         Label(formattedSize(store.totalStorageUsed), systemImage: "internaldrive")
                             .font(.caption).foregroundStyle(.secondary)
@@ -494,7 +560,6 @@ private struct OnDeviceModelManagementView: View {
                     Text("Opens the full model catalog to download a different model.")
                 }
             } else {
-                // Shouldn't happen — management view only shown when model is installed
                 Section {
                     ContentUnavailableView("No Model Installed", systemImage: "cpu")
                 }
