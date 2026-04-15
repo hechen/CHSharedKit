@@ -111,16 +111,18 @@ public extension View {
 /// Configures the navigation bar background and title colors to match the
 /// active theme. Call once at the root of a `NavigationStack`.
 ///
-/// **Why UINavigationBarAppearance instead of `.toolbarColorScheme`:**
-/// `.toolbarColorScheme` mirrors the *system* color scheme, not the
-/// *theme's* background brightness. If the user picks a dark-background
-/// theme while the system is in light mode, `.toolbarColorScheme(.light)`
-/// would render dark title text on a dark background — invisible.
-/// It also doesn't reliably control large-title text color on all iOS
-/// versions. Instead we drive `UINavigationBarAppearance` directly with
-/// explicit text attributes keyed to `UIColor.label` (which adapts to
-/// light/dark automatically) so titles always contrast against the
-/// themed background.
+/// **Why luminance-based toolbarColorScheme instead of UIKit appearance proxy:**
+/// The UIKit `UINavigationBar.appearance()` proxy is set globally and can be
+/// overridden by SwiftUI's internal NavigationStack rendering on tab switches
+/// and navigation transitions. Worse, it only applies to bars that exist when
+/// `.onAppear` fires — newly-created bars (e.g. after a tab switch) inherit
+/// SwiftUI defaults that may not match.
+///
+/// The correct SwiftUI-native approach: compute whether `theme.background` is
+/// perceptually dark (luminance < 0.5) and drive `.toolbarColorScheme(.dark)`
+/// or `.toolbarColorScheme(.light)` accordingly. SwiftUI manages title text
+/// contrast automatically from there. This is reactive: when the theme changes,
+/// the modifier updates without any UIKit side effects.
 ///
 /// **Usage:**
 /// ```swift
@@ -137,51 +139,19 @@ private struct ThemedNavigationBarModifier: ViewModifier {
         content
             .toolbarBackground(theme.background, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .onAppear { applyNavBarAppearance(theme.background) }
-            .onChange(of: theme.background) { _, bg in applyNavBarAppearance(bg) }
+            .toolbarColorScheme(isDarkBackground ? .dark : .light, for: .navigationBar)
         #else
         content
         #endif
     }
 
     #if os(iOS)
-    private func applyNavBarAppearance(_ background: Color) {
-        let titleAttrs: [NSAttributedString.Key: Any] = [
-            .foregroundColor: UIColor.label,
-        ]
-        let uiBg = UIColor(background)
-        let appearance = UINavigationBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = uiBg
-        appearance.titleTextAttributes = titleAttrs
-        appearance.largeTitleTextAttributes = titleAttrs
-
-        UINavigationBar.appearance().standardAppearance = appearance
-        UINavigationBar.appearance().compactAppearance = appearance
-        UINavigationBar.appearance().scrollEdgeAppearance = appearance
-        UINavigationBar.appearance().compactScrollEdgeAppearance = appearance
-
-        // Refresh any live navigation bars
-        for scene in UIApplication.shared.connectedScenes {
-            guard let windowScene = scene as? UIWindowScene else { continue }
-            for window in windowScene.windows {
-                refreshNavBarsInView(window)
-            }
-        }
-    }
-
-    private func refreshNavBarsInView(_ view: UIView) {
-        if let navBar = view as? UINavigationBar {
-            navBar.standardAppearance = UINavigationBar.appearance().standardAppearance
-            navBar.compactAppearance = UINavigationBar.appearance().compactAppearance
-            if let se = UINavigationBar.appearance().scrollEdgeAppearance {
-                navBar.scrollEdgeAppearance = se
-            }
-            if let cse = UINavigationBar.appearance().compactScrollEdgeAppearance {
-                navBar.compactScrollEdgeAppearance = cse
-            }
-        }
-        for subview in view.subviews { refreshNavBarsInView(subview) }
+    /// Returns true when `theme.background` has a perceptual luminance below 0.5.
+    /// Uses the ITU-R BT.601 luma formula matching human brightness perception.
+    private var isDarkBackground: Bool {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(theme.background).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (0.299 * r + 0.587 * g + 0.114 * b) < 0.5
     }
     #endif
 }
@@ -189,9 +159,10 @@ private struct ThemedNavigationBarModifier: ViewModifier {
 public extension View {
     /// Style the navigation bar to match the active theme.
     ///
-    /// Applies `theme.background` as the nav bar fill and explicitly sets
-    /// title text to `UIColor.label` so large titles are always visible
-    /// regardless of which theme or system color scheme is active.
+    /// Sets `theme.background` as the nav bar fill and automatically picks
+    /// `.dark` or `.light` color scheme based on background luminance so
+    /// titles (including large titles) always contrast correctly regardless
+    /// of which theme or system appearance is active.
     func themedNavigationBar() -> some View {
         modifier(ThemedNavigationBarModifier())
     }
