@@ -111,18 +111,20 @@ public extension View {
 /// Configures the navigation bar background and title colors to match the
 /// active theme. Call once at the root of a `NavigationStack`.
 ///
-/// **Why luminance-based toolbarColorScheme instead of UIKit appearance proxy:**
-/// The UIKit `UINavigationBar.appearance()` proxy is set globally and can be
-/// overridden by SwiftUI's internal NavigationStack rendering on tab switches
-/// and navigation transitions. Worse, it only applies to bars that exist when
-/// `.onAppear` fires — newly-created bars (e.g. after a tab switch) inherit
-/// SwiftUI defaults that may not match.
+/// **Large title behavior:**
+/// `.toolbarBackground(.visible)` is intentionally NOT applied here. Forcing
+/// visibility makes SwiftUI set `scrollEdgeAppearance = standardAppearance`,
+/// which prevents the nav bar from ever entering large-title mode (iOS needs
+/// a transparent scroll-edge appearance to expand the large title). Without
+/// `.visible`, the themed background appears naturally when content scrolls
+/// away from the top — matching standard iOS behavior.
 ///
-/// The correct SwiftUI-native approach: compute whether `theme.background` is
-/// perceptually dark (luminance < 0.5) and drive `.toolbarColorScheme(.dark)`
-/// or `.toolbarColorScheme(.light)` accordingly. SwiftUI manages title text
-/// contrast automatically from there. This is reactive: when the theme changes,
-/// the modifier updates without any UIKit side effects.
+/// **Color scheme:**
+/// `UIColor(color).getRed(...)` silently returns 0 for SwiftUI dynamic colors
+/// (which have no resolved value without a trait collection). We resolve in the
+/// `.light` trait collection to determine the theme's intrinsic luminance, then
+/// apply `.toolbarColorScheme` so inline titles contrast correctly against the
+/// themed background.
 ///
 /// **Usage:**
 /// ```swift
@@ -138,7 +140,9 @@ private struct ThemedNavigationBarModifier: ViewModifier {
         #if os(iOS)
         content
             .toolbarBackground(theme.background, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            // NOTE: .toolbarBackground(.visible) is deliberately absent.
+            // Forcing visibility sets scrollEdgeAppearance = standardAppearance,
+            // which prevents large titles from expanding when scrolled to top.
             .toolbarColorScheme(isDarkBackground ? .dark : .light, for: .navigationBar)
         #else
         content
@@ -146,11 +150,14 @@ private struct ThemedNavigationBarModifier: ViewModifier {
     }
 
     #if os(iOS)
-    /// Returns true when `theme.background` has a perceptual luminance below 0.5.
-    /// Uses the ITU-R BT.601 luma formula matching human brightness perception.
+    /// Returns true when `theme.background` is perceptually dark (luma < 0.5).
+    /// Resolves in .light trait collection so dynamic colors return a real value
+    /// instead of the silent-zero the default resolution path returns.
     private var isDarkBackground: Bool {
+        let resolved = UIColor(theme.background)
+            .resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
         var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(theme.background).getRed(&r, green: &g, blue: &b, alpha: &a)
+        resolved.getRed(&r, green: &g, blue: &b, alpha: &a)
         return (0.299 * r + 0.587 * g + 0.114 * b) < 0.5
     }
     #endif
@@ -159,10 +166,9 @@ private struct ThemedNavigationBarModifier: ViewModifier {
 public extension View {
     /// Style the navigation bar to match the active theme.
     ///
-    /// Sets `theme.background` as the nav bar fill and automatically picks
-    /// `.dark` or `.light` color scheme based on background luminance so
-    /// titles (including large titles) always contrast correctly regardless
-    /// of which theme or system appearance is active.
+    /// Sets `theme.background` as the nav bar fill (visible when scrolled) and
+    /// applies the correct color scheme for inline title contrast. Large titles
+    /// work correctly because the scroll-edge appearance remains transparent.
     func themedNavigationBar() -> some View {
         modifier(ThemedNavigationBarModifier())
     }
