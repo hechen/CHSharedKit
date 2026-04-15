@@ -27,6 +27,8 @@ public struct ClawdAIProviderPickerView: View {
         List {
             ClawdAISettingsContent(appIdentifier: appIdentifier)
         }
+        .themedListBackground()
+        .themedNavigationBar()
         .navigationTitle("AI Provider")
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively)
