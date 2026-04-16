@@ -1,6 +1,6 @@
 import Foundation
 
-public struct ClawdBackupFile: Codable, Sendable {
+public struct CHBackupFile: Codable, Sendable {
     public let exportDate: Date
     public let appVersion: String
     public let payload: Data
@@ -12,7 +12,7 @@ public struct ClawdBackupFile: Codable, Sendable {
     }
 }
 
-public enum ClawdBackupStorage {
+public enum CHBackupStorage {
     public static func backupDirectory(iCloudContainerId: String?, fallbackFolderName: String) -> URL {
         let fm = FileManager.default
         if let container = iCloudContainerId,

@@ -5,7 +5,7 @@ import Security
 
 /// Generic AI provider protocol for text and vision requests.
 /// Implement this to add OpenAI, Claude, Gemini, Ollama, or any custom endpoint.
-public protocol ClawdAIProvider: Sendable {
+public protocol CHAIProvider: Sendable {
     /// Unique identifier for this provider
     var id: String { get }
     
@@ -26,15 +26,15 @@ public protocol ClawdAIProvider: Sendable {
 }
 
 // Default implementation for providers that don't support vision
-public extension ClawdAIProvider {
+public extension CHAIProvider {
     func sendVisionMessage(prompt: String, imageData: Data) async throws -> String {
-        throw ClawdAIError.visionNotSupported
+        throw CHAIError.visionNotSupported
     }
 }
 
 // MARK: - AI Errors
 
-public enum ClawdAIError: LocalizedError {
+public enum CHAIError: LocalizedError {
     case noProvider
     case noAPIKey
     case invalidResponse
@@ -61,7 +61,7 @@ public enum ClawdAIError: LocalizedError {
 // MARK: - Keychain Helper
 
 /// Keychain helper for securely storing API keys
-public enum ClawdAIKeychain {
+public enum CHAIKeychain {
     public static func save(key: String, service: String) {
         let data = key.data(using: .utf8)!
         let query: [String: Any] = [

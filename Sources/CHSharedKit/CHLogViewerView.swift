@@ -3,15 +3,15 @@ import SwiftUI
 import UIKit
 #endif
 
-public struct ClawdLogViewerView: View {
-    @ObservedObject var logger: ClawdLogger
+public struct CHLogViewerView: View {
+    @ObservedObject var logger: CHLogger
     @State private var search = ""
 
-    public init(logger: ClawdLogger) {
+    public init(logger: CHLogger) {
         self.logger = logger
     }
 
-    var filtered: [ClawdLogEntry] {
+    var filtered: [CHLogEntry] {
         guard !search.isEmpty else { return logger.entries }
         return logger.entries.filter {
             $0.message.localizedCaseInsensitiveContains(search) ||

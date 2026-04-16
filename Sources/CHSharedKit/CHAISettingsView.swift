@@ -4,16 +4,16 @@ import SwiftUI
 
 /// SwiftUI view for configuring AI providers
 /// Embed this in your app's settings screen
-public struct ClawdAISettingsView: View {
-    @StateObject private var aiManager = ClawdAIManager.shared
-    @State private var selectedProvider: String = ClawdAIManager.shared.activeProviderID
+public struct CHAISettingsView: View {
+    @StateObject private var aiManager = CHAIManager.shared
+    @State private var selectedProvider: String = CHAIManager.shared.activeProviderID
     @State private var openaiKey = ""
     @State private var claudeKey = ""
-    @State private var customURL = ClawdCustomEndpointProvider.baseURL
-    @State private var customModel = ClawdCustomEndpointProvider.model
+    @State private var customURL = CHCustomEndpointProvider.baseURL
+    @State private var customModel = CHCustomEndpointProvider.model
     @State private var customKey = ""
-    @State private var openaiModel = ClawdOpenAIProvider.model
-    @State private var claudeModel = ClawdClaudeProvider.model
+    @State private var openaiModel = CHOpenAIProvider.model
+    @State private var claudeModel = CHClaudeProvider.model
     @State private var isValidating = false
     @State private var validationResult: String?
     @State private var showingAPIKey = false
@@ -25,7 +25,7 @@ public struct ClawdAISettingsView: View {
             Section("Provider") {
                 // Apple Intelligence
                 providerRow(
-                    ClawdAppleIntelligenceProvider.providerID,
+                    CHAppleIntelligenceProvider.providerID,
                     name: "Apple Intelligence",
                     badge: "Free",
                     badgeColor: .green,
@@ -34,13 +34,13 @@ public struct ClawdAISettingsView: View {
                 )
                 
                 // Other providers
-                ForEach(aiManager.availableProviders.filter { $0.id != ClawdAppleIntelligenceProvider.providerID }, id: \.id) { provider in
+                ForEach(aiManager.availableProviders.filter { $0.id != CHAppleIntelligenceProvider.providerID }, id: \.id) { provider in
                     providerRow(provider.id, name: provider.name, badge: nil, badgeColor: .clear, available: true)
                 }
             }
             
             // Apple Intelligence info
-            if selectedProvider == ClawdAppleIntelligenceProvider.providerID {
+            if selectedProvider == CHAppleIntelligenceProvider.providerID {
                 Section {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
@@ -55,7 +55,7 @@ public struct ClawdAISettingsView: View {
             }
             
             // OpenAI settings
-            if selectedProvider == ClawdOpenAIProvider.providerID {
+            if selectedProvider == CHOpenAIProvider.providerID {
                 Section {
                     HStack {
                         if showingAPIKey {
@@ -75,14 +75,14 @@ public struct ClawdAISettingsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .onSubmit { ClawdOpenAIProvider.apiKey = openaiKey }
+                    .onSubmit { CHOpenAIProvider.apiKey = openaiKey }
                     
                     Picker("Model", selection: $openaiModel) {
-                        ForEach(ClawdOpenAIProvider.availableModels) { model in
+                        ForEach(CHOpenAIProvider.availableModels) { model in
                             Text(model.name).tag(model.id)
                         }
                     }
-                    .onChange(of: openaiModel) { _, val in ClawdOpenAIProvider.model = val }
+                    .onChange(of: openaiModel) { _, val in CHOpenAIProvider.model = val }
                 } header: {
                     Text("OpenAI")
                 } footer: {
@@ -99,7 +99,7 @@ public struct ClawdAISettingsView: View {
             }
             
             // Claude settings
-            if selectedProvider == ClawdClaudeProvider.providerID {
+            if selectedProvider == CHClaudeProvider.providerID {
                 Section {
                     HStack {
                         if showingAPIKey {
@@ -119,14 +119,14 @@ public struct ClawdAISettingsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .onSubmit { ClawdClaudeProvider.apiKey = claudeKey }
+                    .onSubmit { CHClaudeProvider.apiKey = claudeKey }
                     
                     Picker("Model", selection: $claudeModel) {
-                        ForEach(ClawdClaudeProvider.availableModels) { model in
+                        ForEach(CHClaudeProvider.availableModels) { model in
                             Text(model.name).tag(model.id)
                         }
                     }
-                    .onChange(of: claudeModel) { _, val in ClawdClaudeProvider.model = val }
+                    .onChange(of: claudeModel) { _, val in CHClaudeProvider.model = val }
                 } header: {
                     Text("Anthropic Claude")
                 } footer: {
@@ -143,7 +143,7 @@ public struct ClawdAISettingsView: View {
             }
             
             // Custom endpoint settings
-            if selectedProvider == ClawdCustomEndpointProvider.providerID {
+            if selectedProvider == CHCustomEndpointProvider.providerID {
                 Section {
                     HStack {
                         Text("Base URL")
@@ -155,7 +155,7 @@ public struct ClawdAISettingsView: View {
                             .keyboardType(.URL)
                             #endif
                             .autocorrectionDisabled()
-                            .onSubmit { ClawdCustomEndpointProvider.baseURL = customURL }
+                            .onSubmit { CHCustomEndpointProvider.baseURL = customURL }
                     }
                     
                     HStack {
@@ -167,7 +167,7 @@ public struct ClawdAISettingsView: View {
                             .textInputAutocapitalization(.never)
                             #endif
                             .autocorrectionDisabled()
-                            .onSubmit { ClawdCustomEndpointProvider.model = customModel }
+                            .onSubmit { CHCustomEndpointProvider.model = customModel }
                     }
                     
                     HStack {
@@ -186,7 +186,7 @@ public struct ClawdAISettingsView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .onSubmit { ClawdCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
+                    .onSubmit { CHCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
                 } header: {
                     Text("Custom Endpoint")
                 } footer: {
@@ -195,7 +195,7 @@ public struct ClawdAISettingsView: View {
             }
             
             // Validate (for non-Apple providers)
-            if selectedProvider != ClawdAppleIntelligenceProvider.providerID {
+            if selectedProvider != CHAppleIntelligenceProvider.providerID {
                 Section {
                     Button {
                         saveKeys()
@@ -234,9 +234,9 @@ public struct ClawdAISettingsView: View {
         }
         #endif
         .onAppear {
-            openaiKey = ClawdOpenAIProvider.apiKey ?? ""
-            claudeKey = ClawdClaudeProvider.apiKey ?? ""
-            customKey = ClawdCustomEndpointProvider.apiKey ?? ""
+            openaiKey = CHOpenAIProvider.apiKey ?? ""
+            claudeKey = CHClaudeProvider.apiKey ?? ""
+            customKey = CHCustomEndpointProvider.apiKey ?? ""
         }
     }
     
@@ -280,13 +280,13 @@ public struct ClawdAISettingsView: View {
     }
     
     private func saveKeys() {
-        if !openaiKey.isEmpty { ClawdOpenAIProvider.apiKey = openaiKey }
-        if !claudeKey.isEmpty { ClawdClaudeProvider.apiKey = claudeKey }
-        ClawdCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey
-        ClawdCustomEndpointProvider.baseURL = customURL
-        ClawdCustomEndpointProvider.model = customModel
-        ClawdOpenAIProvider.model = openaiModel
-        ClawdClaudeProvider.model = claudeModel
+        if !openaiKey.isEmpty { CHOpenAIProvider.apiKey = openaiKey }
+        if !claudeKey.isEmpty { CHClaudeProvider.apiKey = claudeKey }
+        CHCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey
+        CHCustomEndpointProvider.baseURL = customURL
+        CHCustomEndpointProvider.model = customModel
+        CHOpenAIProvider.model = openaiModel
+        CHClaudeProvider.model = claudeModel
     }
     
     private func validateCurrentProvider() {

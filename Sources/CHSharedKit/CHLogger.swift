@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-public enum ClawdLogLevel: Int, Comparable, Codable, CaseIterable, Sendable {
+public enum CHLogLevel: Int, Comparable, Codable, CaseIterable, Sendable {
     case debug = 0
     case info = 1
     case warning = 2
@@ -16,18 +16,18 @@ public enum ClawdLogLevel: Int, Comparable, Codable, CaseIterable, Sendable {
         }
     }
 
-    public static func < (lhs: ClawdLogLevel, rhs: ClawdLogLevel) -> Bool { lhs.rawValue < rhs.rawValue }
+    public static func < (lhs: CHLogLevel, rhs: CHLogLevel) -> Bool { lhs.rawValue < rhs.rawValue }
 }
 
-public struct ClawdLogEntry: Identifiable, Codable, Sendable {
+public struct CHLogEntry: Identifiable, Codable, Sendable {
     public let id: UUID
     public let timestamp: Date
-    public let level: ClawdLogLevel
+    public let level: CHLogLevel
     public let category: String
     public let message: String
     public let details: String?
 
-    public init(level: ClawdLogLevel, category: String, message: String, details: String? = nil) {
+    public init(level: CHLogLevel, category: String, message: String, details: String? = nil) {
         self.id = UUID()
         self.timestamp = Date()
         self.level = level
@@ -38,15 +38,15 @@ public struct ClawdLogEntry: Identifiable, Codable, Sendable {
 }
 
 @MainActor
-public final class ClawdLogger: ObservableObject {
-    @Published public private(set) var entries: [ClawdLogEntry] = []
+public final class CHLogger: ObservableObject {
+    @Published public private(set) var entries: [CHLogEntry] = []
 
     private let subsystem: String
     private let maxEntries: Int
     private let persistURL: URL
     private let logger: Logger
 
-    public init(subsystem: String, category: String = "ClawdLogger", persistFileName: String = "clawd-logs.json", maxEntries: Int = 2000) {
+    public init(subsystem: String, category: String = "CHLogger", persistFileName: String = "clawd-logs.json", maxEntries: Int = 2000) {
         self.subsystem = subsystem
         self.maxEntries = maxEntries
         self.logger = Logger(subsystem: subsystem, category: category)
@@ -56,8 +56,8 @@ public final class ClawdLogger: ObservableObject {
         loadFromDisk()
     }
 
-    public func log(_ level: ClawdLogLevel, category: String, message: String, details: String? = nil) {
-        let entry = ClawdLogEntry(level: level, category: category, message: message, details: details)
+    public func log(_ level: CHLogLevel, category: String, message: String, details: String? = nil) {
+        let entry = CHLogEntry(level: level, category: category, message: message, details: details)
         entries.append(entry)
         if entries.count > maxEntries {
             entries.removeFirst(entries.count - maxEntries)
@@ -100,7 +100,7 @@ public final class ClawdLogger: ObservableObject {
 
     private func loadFromDisk() {
         guard let data = try? Data(contentsOf: persistURL),
-              let saved = try? JSONDecoder().decode([ClawdLogEntry].self, from: data) else { return }
+              let saved = try? JSONDecoder().decode([CHLogEntry].self, from: data) else { return }
         entries = saved
     }
 }

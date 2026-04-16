@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct ClawdDeveloperMenu<Item: View>: ViewModifier {
+public struct CHDeveloperMenu<Item: View>: ViewModifier {
     @Binding var tapCount: Int
     @Binding var visible: Bool
     let threshold: Int
@@ -30,12 +30,12 @@ public struct ClawdDeveloperMenu<Item: View>: ViewModifier {
 }
 
 public extension View {
-    func clawdDeveloperMenu<Item: View>(
+    func chDeveloperMenu<Item: View>(
         tapCount: Binding<Int>,
         visible: Binding<Bool>,
         threshold: Int = 5,
         @ViewBuilder menuContent: @escaping () -> Item
     ) -> some View {
-        modifier(ClawdDeveloperMenu(tapCount: tapCount, visible: visible, threshold: threshold, menuContent: menuContent))
+        modifier(CHDeveloperMenu(tapCount: tapCount, visible: visible, threshold: threshold, menuContent: menuContent))
     }
 }

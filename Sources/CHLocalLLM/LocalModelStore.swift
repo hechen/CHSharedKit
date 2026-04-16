@@ -284,17 +284,17 @@ public final class LocalModelStore {
 
     // MARK: - Active model
 
-    /// Make `model` the active on-device provider. Registers `ClawdLocalLLMProvider` and persists the choice.
+    /// Make `model` the active on-device provider. Registers `CHLocalLLMProvider` and persists the choice.
     public func setActiveModel(_ model: LocalModelInfo) {
         guard isInstalled(model) else { return }
         activeModelID = model.id
         UserDefaults.standard.set(model.id, forKey: Self.activeModelKey)
-        let provider = ClawdLocalLLMProvider(
+        let provider = CHLocalLLMProvider(
             modelURL: modelURL(for: model),
             modelInfo: model
         )
-        ClawdAIManager.shared.registerProvider(provider)
-        ClawdAIManager.shared.activeProviderID = ClawdLocalLLMProvider.providerID
+        CHAIManager.shared.registerProvider(provider)
+        CHAIManager.shared.activeProviderID = CHLocalLLMProvider.providerID
     }
 
     /// Clear the active model selection (e.g. after deleting it).

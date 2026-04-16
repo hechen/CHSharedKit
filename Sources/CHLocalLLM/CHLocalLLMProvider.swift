@@ -7,11 +7,11 @@ import CHSharedKit
 public extension Notification.Name {
     /// Posted on the main thread when the on-device model begins loading into memory.
     /// userInfo: ["modelName": String]
-    static let clawdLocalLLMWillLoad  = Notification.Name("ClawdLocalLLMWillLoad")
+    static let chLocalLLMWillLoad  = Notification.Name("CHLocalLLMWillLoad")
     /// Posted when the model finishes loading and is ready to accept prompts.
-    static let clawdLocalLLMDidLoad   = Notification.Name("ClawdLocalLLMDidLoad")
+    static let chLocalLLMDidLoad   = Notification.Name("CHLocalLLMDidLoad")
     /// Posted when the model is unloaded to reclaim RAM after idle timeout.
-    static let clawdLocalLLMDidUnload = Notification.Name("ClawdLocalLLMDidUnload")
+    static let chLocalLLMDidUnload = Notification.Name("CHLocalLLMDidUnload")
 }
 
 // MARK: - Provider
@@ -21,12 +21,12 @@ public extension Notification.Name {
 /// Loads the GGUF model lazily on first request, keeps it warm for 30 s,
 /// then unloads to free RAM.
 ///
-/// Register with ``ClawdAIManager``:
+/// Register with ``CHAIManager``:
 /// ```swift
-/// let provider = ClawdLocalLLMProvider(modelURL: url, modelInfo: .default)
-/// ClawdAIManager.shared.registerProvider(provider)
+/// let provider = CHLocalLLMProvider(modelURL: url, modelInfo: .default)
+/// CHAIManager.shared.registerProvider(provider)
 /// ```
-public final class ClawdLocalLLMProvider: @unchecked Sendable {
+public final class CHLocalLLMProvider: @unchecked Sendable {
     public static let providerID = "on-device-llm"
 
     private let modelURL: URL
@@ -49,9 +49,9 @@ public final class ClawdLocalLLMProvider: @unchecked Sendable {
     }
 }
 
-// MARK: - ClawdAIProvider conformance
+// MARK: - CHAIProvider conformance
 
-extension ClawdLocalLLMProvider: ClawdAIProvider {
+extension CHLocalLLMProvider: CHAIProvider {
     public var id: String { Self.providerID }
     public var displayName: String { "On-Device AI (\(modelInfo.displayName))" }
     public var supportsVision: Bool { false }
@@ -66,7 +66,7 @@ extension ClawdLocalLLMProvider: ClawdAIProvider {
         let response = await bot.getCompletion(from: formatted)
 
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { throw ClawdAIError.invalidResponse }
+        if trimmed.isEmpty { throw CHAIError.invalidResponse }
         return trimmed
     }
 
@@ -79,7 +79,7 @@ extension ClawdLocalLLMProvider: ClawdAIProvider {
 
 // MARK: - Private helpers
 
-private extension ClawdLocalLLMProvider {
+private extension CHLocalLLMProvider {
 
     // MARK: Model lifecycle
 
@@ -94,7 +94,7 @@ private extension ClawdLocalLLMProvider {
         // Cold-start: notify UI so it can show "Starting on-device AI…"
         await MainActor.run {
             NotificationCenter.default.post(
-                name: .clawdLocalLLMWillLoad,
+                name: .chLocalLLMWillLoad,
                 object: nil,
                 userInfo: ["modelName": modelInfo.displayName]
             )
@@ -103,7 +103,7 @@ private extension ClawdLocalLLMProvider {
         let template = makeTemplate(for: modelInfo, systemPrompt: nil)
 
         guard let bot = LLM(from: modelURL, template: template, maxTokenCount: 2048) else {
-            throw ClawdAIError.networkError(
+            throw CHAIError.networkError(
                 NSError(domain: "CHLocalLLM", code: -1,
                         userInfo: [NSLocalizedDescriptionKey: "Failed to load model from \(modelURL.lastPathComponent)"])
             )
@@ -114,7 +114,7 @@ private extension ClawdLocalLLMProvider {
         lock.unlock()
 
         await MainActor.run {
-            NotificationCenter.default.post(name: .clawdLocalLLMDidLoad, object: nil)
+            NotificationCenter.default.post(name: .chLocalLLMDidLoad, object: nil)
         }
 
         return bot
@@ -141,7 +141,7 @@ private extension ClawdLocalLLMProvider {
 
         if wasLoaded {
             Task { @MainActor in
-                NotificationCenter.default.post(name: .clawdLocalLLMDidUnload, object: nil)
+                NotificationCenter.default.post(name: .chLocalLLMDidUnload, object: nil)
             }
         }
     }

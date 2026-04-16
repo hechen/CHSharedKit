@@ -8,8 +8,8 @@ import FoundationModels
 
 /// Central manager for AI providers. Handles provider selection, key storage, and requests.
 @MainActor
-public final class ClawdAIManager: ObservableObject {
-    public static let shared = ClawdAIManager()
+public final class CHAIManager: ObservableObject {
+    public static let shared = CHAIManager()
     
     @Published public var activeProviderID: String {
         didSet { UserDefaults.standard.set(activeProviderID, forKey: "clawd_ai_active_provider") }
@@ -17,19 +17,19 @@ public final class ClawdAIManager: ObservableObject {
     @Published public var isProcessing = false
     @Published public var lastError: String?
     
-    private var providers: [String: any ClawdAIProvider] = [:]
+    private var providers: [String: any CHAIProvider] = [:]
     
     private init() {
         // Check if Apple Intelligence is available and default to it, otherwise use OpenAI
         let defaultProvider: String
         #if canImport(FoundationModels)
         if #available(iOS 26, macOS 26, *) {
-            defaultProvider = SystemLanguageModel.default.isAvailable ? ClawdAppleIntelligenceProvider.providerID : ClawdOpenAIProvider.providerID
+            defaultProvider = SystemLanguageModel.default.isAvailable ? CHAppleIntelligenceProvider.providerID : CHOpenAIProvider.providerID
         } else {
-            defaultProvider = ClawdOpenAIProvider.providerID
+            defaultProvider = CHOpenAIProvider.providerID
         }
         #else
-        defaultProvider = ClawdOpenAIProvider.providerID
+        defaultProvider = CHOpenAIProvider.providerID
         #endif
         
         self.activeProviderID = UserDefaults.standard.string(forKey: "clawd_ai_active_provider") ?? defaultProvider
@@ -38,26 +38,26 @@ public final class ClawdAIManager: ObservableObject {
     
     private func registerBuiltInProviders() {
         // Always register Apple Intelligence (it checks availability internally)
-        let apple = ClawdAppleIntelligenceProvider()
+        let apple = CHAppleIntelligenceProvider()
         providers[apple.id] = apple
         
-        let openai = ClawdOpenAIProvider()
+        let openai = CHOpenAIProvider()
         providers[openai.id] = openai
         
-        let claude = ClawdClaudeProvider()
+        let claude = CHClaudeProvider()
         providers[claude.id] = claude
         
-        let custom = ClawdCustomEndpointProvider()
+        let custom = CHCustomEndpointProvider()
         providers[custom.id] = custom
     }
     
     /// Register a custom provider
-    public func registerProvider(_ provider: any ClawdAIProvider) {
+    public func registerProvider(_ provider: any CHAIProvider) {
         providers[provider.id] = provider
     }
     
     /// Currently active provider
-    public var activeProvider: (any ClawdAIProvider)? {
+    public var activeProvider: (any CHAIProvider)? {
         providers[activeProviderID]
     }
     
@@ -79,7 +79,7 @@ public final class ClawdAIManager: ObservableObject {
     /// Send a text message using the active provider
     public func send(prompt: String, systemPrompt: String? = nil) async throws -> String {
         guard let provider = activeProvider else {
-            throw ClawdAIError.noProvider
+            throw CHAIError.noProvider
         }
         isProcessing = true
         lastError = nil
@@ -90,7 +90,7 @@ public final class ClawdAIManager: ObservableObject {
             // Estimate tokens and log usage
             let inputTokens = (prompt.count + (systemPrompt?.count ?? 0)) / 4
             let outputTokens = result.count / 4
-            let tracker = ClawdAIUsageTracker.shared
+            let tracker = CHAIUsageTracker.shared
             let cost = tracker.logRequest(
                 provider: provider.displayName,
                 model: provider.id,
@@ -109,10 +109,10 @@ public final class ClawdAIManager: ObservableObject {
     /// Send a message with an image using the active provider
     public func sendWithVision(prompt: String, imageData: Data) async throws -> String {
         guard let provider = activeProvider else {
-            throw ClawdAIError.noProvider
+            throw CHAIError.noProvider
         }
         guard provider.supportsVision else {
-            throw ClawdAIError.visionNotSupported
+            throw CHAIError.visionNotSupported
         }
         isProcessing = true
         lastError = nil
@@ -123,7 +123,7 @@ public final class ClawdAIManager: ObservableObject {
             let inputTokens = (prompt.count / 4) + (imageData.count / 750)
             let outputTokens = result.count / 4
             let imageTokens = imageData.count / 750
-            let tracker = ClawdAIUsageTracker.shared
+            let tracker = CHAIUsageTracker.shared
             let cost = tracker.logRequest(
                 provider: provider.displayName,
                 model: provider.id,
@@ -140,14 +140,14 @@ public final class ClawdAIManager: ObservableObject {
         }
     }
 
-    /// Log AI request cost to any registered ClawdLogger via NotificationCenter.
+    /// Log AI request cost to any registered CHLogger via NotificationCenter.
     /// Apps listen for this notification in their logger wrapper to show costs in Activity Log.
     private func logAICost(provider: String, model: String, inputTokens: Int, outputTokens: Int, cost: Double, isVision: Bool) {
         let costStr = cost < 0.01 ? String(format: "$%.4f", cost) : String(format: "$%.3f", cost)
         let detail = "in=\(inputTokens) out=\(outputTokens) tokens, cost=\(costStr)\(isVision ? " [vision]" : "")"
         // Post to NotificationCenter so each app's logger picks it up
         NotificationCenter.default.post(
-            name: Notification.Name("ClawdAIRequestCompleted"),
+            name: Notification.Name("CHAIRequestCompleted"),
             object: nil,
             userInfo: ["provider": provider, "model": model, "detail": detail, "cost": cost]
         )
@@ -163,7 +163,7 @@ public final class ClawdAIManager: ObservableObject {
 // MARK: - Apple Intelligence Provider
 
 /// Apple Intelligence provider using on-device FoundationModels (iOS 26+)
-public struct ClawdAppleIntelligenceProvider: ClawdAIProvider, Sendable {
+public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
     public static let providerID = "apple-intelligence"
     
     public var id: String { Self.providerID }
@@ -176,7 +176,7 @@ public struct ClawdAppleIntelligenceProvider: ClawdAIProvider, Sendable {
         #if canImport(FoundationModels)
         if #available(iOS 26, macOS 26, *) {
             guard SystemLanguageModel.default.isAvailable else {
-                throw ClawdAIError.appleIntelligenceUnavailable
+                throw CHAIError.appleIntelligenceUnavailable
             }
             let session = LanguageModelSession()
             let fullPrompt = systemPrompt.map { "\($0)\n\n\(prompt)" } ?? prompt
@@ -184,7 +184,7 @@ public struct ClawdAppleIntelligenceProvider: ClawdAIProvider, Sendable {
             return response.content
         }
         #endif
-        throw ClawdAIError.appleIntelligenceUnavailable
+        throw CHAIError.appleIntelligenceUnavailable
     }
     
     public func validate() async throws -> Bool {

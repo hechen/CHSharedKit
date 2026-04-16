@@ -4,7 +4,7 @@ import Foundation
 
 /// For self-hosted services (Ollama, vLLM, LMStudio, etc.)
 /// Uses OpenAI-compatible API format since most self-hosted solutions support it.
-public struct ClawdCustomEndpointProvider: ClawdAIProvider, Sendable {
+public struct CHCustomEndpointProvider: CHAIProvider, Sendable {
     public static let providerID = "custom"
     private static let keychainService = "app.chen.clawdappkit.custom"
     
@@ -15,12 +15,12 @@ public struct ClawdCustomEndpointProvider: ClawdAIProvider, Sendable {
     public init() {}
     
     public static var apiKey: String? {
-        get { ClawdAIKeychain.load(service: keychainService) }
+        get { CHAIKeychain.load(service: keychainService) }
         set {
             if let key = newValue {
-                ClawdAIKeychain.save(key: key, service: keychainService)
+                CHAIKeychain.save(key: key, service: keychainService)
             } else {
-                ClawdAIKeychain.delete(service: keychainService)
+                CHAIKeychain.delete(service: keychainService)
             }
         }
     }
@@ -88,7 +88,7 @@ public struct ClawdCustomEndpointProvider: ClawdAIProvider, Sendable {
     private func makeRequest(body: [String: Any]) async throws -> Data {
         let endpoint = Self.baseURL.hasSuffix("/") ? "\(Self.baseURL)chat/completions" : "\(Self.baseURL)/chat/completions"
         guard let url = URL(string: endpoint) else {
-            throw ClawdAIError.networkError(URLError(.badURL))
+            throw CHAIError.networkError(URLError(.badURL))
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -103,7 +103,7 @@ public struct ClawdCustomEndpointProvider: ClawdAIProvider, Sendable {
         
         guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
             let message = String(data: data, encoding: .utf8) ?? "Connection failed"
-            throw ClawdAIError.networkError(NSError(domain: "Custom", code: (response as? HTTPURLResponse)?.statusCode ?? 0,
+            throw CHAIError.networkError(NSError(domain: "Custom", code: (response as? HTTPURLResponse)?.statusCode ?? 0,
                                                     userInfo: [NSLocalizedDescriptionKey: message]))
         }
         return data
@@ -111,19 +111,19 @@ public struct ClawdCustomEndpointProvider: ClawdAIProvider, Sendable {
     
     private func parseOpenAICompatibleResponse(_ data: Data) throws -> String {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         guard let choices = json["choices"] as? [[String: Any]] else {
             if let error = json["error"] as? [String: Any], let message = error["message"] as? String {
-                throw ClawdAIError.networkError(NSError(domain: "Custom", code: -1, userInfo: [NSLocalizedDescriptionKey: message]))
+                throw CHAIError.networkError(NSError(domain: "Custom", code: -1, userInfo: [NSLocalizedDescriptionKey: message]))
             }
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         guard let message = choices.first?["message"] as? [String: Any],
               let content = message["content"] as? String else {
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         return content

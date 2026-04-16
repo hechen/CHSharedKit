@@ -4,7 +4,7 @@ import UniformTypeIdentifiers
 // MARK: - Configuration
 
 /// Configuration for the backup settings view
-public struct ClawdBackupConfig {
+public struct CHBackupConfig {
     public let appName: String
     public let fileExtension: String
     public let iCloudContainerId: String?
@@ -25,7 +25,7 @@ public struct ClawdBackupConfig {
 
 // MARK: - Storage Extensions
 
-extension ClawdBackupStorage {
+extension CHBackupStorage {
     
     // MARK: - UserDefaults Keys
     
@@ -112,7 +112,7 @@ extension ClawdBackupStorage {
 ///
 /// Usage:
 /// ```swift
-/// ClawdBackupSettingsView(
+/// CHBackupSettingsView(
 ///     config: .init(
 ///         appName: "MyApp",
 ///         fileExtension: "myappbackup",
@@ -127,8 +127,8 @@ extension ClawdBackupStorage {
 ///     onBackupNow: { await performAutoBackup() }
 /// )
 /// ```
-public struct ClawdBackupSettingsView: View {
-    let config: ClawdBackupConfig
+public struct CHBackupSettingsView: View {
+    let config: CHBackupConfig
     let itemCount: Int
     @Binding var isExporting: Bool
     @Binding var isImporting: Bool
@@ -141,7 +141,7 @@ public struct ClawdBackupSettingsView: View {
     @State private var backupCount: Int = 0
     
     public init(
-        config: ClawdBackupConfig,
+        config: CHBackupConfig,
         itemCount: Int,
         isExporting: Binding<Bool>,
         isImporting: Binding<Bool>,
@@ -156,8 +156,8 @@ public struct ClawdBackupSettingsView: View {
         self.onExport = onExport
         self.onImportTapped = onImportTapped
         self.onBackupNow = onBackupNow
-        self._autoBackupEnabled = State(initialValue: ClawdBackupStorage.autoBackupEnabled(appName: config.appName))
-        self._maxBackups = State(initialValue: ClawdBackupStorage.maxAutoBackups(appName: config.appName))
+        self._autoBackupEnabled = State(initialValue: CHBackupStorage.autoBackupEnabled(appName: config.appName))
+        self._maxBackups = State(initialValue: CHBackupStorage.maxAutoBackups(appName: config.appName))
     }
     
     public var body: some View {
@@ -169,7 +169,7 @@ public struct ClawdBackupSettingsView: View {
                 Toggle("", isOn: $autoBackupEnabled)
                     .labelsHidden()
                     .onChange(of: autoBackupEnabled) { _, newValue in
-                        ClawdBackupStorage.setAutoBackupEnabled(newValue, appName: config.appName)
+                        CHBackupStorage.setAutoBackupEnabled(newValue, appName: config.appName)
                     }
             }
             
@@ -179,7 +179,7 @@ public struct ClawdBackupSettingsView: View {
                     Text("Last Backup")
                         .foregroundStyle(.secondary)
                     Spacer()
-                    if let last = ClawdBackupStorage.lastAutoBackupDate(appName: config.appName) {
+                    if let last = CHBackupStorage.lastAutoBackupDate(appName: config.appName) {
                         Text(last.formatted(.relative(presentation: .named)))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
@@ -193,7 +193,7 @@ public struct ClawdBackupSettingsView: View {
                 // Backup Count
                 if backupCount > 0 {
                     NavigationLink {
-                        ClawdBackupListView(config: config)
+                        CHBackupListView(config: config)
                     } label: {
                         HStack {
                             Text("\(backupCount) backup\(backupCount == 1 ? "" : "s") stored")
@@ -206,8 +206,8 @@ public struct ClawdBackupSettingsView: View {
                 // Max Backups Stepper
                 Stepper("Keep \(maxBackups) backups", value: $maxBackups, in: 1...30)
                     .onChange(of: maxBackups) { _, newValue in
-                        ClawdBackupStorage.setMaxAutoBackups(newValue, appName: config.appName)
-                        ClawdBackupStorage.pruneOldBackups(
+                        CHBackupStorage.setMaxAutoBackups(newValue, appName: config.appName)
+                        CHBackupStorage.pruneOldBackups(
                             fileExtension: config.fileExtension,
                             iCloudContainerId: config.iCloudContainerId,
                             fallbackFolderName: config.fallbackFolderName,
@@ -255,7 +255,7 @@ public struct ClawdBackupSettingsView: View {
             Text("Backup")
         } footer: {
             if autoBackupEnabled {
-                if ClawdBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
+                if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
                     Text("Backups are saved to iCloud Drive and sync across all your devices.")
                 } else {
                     Text("Backups are saved locally. Enable iCloud Drive for cross-device sync.")
@@ -269,7 +269,7 @@ public struct ClawdBackupSettingsView: View {
     
     /// Call this to refresh the backup count (e.g., after a backup is created)
     public func refreshBackupCount() {
-        backupCount = ClawdBackupStorage.list(
+        backupCount = CHBackupStorage.list(
             fileExtension: config.fileExtension,
             iCloudContainerId: config.iCloudContainerId,
             fallbackFolderName: config.fallbackFolderName

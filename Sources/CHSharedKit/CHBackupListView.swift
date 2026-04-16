@@ -1,18 +1,18 @@
 import SwiftUI
 
 /// A view displaying the list of stored backups with management options
-public struct ClawdBackupListView: View {
-    let config: ClawdBackupConfig
+public struct CHBackupListView: View {
+    let config: CHBackupConfig
 
-    @StateObject private var loader: ClawdBackupLoader
+    @StateObject private var loader: CHBackupLoader
     @State private var selectedBackup: BackupFileInfo?
     @State private var showingShareSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var backupToDelete: BackupFileInfo?
 
-    public init(config: ClawdBackupConfig) {
+    public init(config: CHBackupConfig) {
         self.config = config
-        _loader = StateObject(wrappedValue: ClawdBackupLoader(config: config))
+        _loader = StateObject(wrappedValue: CHBackupLoader(config: config))
     }
 
     public var body: some View {
@@ -41,7 +41,7 @@ public struct ClawdBackupListView: View {
                 ForEach(loader.backups) { backup in
                     BackupRow(
                         backup: backup,
-                        isUsingiCloud: ClawdBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId)
+                        isUsingiCloud: CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId)
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -93,7 +93,7 @@ public struct ClawdBackupListView: View {
 
     private func deleteBackup(_ backup: BackupFileInfo) {
         do {
-            try ClawdBackupStorage.delete(at: backup.url)
+            try CHBackupStorage.delete(at: backup.url)
             loader.refresh()
         } catch {
             print("Failed to delete backup: \(error)")
@@ -107,15 +107,15 @@ public struct ClawdBackupListView: View {
 /// for backup files. Triggers downloads of any iCloud items that haven't been
 /// pulled to the device yet.
 @MainActor
-final class ClawdBackupLoader: NSObject, ObservableObject {
+final class CHBackupLoader: NSObject, ObservableObject {
     @Published var backups: [BackupFileInfo] = []
     @Published var isLoading: Bool = true
 
-    private let config: ClawdBackupConfig
+    private let config: CHBackupConfig
     private var metadataQuery: NSMetadataQuery?
     private var observersInstalled = false
 
-    init(config: ClawdBackupConfig) {
+    init(config: CHBackupConfig) {
         self.config = config
         super.init()
     }
@@ -129,7 +129,7 @@ final class ClawdBackupLoader: NSObject, ObservableObject {
         // surface backups that pre-date iCloud being enabled.
         loadLocalBackups()
 
-        if ClawdBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
+        if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
             startMetadataQuery()
         } else {
             // No iCloud — local scan was authoritative.
@@ -142,7 +142,7 @@ final class ClawdBackupLoader: NSObject, ObservableObject {
         backups = []
         stopMetadataQuery()
         loadLocalBackups()
-        if ClawdBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
+        if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
             startMetadataQuery()
         } else {
             isLoading = false
@@ -293,8 +293,8 @@ struct BackupFileInfo: Identifiable {
             name = String(name.dropFirst())
         }
         self.displayName = name
-        self.creationDate = creationDate ?? ClawdBackupStorage.creationDate(for: url)
-        self.fileSize = fileSize ?? ClawdBackupStorage.fileSize(for: url)
+        self.creationDate = creationDate ?? CHBackupStorage.creationDate(for: url)
+        self.fileSize = fileSize ?? CHBackupStorage.fileSize(for: url)
     }
 
     var formattedSize: String {
@@ -364,7 +364,7 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 #Preview {
     NavigationStack {
-        ClawdBackupListView(config: .init(
+        CHBackupListView(config: .init(
             appName: "Preview",
             fileExtension: "backup",
             iCloudContainerId: nil,

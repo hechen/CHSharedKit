@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Claude (Anthropic) Provider
 
 /// Anthropic Claude provider for text and vision requests
-public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
+public struct CHClaudeProvider: CHAIProvider, Sendable {
     public static let providerID = "claude"
     private static let keychainService = "app.chen.clawdappkit.claude"
     
@@ -14,12 +14,12 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
     public init() {}
     
     public static var apiKey: String? {
-        get { ClawdAIKeychain.load(service: keychainService) }
+        get { CHAIKeychain.load(service: keychainService) }
         set {
             if let key = newValue {
-                ClawdAIKeychain.save(key: key, service: keychainService)
+                CHAIKeychain.save(key: key, service: keychainService)
             } else {
-                ClawdAIKeychain.delete(service: keychainService)
+                CHAIKeychain.delete(service: keychainService)
             }
         }
     }
@@ -35,7 +35,7 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
     }
     
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
-        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw ClawdAIError.noAPIKey }
+        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
         
         var body: [String: Any] = [
             "model": Self.model,
@@ -52,7 +52,7 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
     }
     
     public func sendVisionMessage(prompt: String, imageData: Data) async throws -> String {
-        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw ClawdAIError.noAPIKey }
+        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
         
         let base64 = imageData.base64EncodedString()
         
@@ -82,7 +82,7 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
     }
     
     public func validate() async throws -> Bool {
-        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw ClawdAIError.noAPIKey }
+        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
         
         let body: [String: Any] = [
             "model": "claude-sonnet-4-20250514",
@@ -98,7 +98,7 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
     
     private func makeRequest(apiKey: String, body: [String: Any]) async throws -> Data {
         guard let url = URL(string: "\(Self.baseURL)/messages") else {
-            throw ClawdAIError.networkError(URLError(.badURL))
+            throw CHAIError.networkError(URLError(.badURL))
         }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -111,35 +111,35 @@ public struct ClawdClaudeProvider: ClawdAIProvider, Sendable {
         let (data, response) = try await URLSession.shared.data(for: request)
         
         guard let http = response as? HTTPURLResponse else {
-            throw ClawdAIError.networkError(URLError(.badServerResponse))
+            throw CHAIError.networkError(URLError(.badServerResponse))
         }
         
         switch http.statusCode {
         case 200...299: return data
-        case 401: throw ClawdAIError.invalidKey
-        case 429: throw ClawdAIError.rateLimited
+        case 401: throw CHAIError.invalidKey
+        case 429: throw CHAIError.rateLimited
         default:
             let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw ClawdAIError.networkError(NSError(domain: "Claude", code: http.statusCode,
+            throw CHAIError.networkError(NSError(domain: "Claude", code: http.statusCode,
                                                     userInfo: [NSLocalizedDescriptionKey: message]))
         }
     }
     
     private func parseTextResponse(_ data: Data) throws -> String {
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         guard let content = json["content"] as? [[String: Any]] else {
             if let error = json["error"] as? [String: Any], let message = error["message"] as? String {
-                throw ClawdAIError.networkError(NSError(domain: "Claude", code: -1, userInfo: [NSLocalizedDescriptionKey: message]))
+                throw CHAIError.networkError(NSError(domain: "Claude", code: -1, userInfo: [NSLocalizedDescriptionKey: message]))
             }
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         guard let textBlock = content.first(where: { $0["type"] as? String == "text" }),
               let text = textBlock["text"] as? String else {
-            throw ClawdAIError.invalidResponse
+            throw CHAIError.invalidResponse
         }
         
         return text

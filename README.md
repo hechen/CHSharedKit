@@ -25,7 +25,7 @@ Shared Swift package providing the theme system, AI provider infrastructure, on-
 packages:
   CHSharedKit:
     url: https://github.com/hechen/CHSharedKit
-    from: "1.6.4"
+    from: "2.0.0"
 
 targets:
   MyApp:
@@ -40,7 +40,7 @@ targets:
 **Package.swift:**
 
 ```swift
-.package(url: "https://github.com/hechen/CHSharedKit", from: "1.6.4")
+.package(url: "https://github.com/hechen/CHSharedKit", from: "2.0.0")
 ```
 
 ---
@@ -115,7 +115,6 @@ ThemePickerView()  // grid picker, drop-in settings screen
 | `aurora` | Aurora | Northern lights — purple to teal | Magenta |
 | `monochrome` | Monochrome | Pure grayscale | White |
 | `editorial` | Editorial | Airy neutrals like a magazine spread | Stone |
-| `luxe` | Luxe | Warm stone and espresso with gold | Gold |
 | `boutique` | Boutique | Bright retail polish with blush tones | Pink |
 
 Themes that set `associatedIconName` (Midnight, Ocean, Sunset, Forest, Paper, Aurora, Monochrome) automatically swap the app icon when selected. Register the corresponding `CFBundleAlternateIcons` entries in the host app (e.g. `AppIcon-Midnight`).
@@ -150,7 +149,7 @@ VStack { ... }
 
 ## AI Provider System
 
-Plug-in AI architecture. All providers conform to `ClawdAIProvider` and can be swapped at runtime.
+Plug-in AI architecture. All providers conform to `CHAIProvider` and can be swapped at runtime.
 
 ### Setup
 
@@ -158,19 +157,19 @@ Plug-in AI architecture. All providers conform to `ClawdAIProvider` and can be s
 import CHSharedKit
 
 // At app startup — registers Apple Intelligence, OpenAI, Claude, and custom endpoint
-ClawdAIManager.shared.registerBuiltInProviders()
+CHAIManager.shared.registerBuiltInProviders()
 ```
 
 ### Sending requests
 
 ```swift
-let response = try await ClawdAIManager.shared.send(
+let response = try await CHAIManager.shared.send(
     prompt: "Summarize this article",
     systemPrompt: "You are a concise summarizer."
 )
 
 // Vision request
-let response = try await ClawdAIManager.shared.sendWithVision(
+let response = try await CHAIManager.shared.sendWithVision(
     prompt: "What's in this image?",
     imageData: jpegData
 )
@@ -180,34 +179,34 @@ let response = try await ClawdAIManager.shared.sendWithVision(
 
 ```swift
 // Drop-in settings screen (provider picker, API key fields, test connection)
-ClawdAISettingsView()
+CHAISettingsView()
 
 // Usage dashboard (requests, tokens, estimated cost)
-ClawdAIUsageView()
+CHAIUsageView()
 ```
 
 ### Built-in providers
 
 | Provider | Default Model | Vision | Notes |
 |---|---|---|---|
-| `ClawdOpenAIProvider` | `gpt-4o` | Yes | Also: gpt-4o-mini, GPT-4.1, o4-mini |
-| `ClawdClaudeProvider` | `claude-sonnet-4-20250514` | Yes | Also: Opus 4, Haiku 3.5 |
-| `ClawdAppleIntelligenceProvider` | System default | — | iOS 26+, free, on-device |
-| `ClawdCustomEndpointProvider` | `llava` | — | Ollama, vLLM, LMStudio; OpenAI-compatible |
+| `CHOpenAIProvider` | `gpt-4o` | Yes | Also: gpt-4o-mini, GPT-4.1, o4-mini |
+| `CHClaudeProvider` | `claude-sonnet-4-20250514` | Yes | Also: Opus 4, Haiku 3.5 |
+| `CHAppleIntelligenceProvider` | System default | — | iOS 26+, free, on-device |
+| `CHCustomEndpointProvider` | `llava` | — | Ollama, vLLM, LMStudio; OpenAI-compatible |
 
 ### BYOK — storing API keys
 
 Keys are stored in the system Keychain:
 
 ```swift
-ClawdAIKeychain.save(apiKey: "sk-...", service: ClawdOpenAIProvider.keychainService)
-let key = ClawdAIKeychain.load(service: ClawdOpenAIProvider.keychainService)
+CHAIKeychain.save(apiKey: "sk-...", service: CHOpenAIProvider.keychainService)
+let key = CHAIKeychain.load(service: CHOpenAIProvider.keychainService)
 ```
 
 ### Custom provider
 
 ```swift
-struct MyProvider: ClawdAIProvider {
+struct MyProvider: CHAIProvider {
     let id = "myprovider"
     let displayName = "My Backend"
     let supportsVision = false
@@ -219,18 +218,18 @@ struct MyProvider: ClawdAIProvider {
     func validate() async throws -> Bool { true }
 }
 
-ClawdAIManager.shared.registerProvider(MyProvider())
+CHAIManager.shared.registerProvider(MyProvider())
 ```
 
 ### Usage tracking
 
-`ClawdAIUsageTracker` captures every request automatically via `ClawdAIRequestCompleted` notifications. Access via:
+`CHAIUsageTracker` captures every request automatically. Access via:
 
 ```swift
-let tracker = ClawdAIUsageTracker.shared
+let tracker = CHAIUsageTracker.shared
 print(tracker.totalRequests)
 print(tracker.thisMonthCost)   // estimated USD
-print(tracker.requestHistory)  // [ClawdAIRequestLog]
+print(tracker.requestHistory)  // [CHAIRequestLog]
 ```
 
 ---
@@ -254,7 +253,7 @@ store.appIdentifier = .gymlog
 let model = LocalModelCatalog.defaultModel
 await store.downloadModel(model)
 
-// Set as active provider (registers with ClawdAIManager automatically)
+// Set as active provider (registers with CHAIManager automatically)
 await store.setActiveModel(model.id)
 ```
 
@@ -301,7 +300,7 @@ Models are stored in an App Group container so they can be shared across apps.
 ```swift
 import CHSharedKit
 
-let log = ClawdLogger.shared
+let log = CHLogger.shared
 log.debug("Cache hit", category: "Storage")
 log.info("Sync started", category: "iCloud")
 log.warning("Rate limit approaching", category: "AI")
@@ -312,11 +311,11 @@ Persists the last 500 entries to `Documents/clawd-logs.json`. Max 2000 in-memory
 
 ```swift
 // Drop-in log viewer with search and level filtering
-ClawdLogViewerView()
+CHLogViewerView()
 
 // Hidden dev menu revealed after N taps
 someView
-    .clawdDeveloperMenu(tapCount: $taps, visible: $showMenu, threshold: 5) {
+    .chDeveloperMenu(tapCount: $taps, visible: $showMenu, threshold: 5) {
         DevMenuContent()
     }
 ```
@@ -332,7 +331,7 @@ import CHSharedKit
 
 // Export
 let payload = try JSONEncoder().encode(myAppData)
-try ClawdBackupStorage.write(
+try CHBackupStorage.write(
     payload: payload,
     iCloudContainerId: "iCloud.app.chen.myapp",
     fallbackFolderName: "MyAppBackups",
@@ -340,49 +339,15 @@ try ClawdBackupStorage.write(
 )
 
 // List available backups
-let backups = ClawdBackupStorage.list(
+let backups = CHBackupStorage.list(
     iCloudContainerId: "iCloud.app.chen.myapp",
     fallbackFolderName: "MyAppBackups"
 )
 
 // Decode
-let backup = try JSONDecoder().decode(ClawdBackupFile.self, from: backupData)
+let backup = try JSONDecoder().decode(CHBackupFile.self, from: backupData)
 let myAppData = try JSONDecoder().decode(MyAppData.self, from: backup.payload)
 ```
-
----
-
-## Prefix migration
-
-All public types currently use the `Clawd` prefix (legacy). They will be renamed to `CH` in the next major version — a breaking change that requires updates in every consuming app. The rename will be done in one coordinated pass.
-
-**Current → Future:**
-
-| Current | Future |
-|---|---|
-| `ClawdAIManager` | `CHAIManager` |
-| `ClawdAIProvider` | `CHAIProvider` |
-| `ClawdAIError` | `CHAIError` |
-| `ClawdAIKeychain` | `CHAIKeychain` |
-| `ClawdAISettingsView` | `CHAISettingsView` |
-| `ClawdAISettingsContent` | `CHAISettingsContent` |
-| `ClawdAIProviderPickerView` | `CHAIProviderPickerView` |
-| `ClawdAIUsageTracker` | `CHAIUsageTracker` |
-| `ClawdAIUsageView` | `CHAIUsageView` |
-| `ClawdAIPricingView` | `CHAIPricingView` |
-| `ClawdAIRequestLog` | `CHAIRequestLog` |
-| `ClawdOpenAIProvider` | `CHOpenAIProvider` |
-| `ClawdClaudeProvider` | `CHClaudeProvider` |
-| `ClawdAppleIntelligenceProvider` | `CHAppleIntelligenceProvider` |
-| `ClawdCustomEndpointProvider` | `CHCustomEndpointProvider` |
-| `ClawdLocalLLMProvider` | `CHLocalLLMProvider` |
-| `ClawdLogger` / `ClawdLogEntry` / `ClawdLogLevel` | `CHLogger` / `CHLogEntry` / `CHLogLevel` |
-| `ClawdLogViewerView` | `CHLogViewerView` |
-| `ClawdDeveloperMenu` / `.clawdDeveloperMenu()` | `CHDeveloperMenu` / `.chDeveloperMenu()` |
-| `ClawdBackupKit` / `ClawdBackupFile` / `ClawdBackupStorage` | `CHBackupKit` / `CHBackupFile` / `CHBackupStorage` |
-| `ClawdBackupListView` / `ClawdBackupSettingsView` | `CHBackupListView` / `CHBackupSettingsView` |
-
-Until that migration lands, all code examples in this README use the current `Clawd` names, which is what consumers import today.
 
 ---
 

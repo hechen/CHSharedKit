@@ -3,8 +3,8 @@ import SwiftUI
 
 /// Tracks AI API usage: requests, tokens, estimated cost
 @MainActor
-public final class ClawdAIUsageTracker: ObservableObject {
-    public static let shared = ClawdAIUsageTracker()
+public final class CHAIUsageTracker: ObservableObject {
+    public static let shared = CHAIUsageTracker()
     
     // MARK: - Published Stats
     
@@ -12,7 +12,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
     @Published public private(set) var totalInputTokens: Int = 0
     @Published public private(set) var totalOutputTokens: Int = 0
     @Published public private(set) var totalImageTokens: Int = 0
-    @Published public private(set) var requestHistory: [ClawdAIRequestLog] = []
+    @Published public private(set) var requestHistory: [CHAIRequestLog] = []
     
     // Persisted via UserDefaults
     private let defaults = UserDefaults.standard
@@ -66,7 +66,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
                    Double(outputTokens) * pricing.outputPerToken +
                    Double(imageTokens) * pricing.imagePerToken
         
-        let log = ClawdAIRequestLog(
+        let log = CHAIRequestLog(
             date: .now,
             provider: provider,
             model: model,
@@ -147,7 +147,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
         totalImageTokens = defaults.integer(forKey: "clawd_ai_total_image_tokens")
         
         if let data = defaults.data(forKey: "clawd_ai_request_history"),
-           let history = try? JSONDecoder().decode([ClawdAIRequestLog].self, from: data) {
+           let history = try? JSONDecoder().decode([CHAIRequestLog].self, from: data) {
             requestHistory = history
         }
     }
@@ -204,7 +204,7 @@ public final class ClawdAIUsageTracker: ObservableObject {
 
 // MARK: - Request Log
 
-public struct ClawdAIRequestLog: Identifiable, Codable, Sendable {
+public struct CHAIRequestLog: Identifiable, Codable, Sendable {
     public let id: UUID
     public let date: Date
     public let provider: String

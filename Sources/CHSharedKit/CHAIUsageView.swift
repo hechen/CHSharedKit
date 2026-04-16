@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Shows AI API usage stats: requests, tokens, estimated cost.
 /// Embed this in your app's settings to show usage/cost tracking.
-public struct ClawdAIUsageView: View {
-    @StateObject private var tracker = ClawdAIUsageTracker.shared
+public struct CHAIUsageView: View {
+    @StateObject private var tracker = CHAIUsageTracker.shared
     @State private var showResetConfirmation = false
 
     public init() {}
@@ -75,7 +75,7 @@ public struct ClawdAIUsageView: View {
             // Pricing reference
             Section {
                 NavigationLink("Model Pricing Reference") {
-                    ClawdAIPricingView()
+                    CHAIPricingView()
                 }
             }
 
@@ -161,7 +161,7 @@ struct TokenRow: View {
 
 // MARK: - Pricing Reference
 
-public struct ClawdAIPricingView: View {
+public struct CHAIPricingView: View {
     public init() {}
 
     public var body: some View {
