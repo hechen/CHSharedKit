@@ -8,7 +8,6 @@ public enum ThemePalette {
     public static let all: [Theme] = [
         .default,
         .editorial,
-        .luxe,
         .boutique,
         .midnight,
         .ocean,
@@ -61,30 +60,6 @@ public extension Theme {
         error:              tc((0.78, 0.30, 0.30), (0.94, 0.48, 0.48)),
         gradientStart:      tc((0.92, 0.90, 0.87), (0.30, 0.29, 0.30)),
         gradientEnd:        tc((0.74, 0.72, 0.68), (0.15, 0.15, 0.17))
-    )
-
-    // ---------- Luxe — warm stone, espresso, muted gold ----------
-    static let luxe = Theme(
-        id: "luxe",
-        name: "Luxe",
-        description: "Warm stone and espresso with a subtle luxury glow.",
-        symbol: "sparkle",
-        associatedIconName: nil,
-        accent:             tc((0.56, 0.42, 0.22), (0.92, 0.78, 0.52)),
-        accentSecondary:    tc((0.72, 0.60, 0.40), (0.74, 0.60, 0.40)),
-        background:         tc((0.965, 0.945, 0.92), (0.08, 0.06, 0.05)),
-        backgroundElevated: tc((0.99, 0.975, 0.95), (0.12, 0.09, 0.08)),
-        card:               tc((1.00, 0.99, 0.975), (0.15, 0.11, 0.10)),
-        cardElevated:       tc((0.985, 0.96, 0.93), (0.20, 0.15, 0.13)),
-        textPrimary:        tc((0.18, 0.12, 0.08), (0.98, 0.94, 0.88)),
-        textSecondary:      tc((0.47, 0.38, 0.30), (0.78, 0.68, 0.58)),
-        textTertiary:       tc((0.64, 0.54, 0.46), (0.52, 0.44, 0.38)),
-        divider:            tc((0.90, 0.84, 0.76), (0.28, 0.21, 0.18)),
-        success:            tc((0.28, 0.62, 0.42), (0.44, 0.84, 0.58)),
-        warning:            tc((0.86, 0.60, 0.18), (1.00, 0.78, 0.34)),
-        error:              tc((0.76, 0.24, 0.22), (0.96, 0.44, 0.40)),
-        gradientStart:      tc((0.84, 0.72, 0.50), (0.55, 0.40, 0.20)),
-        gradientEnd:        tc((0.44, 0.28, 0.16), (0.16, 0.10, 0.08))
     )
 
     // ---------- Boutique — bright boutique retail, blush + sand ----------
