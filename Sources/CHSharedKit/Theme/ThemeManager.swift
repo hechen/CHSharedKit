@@ -77,6 +77,13 @@ public final class ThemeManager: ObservableObject {
         apply(themeId: theme.id, animated: animated)
     }
 
+    /// Re-applies the alternate icon for the current theme if it has drifted
+    /// (e.g. after the OS resets it while the app is backgrounded). Call on
+    /// `scenePhase == .active`.
+    public func syncIconIfNeeded() {
+        updateAlternateIcon(for: currentTheme)
+    }
+
     private func persist(_ id: String) {
         cloud.set(id, forKey: Self.kvsKey)
         cloud.synchronize()
