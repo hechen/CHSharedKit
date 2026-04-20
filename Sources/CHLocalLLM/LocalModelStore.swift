@@ -389,7 +389,7 @@ public final class LocalModelStore {
     /// Called once at init on a background task. Idempotent: safe to call repeatedly.
     /// - If shared copy already exists, deletes the per-app copy to reclaim disk space.
     /// - If only per-app copy exists, moves it atomically to shared location.
-    private static func migrateModelFilesIfNeeded(from legacyDir: URL, to sharedDir: URL) {
+    private nonisolated static func migrateModelFilesIfNeeded(from legacyDir: URL, to sharedDir: URL) {
         let fm = FileManager.default
         guard fm.fileExists(atPath: legacyDir.path) else { return }
         do {
