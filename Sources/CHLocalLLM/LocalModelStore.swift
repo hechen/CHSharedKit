@@ -37,10 +37,12 @@ public final class LocalModelStore {
     public private(set) var downloadState: ModelDownloadState = .idle
     public private(set) var activeDownloadModelID: String?
     /// ID of the model the user has chosen as active (persisted across launches).
-    public private(set) var activeModelID: String? = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey)
+    public private(set) var activeModelID: String?
 
     // Configuration — apps can override appGroupID before first use
-    public var appGroupID: String = "group.app.chen.sharedllm"
+    public var appGroupID: String = "group.app.chen.sharedllm" {
+        didSet { _sharedDefaults = nil } // invalidate cache when group changes
+    }
 
     /// Identifies the consuming app. Drives the default onboarding copy and
     /// the local notification fired when a model finishes downloading, so
@@ -63,15 +65,41 @@ public final class LocalModelStore {
     // Custom models added by the user
     public private(set) var customModels: [CustomModelEntry] = []
 
+    // Cached shared UserDefaults suite — invalidated when appGroupID changes
+    @ObservationIgnored private var _sharedDefaults: UserDefaults?
+    private var sharedDefaults: UserDefaults {
+        if let cached = _sharedDefaults { return cached }
+        let suite = UserDefaults(suiteName: appGroupID) ?? .standard
+        _sharedDefaults = suite
+        return suite
+    }
+
     // Background session delegate — persists for app lifetime so iOS can reconnect downloads
     let bgDelegate: BackgroundDownloadDelegate
 
     private init() {
-        // Load persisted custom models
-        if let data = UserDefaults.standard.data(forKey: LocalModelStore.customModelsKey),
+        // Load persisted active model ID — prefer shared suite, fall back + migrate from standard
+        let sharedSuite = UserDefaults(suiteName: "group.app.chen.sharedllm") ?? .standard
+        if let id = sharedSuite.string(forKey: LocalModelStore.activeModelKey) {
+            activeModelID = id
+        } else if let legacyID = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey) {
+            // Migrate legacy per-app value to shared suite on first launch after update
+            activeModelID = legacyID
+            sharedSuite.set(legacyID, forKey: LocalModelStore.activeModelKey)
+            UserDefaults.standard.removeObject(forKey: LocalModelStore.activeModelKey)
+        }
+
+        // Load custom models — prefer shared suite, migrate from standard if needed
+        if let data = sharedSuite.data(forKey: LocalModelStore.customModelsKey),
            let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: data) {
             customModels = entries
+        } else if let legacyData = UserDefaults.standard.data(forKey: LocalModelStore.customModelsKey),
+                  let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: legacyData) {
+            customModels = entries
+            sharedSuite.set(legacyData, forKey: LocalModelStore.customModelsKey)
+            UserDefaults.standard.removeObject(forKey: LocalModelStore.customModelsKey)
         }
+
         // BackgroundDownloadDelegate resolves its models directory lazily so appGroupID overrides
         // (set after init but before the first download) are respected. Using LocalModelStore.shared
         // inside the closure is safe: by the time any download completes, the singleton exists.
@@ -99,6 +127,15 @@ public final class LocalModelStore {
 
         // Reconnect any in-flight background download (e.g. after app relaunch)
         reconnectPendingTasks()
+
+        // Migrate model files from per-app Application Support → shared container (runs once, background).
+        let sharedDir = Self.resolveModelsDirectory(appGroupID: "group.app.chen.sharedllm")
+        let legacyDir = FileManager.default
+            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("CHLocalModels")
+        Task.detached(priority: .background) {
+            Self.migrateModelFilesIfNeeded(from: legacyDir, to: sharedDir)
+        }
     }
 
     // MARK: - Completion notification
@@ -279,7 +316,7 @@ public final class LocalModelStore {
 
     private func persistCustomModels() {
         let data = try? JSONEncoder().encode(customModels)
-        UserDefaults.standard.set(data, forKey: LocalModelStore.customModelsKey)
+        sharedDefaults.set(data, forKey: LocalModelStore.customModelsKey)
     }
 
     // MARK: - Active model
@@ -288,7 +325,7 @@ public final class LocalModelStore {
     public func setActiveModel(_ model: LocalModelInfo) {
         guard isInstalled(model) else { return }
         activeModelID = model.id
-        UserDefaults.standard.set(model.id, forKey: Self.activeModelKey)
+        sharedDefaults.set(model.id, forKey: Self.activeModelKey)
         let provider = CHLocalLLMProvider(
             modelURL: modelURL(for: model),
             modelInfo: model
@@ -300,7 +337,7 @@ public final class LocalModelStore {
     /// Clear the active model selection (e.g. after deleting it).
     public func clearActiveModel() {
         activeModelID = nil
-        UserDefaults.standard.removeObject(forKey: Self.activeModelKey)
+        sharedDefaults.removeObject(forKey: Self.activeModelKey)
     }
 
     /// Reset download state to idle (call after a failed download to allow retry).
@@ -344,6 +381,35 @@ public final class LocalModelStore {
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    // MARK: - Legacy file migration
+
+    /// Moves GGUF files from the old per-app Application Support path to the shared group container.
+    /// Called once at init on a background task. Idempotent: safe to call repeatedly.
+    /// - If shared copy already exists, deletes the per-app copy to reclaim disk space.
+    /// - If only per-app copy exists, moves it atomically to shared location.
+    private static func migrateModelFilesIfNeeded(from legacyDir: URL, to sharedDir: URL) {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: legacyDir.path) else { return }
+        do {
+            let files = try fm.contentsOfDirectory(at: legacyDir, includingPropertiesForKeys: [.fileSizeKey])
+            for file in files where file.pathExtension == "gguf" {
+                let dest = sharedDir.appendingPathComponent(file.lastPathComponent)
+                if fm.fileExists(atPath: dest.path) {
+                    // Shared copy already present — remove stale per-app copy
+                    try? fm.removeItem(at: file)
+                } else {
+                    // Only per-app copy exists — move to shared container
+                    try fm.moveItem(at: file, to: dest)
+                }
+            }
+            // Remove empty legacy directory
+            let remaining = try? fm.contentsOfDirectory(atPath: legacyDir.path)
+            if remaining?.isEmpty == true {
+                try? fm.removeItem(at: legacyDir)
+            }
+        } catch { /* non-fatal: model will re-download if needed */ }
     }
 }
 
