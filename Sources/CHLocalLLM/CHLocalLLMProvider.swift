@@ -104,13 +104,14 @@ private extension CHLocalLLMProvider {
         let localURL = modelURL
 
         // llama_model_load_from_file() reads the entire GGUF file synchronously and
-        // can block for many seconds on large models. After the `await MainActor.run`
+        // can block for many seconds on large models. After `await MainActor.run`
         // above, the caller may remain on the main thread depending on the call chain,
         // which would trigger the scene-update watchdog (0x8BADF00D). Detach so this
         // always runs on the cooperative thread pool regardless of the calling context.
-        guard let bot = await Task.detached(priority: .userInitiated) {
+        let botOptional: LLM? = await Task.detached(priority: .userInitiated) {
             LLM(from: localURL, template: template, maxTokenCount: 2048)
-        }.value else {
+        }.value
+        guard let bot = botOptional else {
             throw CHAIError.networkError(
                 NSError(domain: "CHLocalLLM", code: -1,
                         userInfo: [NSLocalizedDescriptionKey: "Failed to load model from \(localURL.lastPathComponent)"])
