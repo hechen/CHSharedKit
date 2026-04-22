@@ -78,17 +78,78 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     
     public func validate() async throws -> Bool {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
-        
+
         let body: [String: Any] = [
             "model": "gpt-4o-mini",
             "messages": [["role": "user", "content": "Say OK"]],
             "max_tokens": 5
         ]
-        
+
         let _ = try await makeRequest(apiKey: apiKey, endpoint: "chat/completions", body: body)
         return true
     }
-    
+
+    // MARK: - Streaming
+
+    /// Stream deltas via Server-Sent Events (`stream: true` on chat/completions).
+    public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
+
+        var messages: [[String: Any]] = []
+        if let system = systemPrompt, !system.isEmpty {
+            messages.append(["role": "system", "content": system])
+        }
+        messages.append(["role": "user", "content": prompt])
+
+        let body: [String: Any] = [
+            "model": Self.model,
+            "messages": messages,
+            "max_tokens": 4000,
+            "stream": true
+        ]
+
+        guard let url = URL(string: "\(Self.baseURL)/chat/completions") else {
+            throw CHAIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 120
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        try CHAIStreamingHelpers.checkHTTP(response, domain: "OpenAI")
+
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await line in bytes.lines {
+                        try Task.checkCancellation()
+                        guard line.hasPrefix("data:") else { continue }
+                        let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                        if payload == "[DONE]" { break }
+                        guard let data = payload.data(using: .utf8),
+                              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                              let choices = json["choices"] as? [[String: Any]],
+                              let delta = choices.first?["delta"] as? [String: Any],
+                              let content = delta["content"] as? String,
+                              !content.isEmpty
+                        else { continue }
+                        continuation.yield(content)
+                    }
+                    continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish(throwing: CancellationError())
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     // MARK: - Private
     
     private func makeRequest(apiKey: String, endpoint: String, body: [String: Any]) async throws -> Data {

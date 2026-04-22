@@ -20,15 +20,49 @@ public protocol CHAIProvider: Sendable {
     
     /// Send a message with an image (for vision-capable providers)
     func sendVisionMessage(prompt: String, imageData: Data) async throws -> String
-    
+
     /// Validate that the API key / endpoint is working
     func validate() async throws -> Bool
+
+    /// Stream a text response as it is produced. Yields partial text deltas
+    /// through an `AsyncThrowingStream`. Providers that support server-sent
+    /// events (OpenAI, Anthropic, Apple Intelligence, local llama.cpp) should
+    /// override this to emit tokens as they arrive; others inherit a default
+    /// that yields the full `sendMessage` response as one chunk, so consumers
+    /// can always call `.stream(...)` regardless of the active provider.
+    func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error>
 }
 
 // Default implementation for providers that don't support vision
 public extension CHAIProvider {
     func sendVisionMessage(prompt: String, imageData: Data) async throws -> String {
         throw CHAIError.visionNotSupported
+    }
+
+    /// Default streaming fallback: call `sendMessage` and yield the full
+    /// response as a single chunk. Concrete providers override with real
+    /// token-by-token streaming where the underlying API supports it.
+    func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let result = try await sendMessage(prompt: prompt, systemPrompt: systemPrompt)
+                    try Task.checkCancellation()
+                    if !result.isEmpty { continuation.yield(result) }
+                    continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish(throwing: CancellationError())
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    /// Convenience matching the spec: stream with no system prompt.
+    func stream(_ prompt: String) async throws -> AsyncThrowingStream<String, Error> {
+        try await stream(prompt: prompt, systemPrompt: nil)
     }
 }
 

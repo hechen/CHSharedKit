@@ -75,6 +75,41 @@ extension CHLocalLLMProvider: CHAIProvider {
         let readable = (try? modelURL.resourceValues(forKeys: [.isReadableKey]))?.isReadable ?? false
         return readable
     }
+
+    /// Streams tokens from llama.cpp as the model produces them.
+    ///
+    /// Uses `LLM.respond(to:with:)`, which hands us the underlying token
+    /// `AsyncStream<String>` that we forward verbatim. The chat template is
+    /// applied manually (same formatter as `sendMessage`); `bot.preprocess`
+    /// is set to the identity so the already-formatted prompt isn't wrapped
+    /// a second time by the template applied at LLM init.
+    public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        let bot = try await loadBotIfNeeded()
+        rescheduleIdleUnload()
+
+        let formatted = formattedPrompt(user: prompt, system: systemPrompt)
+
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                bot.preprocess = { input, _ in input }
+                await bot.respond(to: formatted) { tokenStream in
+                    var full = ""
+                    for await token in tokenStream {
+                        if Task.isCancelled { break }
+                        continuation.yield(token)
+                        full += token
+                    }
+                    return full
+                }
+                if Task.isCancelled {
+                    continuation.finish(throwing: CancellationError())
+                } else {
+                    continuation.finish()
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
 }
 
 // MARK: - Private helpers

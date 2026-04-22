@@ -83,17 +83,78 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     
     public func validate() async throws -> Bool {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
-        
+
         let body: [String: Any] = [
             "model": "claude-sonnet-4-20250514",
             "max_tokens": 10,
             "messages": [["role": "user", "content": "Say OK"]]
         ]
-        
+
         let _ = try await makeRequest(apiKey: apiKey, body: body)
         return true
     }
-    
+
+    // MARK: - Streaming
+
+    /// Stream deltas via Anthropic Messages API SSE (`stream: true`).
+    public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
+
+        var body: [String: Any] = [
+            "model": Self.model,
+            "max_tokens": 4000,
+            "messages": [["role": "user", "content": prompt]],
+            "stream": true
+        ]
+        if let system = systemPrompt, !system.isEmpty { body["system"] = system }
+
+        guard let url = URL(string: "\(Self.baseURL)/messages") else {
+            throw CHAIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        request.timeoutInterval = 120
+
+        let (bytes, response) = try await URLSession.shared.bytes(for: request)
+        try CHAIStreamingHelpers.checkHTTP(response, domain: "Claude")
+
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    for try await line in bytes.lines {
+                        try Task.checkCancellation()
+                        guard line.hasPrefix("data:") else { continue }
+                        let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                        if payload.isEmpty { continue }
+                        guard let data = payload.data(using: .utf8),
+                              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        else { continue }
+                        let type = json["type"] as? String
+                        if type == "content_block_delta",
+                           let delta = json["delta"] as? [String: Any],
+                           let text = delta["text"] as? String,
+                           !text.isEmpty {
+                            continuation.yield(text)
+                        } else if type == "message_stop" {
+                            break
+                        }
+                    }
+                    continuation.finish()
+                } catch is CancellationError {
+                    continuation.finish(throwing: CancellationError())
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     // MARK: - Private
     
     private func makeRequest(apiKey: String, body: [String: Any]) async throws -> Data {

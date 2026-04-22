@@ -106,6 +106,14 @@ public final class CHAIManager: ObservableObject {
         }
     }
 
+    /// Stream a text response using the active provider. Returns an
+    /// `AsyncThrowingStream` that yields text deltas as the provider produces
+    /// them (or a single chunk for providers that don't support streaming).
+    public func stream(prompt: String, systemPrompt: String? = nil) async throws -> AsyncThrowingStream<String, Error> {
+        guard let provider = activeProvider else { throw CHAIError.noProvider }
+        return try await provider.stream(prompt: prompt, systemPrompt: systemPrompt)
+    }
+
     /// Send a message with an image using the active provider
     public func sendWithVision(prompt: String, imageData: Data) async throws -> String {
         guard let provider = activeProvider else {
@@ -195,4 +203,67 @@ public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
         #endif
         return false
     }
+
+    /// Streams deltas via FoundationModels `LanguageModelSession.streamResponse(to:)`.
+    ///
+    /// The framework returns cumulative snapshots (each one contains all the
+    /// text generated so far); we diff against the previous snapshot and yield
+    /// just the new suffix so consumers can concatenate deltas directly.
+    public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *) {
+            guard SystemLanguageModel.default.isAvailable else {
+                throw CHAIError.appleIntelligenceUnavailable
+            }
+            let session: LanguageModelSession = {
+                if let sys = systemPrompt, !sys.isEmpty {
+                    return LanguageModelSession(instructions: sys)
+                }
+                return LanguageModelSession()
+            }()
+
+            return AsyncThrowingStream { continuation in
+                let task = Task {
+                    var previous = ""
+                    do {
+                        for try await snapshot in session.streamResponse(to: prompt) {
+                            try Task.checkCancellation()
+                            let text = Self.snapshotText(snapshot)
+                            if text.isEmpty { continue }
+                            if text.count > previous.count, text.hasPrefix(previous) {
+                                let delta = String(text.dropFirst(previous.count))
+                                if !delta.isEmpty { continuation.yield(delta) }
+                            } else if text != previous {
+                                continuation.yield(text)
+                            }
+                            previous = text
+                        }
+                        continuation.finish()
+                    } catch is CancellationError {
+                        continuation.finish(throwing: CancellationError())
+                    } catch {
+                        continuation.finish(throwing: error)
+                    }
+                }
+                continuation.onTermination = { _ in task.cancel() }
+            }
+        }
+        #endif
+        throw CHAIError.appleIntelligenceUnavailable
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, macOS 26, *)
+    private static func snapshotText(_ snapshot: Any) -> String {
+        // FoundationModels snapshots expose their text either directly as a
+        // String or as a `.content` member. Use Mirror to stay resilient
+        // across framework revisions.
+        if let s = snapshot as? String { return s }
+        let mirror = Mirror(reflecting: snapshot)
+        for child in mirror.children {
+            if child.label == "content", let s = child.value as? String { return s }
+        }
+        return String(describing: snapshot)
+    }
+    #endif
 }
