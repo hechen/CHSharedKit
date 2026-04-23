@@ -293,11 +293,19 @@ public struct CHAISettingsContent: View {
     @ViewBuilder
     private var onDeviceProviderRow: some View {
         Button {
-            // If a model is already installed, show the management sheet.
-            // Only open the download picker directly when no model exists yet.
-            if activeModel != nil {
-                showModelManagement = true
-            } else {
+            // Always activate the on-device provider first — tapping the row
+            // is foremost a provider selection, matching every other row.
+            // Sheet presentation is secondary.
+            aiManager.activeProviderID = CHLocalLLMProvider.providerID
+            #if os(iOS)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            #endif
+
+            // Onboarding: if no model is installed yet, auto-open the picker
+            // so the user can download one. If a model is already active,
+            // just leave it selected — the detail section below exposes
+            // "Change Model" for management.
+            if activeModel == nil {
                 showModelPicker = true
             }
         } label: {
