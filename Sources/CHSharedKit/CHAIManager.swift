@@ -7,10 +7,41 @@ import FoundationModels
 // MARK: - AI Service Manager
 
 /// Central manager for AI providers. Handles provider selection, key storage, and requests.
+///
+/// ## Observing the active provider from Settings
+///
+/// SwiftUI views that display the current provider (e.g. a
+/// "Settings → AI" parent row showing "OpenAI" / "Claude") **must**
+/// establish an observation relationship with this manager, otherwise
+/// the row renders stale after the child picker writes a new value and
+/// pops back:
+///
+/// ```swift
+/// // ❌ WRONG — reads the singleton directly, no subscription,
+/// // the row stays stuck on the old provider name after picker pop.
+/// Text(CHAIManager.shared.activeProvider?.displayName ?? "None")
+///
+/// // ✅ RIGHT — drop-in component that self-observes.
+/// CHAIActiveProviderLabel()
+///
+/// // ✅ ALSO FINE — explicit @StateObject / @ObservedObject binding
+/// // in the enclosing view.
+/// @StateObject private var ai = CHAIManager.shared
+/// var body: some View {
+///     Text(ai.activeProvider?.displayName ?? "None")
+/// }
+/// ```
+///
+/// All writes to `activeProviderID` happen on the main actor (the
+/// enclosing `@MainActor` class enforces this) and the `didSet` hook
+/// persists to `UserDefaults` synchronously on the same tick, so there
+/// is no race between the picker's write and the parent's re-render —
+/// the fix for the reported "cell shows stale provider" bug is purely
+/// on the subscribe side.
 @MainActor
 public final class CHAIManager: ObservableObject {
     public static let shared = CHAIManager()
-    
+
     @Published public var activeProviderID: String {
         didSet { UserDefaults.standard.set(activeProviderID, forKey: "clawd_ai_active_provider") }
     }
