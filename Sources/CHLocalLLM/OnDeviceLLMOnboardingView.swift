@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import CHSharedKit
 
@@ -115,3 +116,5 @@ public struct OnDeviceLLMOnboardingView: View {
         return String(format: "%.0f MB", mb)
     }
 }
+
+#endif

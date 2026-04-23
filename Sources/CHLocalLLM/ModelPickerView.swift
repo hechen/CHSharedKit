@@ -1,3 +1,4 @@
+#if os(iOS)
 import SwiftUI
 import CHSharedKit
 
@@ -703,3 +704,5 @@ private struct PreDownloadSheet: View {
         return String(format: "%.0f MB", Double(bytes) / 1_048_576)
     }
 }
+
+#endif

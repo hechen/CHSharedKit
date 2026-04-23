@@ -30,7 +30,9 @@ public struct CHAIProviderPickerView: View {
         .themedListBackground()
         .themedNavigationBar()
         .navigationTitle("AI Provider")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .scrollDismissesKeyboard(.interactively)
         #if os(iOS)
         .toolbar {
@@ -580,7 +582,9 @@ private struct OnDeviceModelManagementView: View {
             }
         }
         .navigationTitle("On-Device AI")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Done") { dismiss() }
