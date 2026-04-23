@@ -6,7 +6,6 @@ import SwiftUI
 /// Embed this in your app's settings screen
 public struct CHAISettingsView: View {
     @StateObject private var aiManager = CHAIManager.shared
-    @State private var selectedProvider: String = CHAIManager.shared.activeProviderID
     @State private var openaiKey = ""
     @State private var claudeKey = ""
     @State private var customURL = CHCustomEndpointProvider.baseURL
@@ -17,12 +16,32 @@ public struct CHAISettingsView: View {
     @State private var isValidating = false
     @State private var validationResult: String?
     @State private var showingAPIKey = false
-    
+
     public init() {}
-    
+
+    /// Source of truth for which provider is currently selected — reads
+    /// straight from the observed `CHAIManager` instead of a local
+    /// `@State` mirror. The mirror approach was drifting stale when the
+    /// detail page was first pushed (the @State captured at init time
+    /// never re-ran), leaving the picker with no checkmark on the active
+    /// row. Computed access keeps the checkmark, the expanded
+    /// per-provider section, and the summary row all in sync with any
+    /// write — local or external.
+    private var selectedProvider: String { aiManager.activeProviderID }
+
     public var body: some View {
         List {
-            Section("Provider") {
+            // Summary row — always shows the currently-active provider so
+            // the user sees at a glance what the app will use before
+            // scrolling through the picker.
+            Section {
+                LabeledContent("Active Provider") {
+                    Text(CHAIActiveProviderLabel.text(for: aiManager))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Choose Provider") {
                 // Apple Intelligence — only when the current provider
                 // filter opts it in (it's part of `.onDeviceOnly` and
                 // `.all`, the two common cases).
@@ -250,7 +269,6 @@ public struct CHAISettingsView: View {
     private func providerRow(_ id: String, name: String, badge: String?, badgeColor: Color, available: Bool, unavailableReason: String? = nil) -> some View {
         Button {
             guard available else { return }
-            selectedProvider = id
             aiManager.activeProviderID = id
         } label: {
             HStack {

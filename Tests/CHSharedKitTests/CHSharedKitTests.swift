@@ -174,4 +174,47 @@ struct CHAIActiveProviderLabelTests {
         manager.activeProviderID = "provider-does-not-exist"
         #expect(manager.activeProvider == nil)
     }
+
+    // MARK: - 2.4.2 — Active Provider summary row
+
+    /// Regression test for the 2.4.2 "Active Provider" summary row that
+    /// sits at the top of `CHAISettingsView` / `CHAISettingsContent`.
+    /// The row's rendered text comes from
+    /// `CHAIActiveProviderLabel.text(for:fallback:)` — the same resolver
+    /// every visible "active provider name" surface uses. If someone
+    /// accidentally bypasses the resolver (reads the singleton directly,
+    /// caches a value in @State, etc.) the row goes stale and these
+    /// tests fail loud.
+    @Test("text(for:) returns the active provider's displayName")
+    func activeProviderTextFollowsActiveID() {
+        let manager = CHAIManager.shared
+        let previous = manager.activeProviderID
+        defer { manager.activeProviderID = previous }
+
+        manager.activeProviderID = CHOpenAIProvider.providerID
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager)
+                == CHOpenAIProvider().displayName
+        )
+
+        manager.activeProviderID = CHClaudeProvider.providerID
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager)
+                == CHClaudeProvider().displayName
+        )
+    }
+
+    @Test("text(for:) returns the configured fallback for an unknown provider ID")
+    func activeProviderTextFallsBack() {
+        let manager = CHAIManager.shared
+        let previous = manager.activeProviderID
+        defer { manager.activeProviderID = previous }
+
+        manager.activeProviderID = "does-not-exist"
+        #expect(CHAIActiveProviderLabel.text(for: manager) == "None")
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager, fallback: "Not configured")
+                == "Not configured"
+        )
+    }
 }

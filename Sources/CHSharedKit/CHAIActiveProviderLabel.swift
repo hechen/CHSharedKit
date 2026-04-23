@@ -78,7 +78,19 @@ public struct CHAIActiveProviderLabel: View {
         // SwiftUI sees the @StateObject access and re-evaluates when
         // objectWillChange fires.
         let _ = manager.activeProviderID
-        Text(manager.activeProvider?.displayName ?? fallback)
+        Text(Self.text(for: manager, fallback: fallback))
+    }
+
+    /// Unit-testable projection of the label's rendered text.
+    ///
+    /// `CHAISettingsView` and `CHAISettingsContent` use this to populate
+    /// the "Active Provider" summary row at the top of the detail page,
+    /// so the same resolution rule drives every on-screen surface that
+    /// names the current provider. Unit tests pin the projection without
+    /// needing a SwiftUI renderer.
+    @MainActor
+    public static func text(for manager: CHAIManager, fallback: String = "None") -> String {
+        manager.activeProvider?.displayName ?? fallback
     }
 }
 

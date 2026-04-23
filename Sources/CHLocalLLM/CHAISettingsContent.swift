@@ -69,7 +69,6 @@ public struct CHAISettingsContent: View {
     public let appIdentifier: AppIdentifier
 
     @StateObject private var aiManager = CHAIManager.shared
-    @State private var selectedProvider: String = CHAIManager.shared.activeProviderID
     @State private var openaiKey = ""
     @State private var claudeKey = ""
     @State private var customURL = CHCustomEndpointProvider.baseURL
@@ -89,6 +88,14 @@ public struct CHAISettingsContent: View {
         self.appIdentifier = appIdentifier
     }
 
+    /// Source of truth for the currently-selected provider — reads
+    /// straight from the observed `CHAIManager` so the checkmark, the
+    /// expanded per-provider section, and the "Active Provider" summary
+    /// row stay in sync with any write. Replaces a prior `@State` mirror
+    /// that captured `CHAIManager.shared.activeProviderID` once at view
+    /// init and drifted stale on re-push.
+    private var selectedProvider: String { aiManager.activeProviderID }
+
     // Active installed model — checks allModels so custom models are found too
     private var activeModel: LocalModelInfo? {
         guard let id = modelStore.activeModelID else { return nil }
@@ -96,6 +103,16 @@ public struct CHAISettingsContent: View {
     }
 
     public var body: some View {
+        // Summary row — always shows the currently-active provider so
+        // the user sees at a glance what the app will use before
+        // scrolling through the picker below.
+        Section {
+            LabeledContent("Active Provider") {
+                Text(CHAIActiveProviderLabel.text(for: aiManager))
+                    .foregroundStyle(.secondary)
+            }
+        }
+
         Section {
             // On-Device — smart tap: management sheet if installed, picker if not
             onDeviceProviderRow
@@ -304,9 +321,7 @@ public struct CHAISettingsContent: View {
             }
         }
         // Management sheet — shown when a model is already installed
-        .sheet(isPresented: $showModelManagement, onDismiss: {
-            selectedProvider = aiManager.activeProviderID
-        }) {
+        .sheet(isPresented: $showModelManagement) {
             NavigationStack {
                 OnDeviceModelManagementView(
                     store: modelStore,
@@ -320,9 +335,7 @@ public struct CHAISettingsContent: View {
             }
         }
         // Download/browse picker sheet
-        .sheet(isPresented: $showModelPicker, onDismiss: {
-            selectedProvider = aiManager.activeProviderID
-        }) {
+        .sheet(isPresented: $showModelPicker) {
             NavigationStack {
                 ModelPickerView(appIdentifier: appIdentifier) {
                     showModelPicker = false
@@ -410,7 +423,6 @@ public struct CHAISettingsContent: View {
     ) -> some View {
         Button {
             guard available else { return }
-            selectedProvider = id
             aiManager.activeProviderID = id
             #if os(iOS)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
