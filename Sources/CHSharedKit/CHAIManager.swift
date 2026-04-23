@@ -16,7 +16,14 @@ public final class CHAIManager: ObservableObject {
     }
     @Published public var isProcessing = false
     @Published public var lastError: String?
-    
+
+    /// Restricts which providers `availableProviders` and
+    /// `CHAISettingsView` expose. Apps that ship an on-device-only
+    /// privacy story should set this to `.onDeviceOnly` at launch —
+    /// cloud-provider rows will never appear in the settings picker.
+    /// Defaults to `.all` so existing integrations behave as before.
+    @Published public var availableProvidersFilter: CHAIProviderFilter = .all
+
     private var providers: [String: any CHAIProvider] = [:]
     
     private init() {
@@ -61,9 +68,23 @@ public final class CHAIManager: ObservableObject {
         providers[activeProviderID]
     }
     
-    /// List of available providers with their IDs and names
+    /// List of available providers with their IDs and names, filtered
+    /// by `availableProvidersFilter`. Settings UIs should read this
+    /// property — it already honors on-device-only / cloud-only etc.
     public var availableProviders: [(id: String, name: String)] {
-        providers.values.map { (id: $0.id, name: $0.displayName) }.sorted { $0.name < $1.name }
+        providers.values
+            .filter { availableProvidersFilter.contains($0.category) }
+            .map { (id: $0.id, name: $0.displayName) }
+            .sorted { $0.name < $1.name }
+    }
+
+    /// Unfiltered providers — use only when the caller truly needs
+    /// every registered provider (e.g., diagnostic UIs). App settings
+    /// UIs should prefer `availableProviders`.
+    public var allProviders: [(id: String, name: String)] {
+        providers.values
+            .map { (id: $0.id, name: $0.displayName) }
+            .sorted { $0.name < $1.name }
     }
     
     /// Check if Apple Intelligence is available

@@ -23,17 +23,23 @@ public struct CHAISettingsView: View {
     public var body: some View {
         List {
             Section("Provider") {
-                // Apple Intelligence
-                providerRow(
-                    CHAppleIntelligenceProvider.providerID,
-                    name: "Apple Intelligence",
-                    badge: "Free",
-                    badgeColor: .green,
-                    available: aiManager.isAppleIntelligenceAvailable,
-                    unavailableReason: "Requires iOS 26+"
-                )
-                
-                // Other providers
+                // Apple Intelligence — only when the current provider
+                // filter opts it in (it's part of `.onDeviceOnly` and
+                // `.all`, the two common cases).
+                if aiManager.availableProvidersFilter.contains(.appleIntelligence) {
+                    providerRow(
+                        CHAppleIntelligenceProvider.providerID,
+                        name: "Apple Intelligence",
+                        badge: "Free",
+                        badgeColor: .green,
+                        available: aiManager.isAppleIntelligenceAvailable,
+                        unavailableReason: "Requires iOS 26+"
+                    )
+                }
+
+                // Other providers — `availableProviders` already honors
+                // the filter, so an on-device-only integration never
+                // renders cloud-key rows here.
                 ForEach(aiManager.availableProviders.filter { $0.id != CHAppleIntelligenceProvider.providerID }, id: \.id) { provider in
                     providerRow(provider.id, name: provider.name, badge: nil, badgeColor: .clear, available: true)
                 }
