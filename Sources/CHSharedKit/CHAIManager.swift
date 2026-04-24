@@ -48,6 +48,50 @@ public final class CHAIManager: ObservableObject {
     @Published public var isProcessing = false
     @Published public var lastError: String?
 
+    // MARK: - Unified active-selection (2.4.5)
+    //
+    // ## The bug this fixes
+    //
+    // Before 2.4.5, "what is the current on-device model" was stored in
+    // three places that could drift:
+    //
+    //   1. `LocalModelStore.activeModelID` — App Group UserDefaults,
+    //      drives the row subtitle + On-Device detail section.
+    //   2. `CHAIManager.providers["on-device-llm"]` — the last
+    //      `CHLocalLLMProvider` instance registered via
+    //      `registerProvider`. Its `displayName` embedded the model name
+    //      captured at construction (e.g. `"On-Device AI (Qwen 2.5 1.5B)"`).
+    //   3. `CHAIActiveProviderLabel.text(for:)` read (2) and therefore
+    //      the "Active Provider" summary row re-used whichever model
+    //      name was baked into the cached provider instance — which
+    //      diverged from (1) on relaunch (LocalModelStore restores
+    //      persisted activeModelID but never re-registers the provider)
+    //      and after model switches where the dict entry was replaced
+    //      but the observing view didn't rebind.
+    //
+    // Chen's Build 257 screenshot on EatWisely was the proof point:
+    //   - Active Provider cell: "On-Device AI (Qwen 2.5 1.5B)"     ← stale (2)
+    //   - AI Provider row:      "On-Device AI · Phi-3.5 Mini" ✓    ← fresh (1)
+    //   - On-Device section:    "Phi-3.5 Mini · Active"        ✓   ← fresh (1)
+    //
+    // ## The fix
+    //
+    // `CHAIManager` now owns the ONE source of truth: a pair of
+    // `@Published` properties (`activeModelID` + `activeModelDisplayName`)
+    // persisted to UserDefaults and written via
+    // `setActiveOnDeviceModel(id:displayName:)`. Every consumer that
+    // wants to display "the current model" must read through these
+    // properties. `CHLocalLLMProvider.displayName` no longer embeds a
+    // model suffix — the suffix is composed by
+    // `CHAIActiveProviderLabel` from the manager's published state, so
+    // one @Published write propagates to every observing view.
+    //
+    // `LocalModelStore.setActiveModel`/`clearActiveModel` delegate to
+    // this method so the previous persistence path is preserved but the
+    // canonical value lives here.
+    @Published public private(set) var activeModelID: String?
+    @Published public private(set) var activeModelDisplayName: String?
+
     /// Restricts which providers `availableProviders` and
     /// `CHAISettingsView` expose. Apps that ship an on-device-only
     /// privacy story should set this to `.onDeviceOnly` at launch —
@@ -56,7 +100,10 @@ public final class CHAIManager: ObservableObject {
     @Published public var availableProvidersFilter: CHAIProviderFilter = .all
 
     private var providers: [String: any CHAIProvider] = [:]
-    
+
+    private static let activeModelIDKey = "clawd_ai_active_model_id"
+    private static let activeModelDisplayNameKey = "clawd_ai_active_model_name"
+
     private init() {
         // Check if Apple Intelligence is available and default to it, otherwise use OpenAI
         let defaultProvider: String
@@ -69,9 +116,43 @@ public final class CHAIManager: ObservableObject {
         #else
         defaultProvider = CHOpenAIProvider.providerID
         #endif
-        
+
         self.activeProviderID = UserDefaults.standard.string(forKey: "clawd_ai_active_provider") ?? defaultProvider
+        // Restore the persisted on-device model selection so the
+        // "Active Provider" summary row renders correctly on cold start
+        // even before LocalModelStore has a chance to call
+        // setActiveOnDeviceModel (which happens only after a user tap or
+        // a fresh install-and-use).
+        self.activeModelID = UserDefaults.standard.string(forKey: Self.activeModelIDKey)
+        self.activeModelDisplayName = UserDefaults.standard.string(forKey: Self.activeModelDisplayNameKey)
         registerBuiltInProviders()
+    }
+
+    /// Record the currently-active on-device model. Called by
+    /// `LocalModelStore.setActiveModel` — apps SHOULD NOT call this
+    /// directly; go through `LocalModelStore` so the model file, the
+    /// CHLocalLLMProvider instance, and this published state all update
+    /// together.
+    ///
+    /// Writing both properties here in order means a single SwiftUI
+    /// re-eval observes the final state. The @Published wrappers fire
+    /// `objectWillChange` twice in quick succession — harmless, SwiftUI
+    /// coalesces — and persistence runs synchronously on the main tick
+    /// so a subsequent cold launch reads the same values.
+    public func setActiveOnDeviceModel(id: String, displayName: String) {
+        self.activeModelID = id
+        self.activeModelDisplayName = displayName
+        UserDefaults.standard.set(id, forKey: Self.activeModelIDKey)
+        UserDefaults.standard.set(displayName, forKey: Self.activeModelDisplayNameKey)
+    }
+
+    /// Clear the on-device model selection. Called by
+    /// `LocalModelStore.clearActiveModel` / `deleteModel`.
+    public func clearActiveOnDeviceModel() {
+        self.activeModelID = nil
+        self.activeModelDisplayName = nil
+        UserDefaults.standard.removeObject(forKey: Self.activeModelIDKey)
+        UserDefaults.standard.removeObject(forKey: Self.activeModelDisplayNameKey)
     }
     
     private func registerBuiltInProviders() {

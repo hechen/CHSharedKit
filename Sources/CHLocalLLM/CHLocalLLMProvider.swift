@@ -42,7 +42,19 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
 
 extension CHLocalLLMProvider: CHAIProvider {
     public var id: String { Self.providerID }
-    public var displayName: String { "On-Device AI (\(modelInfo.displayName))" }
+
+    /// Provider-level display name — intentionally does NOT include the
+    /// active model name. The model suffix is composed by
+    /// `CHAIActiveProviderLabel` from `CHAIManager.activeModelDisplayName`,
+    /// which is the single observable source of truth for "which
+    /// on-device model is currently selected". Embedding the model name
+    /// here caused the 2.4.4 stale-cell bug: the provider instance
+    /// captured `modelInfo.displayName` at construction, so after
+    /// `LocalModelStore.setActiveModel(newModel)` replaced the dict
+    /// entry, any view that read `manager.activeProvider?.displayName`
+    /// without a direct dependency on `activeModelDisplayName` kept
+    /// rendering the old name. See CHAIManager's 2.4.5 notes.
+    public var displayName: String { "On-Device AI" }
     public var supportsVision: Bool { false }
 
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {

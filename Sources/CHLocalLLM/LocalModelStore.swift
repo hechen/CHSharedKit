@@ -128,6 +128,24 @@ public final class LocalModelStore {
         // Reconnect any in-flight background download (e.g. after app relaunch)
         reconnectPendingTasks()
 
+        // 2.4.5: seed CHAIManager's @Published model selection from the
+        // persisted activeModelID so the unified "Active Provider"
+        // label renders the correct model suffix on cold launch —
+        // without this, CHAIManager's own persistence (UserDefaults.standard)
+        // would start at nil for apps upgrading from 2.4.4 and the label
+        // would fall back to bare "On-Device AI" until the user re-taps
+        // a model in the picker. LocalModelStore's own store (App Group
+        // UserDefaults) is the authoritative source for on-device
+        // selection; we mirror it into CHAIManager here.
+        if let id = activeModelID,
+           let info = (LocalModelCatalog.all + customModels.map(localModelInfo(for:)))
+               .first(where: { $0.id == id }) {
+            CHAIManager.shared.setActiveOnDeviceModel(
+                id: id,
+                displayName: info.displayName
+            )
+        }
+
         // Migrate model files from per-app Application Support → shared container (runs once, background).
         let sharedDir = Self.resolveModelsDirectory(appGroupID: "group.app.chen.sharedllm")
         let legacyDir = FileManager.default
@@ -322,6 +340,14 @@ public final class LocalModelStore {
     // MARK: - Active model
 
     /// Make `model` the active on-device provider. Registers `CHLocalLLMProvider` and persists the choice.
+    ///
+    /// 2.4.5: also propagates the selection to
+    /// `CHAIManager.setActiveOnDeviceModel(id:displayName:)` so the
+    /// unified "Active Provider" label composes the correct model name
+    /// from a single observable source. Before 2.4.5 the label relied
+    /// on the provider instance's `displayName`, which embedded the
+    /// model name captured at construction and drifted stale on model
+    /// switches and cold launches.
     public func setActiveModel(_ model: LocalModelInfo) {
         guard isInstalled(model) else { return }
         activeModelID = model.id
@@ -331,13 +357,22 @@ public final class LocalModelStore {
             modelInfo: model
         )
         CHAIManager.shared.registerProvider(provider)
+        CHAIManager.shared.setActiveOnDeviceModel(
+            id: model.id,
+            displayName: model.displayName
+        )
         CHAIManager.shared.activeProviderID = CHLocalLLMProvider.providerID
     }
 
     /// Clear the active model selection (e.g. after deleting it).
+    ///
+    /// 2.4.5: also clears `CHAIManager.activeModelID` /
+    /// `activeModelDisplayName` so the "Active Provider" label drops
+    /// the stale model suffix immediately.
     public func clearActiveModel() {
         activeModelID = nil
         sharedDefaults.removeObject(forKey: Self.activeModelKey)
+        CHAIManager.shared.clearActiveOnDeviceModel()
     }
 
     /// Reset download state to idle (call after a failed download to allow retry).

@@ -73,11 +73,14 @@ public struct CHAIActiveProviderLabel: View {
     }
 
     public var body: some View {
-        // The read of `manager.activeProviderID` establishes the
-        // dependency — even though we project through `activeProvider`,
-        // SwiftUI sees the @StateObject access and re-evaluates when
-        // objectWillChange fires.
+        // Explicit reads of the properties `text(for:)` depends on —
+        // SwiftUI uses these accesses to wire up dependency tracking
+        // against the @StateObject. When `CHAIManager` fires
+        // `objectWillChange` (either because `activeProviderID` changed
+        // or because `setActiveOnDeviceModel` swapped the model
+        // display name), the view re-evaluates and the label updates.
         let _ = manager.activeProviderID
+        let _ = manager.activeModelDisplayName
         Text(Self.text(for: manager, fallback: fallback))
     }
 
@@ -88,9 +91,31 @@ public struct CHAIActiveProviderLabel: View {
     /// so the same resolution rule drives every on-screen surface that
     /// names the current provider. Unit tests pin the projection without
     /// needing a SwiftUI renderer.
+    ///
+    /// ## 2.4.5: composed display
+    ///
+    /// For the on-device provider, the rendered text is
+    /// `"On-Device AI (<model display name>)"` — the model suffix comes
+    /// from `CHAIManager.activeModelDisplayName`, the single source of
+    /// truth for the current model. Before 2.4.5 the suffix was baked
+    /// into `CHLocalLLMProvider.displayName` at construction time and
+    /// drifted stale after model switches; see CHAIManager's 2.4.5
+    /// notes for the full story.
+    ///
+    /// For every other provider, the rendered text is simply the
+    /// provider's `displayName`.
     @MainActor
     public static func text(for manager: CHAIManager, fallback: String = "None") -> String {
-        manager.activeProvider?.displayName ?? fallback
+        guard let provider = manager.activeProvider else { return fallback }
+        // On-device provider: compose the model suffix from the
+        // manager's @Published selection so every observing view
+        // updates in lockstep with a single write.
+        if provider.id == "on-device-llm",
+           let model = manager.activeModelDisplayName,
+           !model.isEmpty {
+            return "\(provider.displayName) (\(model))"
+        }
+        return provider.displayName
     }
 }
 

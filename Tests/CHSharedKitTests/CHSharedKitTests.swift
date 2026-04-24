@@ -218,3 +218,180 @@ struct CHAIActiveProviderLabelTests {
         )
     }
 }
+
+// MARK: - 2.4.5 — Unified on-device model selection
+//
+// Regression tests for Chen's Build-257 "three sources diverge" bug:
+//
+//   - Active Provider cell: "On-Device AI (Qwen 2.5 1.5B)"  ← WRONG
+//   - AI Provider row:      "On-Device AI · Phi-3.5 Mini"   ← correct
+//   - On-Device section:    "Phi-3.5 Mini · Active"         ← correct
+//
+// Before 2.4.5, the "Active Provider" label read
+// `manager.activeProvider?.displayName`, and `CHLocalLLMProvider`
+// composed its displayName as `"On-Device AI (\(modelInfo.displayName))"`
+// with modelInfo captured at construction time. Replacing the dict
+// entry via `LocalModelStore.setActiveModel(newModel)` would update the
+// subtitle and detail sections (both read LocalModelStore.activeModelID
+// directly) but the summary label would often keep the previous
+// provider's cached `displayName` string, producing the three-way
+// divergence.
+//
+// The 2.4.5 fix: `CHAIManager` owns two @Published properties,
+// `activeModelID` and `activeModelDisplayName`, written via
+// `setActiveOnDeviceModel(id:displayName:)` and
+// `clearActiveOnDeviceModel()`. `CHLocalLLMProvider.displayName` drops
+// the model suffix; `CHAIActiveProviderLabel.text(for:)` composes
+// `"On-Device AI (<activeModelDisplayName>)"` by reading the manager's
+// @Published state, so one write propagates to every observing view.
+@MainActor
+@Suite("CHAIManager 2.4.5 active on-device model selection")
+struct CHAIActiveOnDeviceModelTests {
+
+    /// Matches the constant in CHLocalLLM. Duplicated as a literal here
+    /// so the CHSharedKit test target doesn't need a dependency on
+    /// CHLocalLLM — the whole point of the 2.4.5 fix is that the
+    /// CHSharedKit-side label resolver hardcodes this string too.
+    private let onDeviceProviderID = "on-device-llm"
+
+    @Test("setActiveOnDeviceModel writes both @Published properties + fires objectWillChange")
+    func setActiveOnDeviceModelFiresObjectWillChange() async {
+        let manager = CHAIManager.shared
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        var fired = 0
+        let cancellable = manager.objectWillChange.sink { _ in fired += 1 }
+        defer { cancellable.cancel() }
+
+        manager.setActiveOnDeviceModel(id: "qwen-2.5-1.5b", displayName: "Qwen 2.5 1.5B")
+        #expect(manager.activeModelID == "qwen-2.5-1.5b")
+        #expect(manager.activeModelDisplayName == "Qwen 2.5 1.5B")
+        // Two @Published writes — each fires objectWillChange.
+        #expect(fired >= 1, "setActiveOnDeviceModel must fire objectWillChange at least once")
+
+        // The writes persist synchronously — a fresh UserDefaults read
+        // after the call must reflect the new values.
+        let persistedID = UserDefaults.standard.string(forKey: "clawd_ai_active_model_id")
+        let persistedName = UserDefaults.standard.string(forKey: "clawd_ai_active_model_name")
+        #expect(persistedID == "qwen-2.5-1.5b")
+        #expect(persistedName == "Qwen 2.5 1.5B")
+    }
+
+    @Test("clearActiveOnDeviceModel nils both properties")
+    func clearActiveOnDeviceModel() {
+        let manager = CHAIManager.shared
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        manager.setActiveOnDeviceModel(id: "phi-3.5-mini", displayName: "Phi-3.5 Mini")
+        #expect(manager.activeModelID != nil)
+
+        manager.clearActiveOnDeviceModel()
+        #expect(manager.activeModelID == nil)
+        #expect(manager.activeModelDisplayName == nil)
+    }
+
+    /// **The exact Chen scenario.** Set Qwen → switch to Phi → assert the
+    /// "Active Provider" label text. Before 2.4.5 this would return
+    /// "On-Device AI (Qwen 2.5 1.5B)" (the baked-in displayName on the
+    /// first-registered provider instance); 2.4.5 returns the composed
+    /// "On-Device AI (Phi-3.5 Mini)".
+    @Test("Chen scenario — switching active model flips the composed label")
+    func chenScenario_switchingModelFlipsLabel() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            manager.activeProviderID = previousProvider
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        // Register a stub on-device provider so `activeProvider` resolves —
+        // without it, the label would short-circuit to the fallback.
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+
+        // Initial selection: Qwen.
+        manager.setActiveOnDeviceModel(id: "qwen-2.5-1.5b", displayName: "Qwen 2.5 1.5B")
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager)
+                == "On-Device AI (Qwen 2.5 1.5B)"
+        )
+
+        // User switches to Phi in the picker — setActiveModel writes
+        // through to setActiveOnDeviceModel. (In the live app this is
+        // called from LocalModelStore.setActiveModel; here we invoke the
+        // manager method directly since CHLocalLLM lives in another
+        // target.)
+        manager.setActiveOnDeviceModel(id: "phi-3.5-mini", displayName: "Phi-3.5 Mini")
+
+        // The label must reflect Phi — no stale Qwen suffix.
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager)
+                == "On-Device AI (Phi-3.5 Mini)",
+            "Active Provider label must reflect the latest selection — this is the Chen Build-257 regression"
+        )
+    }
+
+    @Test("Label falls back to bare provider displayName when no model selected")
+    func labelOmitsSuffixWhenModelCleared() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            manager.activeProviderID = previousProvider
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+        manager.clearActiveOnDeviceModel()
+
+        // Bare provider displayName — no "(nil)" or "()" leaked into UI.
+        #expect(CHAIActiveProviderLabel.text(for: manager) == "On-Device AI")
+    }
+}
+
+/// Minimal in-test stub that mirrors the CHLocalLLM module's
+/// `CHLocalLLMProvider.id == "on-device-llm"` so the 2.4.5 label
+/// composition branch activates. Its `displayName` is the bare
+/// "On-Device AI" string — matches the post-2.4.5 production provider.
+private struct StubOnDeviceProvider: CHAIProvider, Sendable {
+    var id: String { "on-device-llm" }
+    var displayName: String { "On-Device AI" }
+    var supportsVision: Bool { false }
+    // `category` is inferred from `id` via the extension in
+    // CHAIProviderFilter.swift — "on-device-llm" → .onDeviceLocal, so no
+    // explicit override needed here.
+
+    func sendMessage(prompt: String, systemPrompt: String?) async throws -> String { "" }
+    func validate() async throws -> Bool { true }
+    func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+}
