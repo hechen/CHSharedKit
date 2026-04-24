@@ -82,7 +82,6 @@ public struct CHAISettingsContent: View {
     @State private var validationResult: String?
     @State private var showingAPIKey = false
     @State private var showModelPicker = false
-    @State private var showModelManagement = false
 
     @State private var modelStore = LocalModelStore.shared
 
@@ -304,7 +303,7 @@ public struct CHAISettingsContent: View {
             // Onboarding: if no model is installed yet, auto-open the picker
             // so the user can download one. If a model is already active,
             // just leave it selected — the detail section below exposes
-            // "Change Model" for management.
+            // "Change Model" which jumps straight to the catalog.
             if activeModel == nil {
                 showModelPicker = true
             }
@@ -330,21 +329,10 @@ public struct CHAISettingsContent: View {
                 }
             }
         }
-        // Management sheet — shown when a model is already installed
-        .sheet(isPresented: $showModelManagement) {
-            NavigationStack {
-                OnDeviceModelManagementView(
-                    store: modelStore,
-                    onChangeTapped: {
-                        showModelManagement = false
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                            showModelPicker = true
-                        }
-                    }
-                )
-            }
-        }
-        // Download/browse picker sheet
+        // Download/browse picker sheet — tapping "Change Model" on the
+        // detail row opens this directly (2.4.6). Removed a prior
+        // management-intermediate sheet that added a redundant screen
+        // plus a 0.35s dismiss-then-present delay.
         .sheet(isPresented: $showModelPicker) {
             NavigationStack {
                 ModelPickerView(appIdentifier: appIdentifier) {
@@ -371,7 +359,7 @@ public struct CHAISettingsContent: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Button("Change Model") { showModelManagement = true }
+                Button("Change Model") { showModelPicker = true }
                     .foregroundStyle(.tint)
             } else if modelStore.activeDownloadModelID != nil {
                 LocalModelDownloadView()
@@ -538,65 +526,3 @@ public struct CHAISettingsContent: View {
     }
 }
 
-// MARK: - OnDeviceModelManagementView
-
-/// Sheet shown when the user taps On-Device and a model is already installed.
-/// Lets the user inspect the active model and optionally switch to a different one.
-private struct OnDeviceModelManagementView: View {
-    let store: LocalModelStore
-    let onChangeTapped: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    private var activeModel: LocalModelInfo? {
-        guard let id = store.activeModelID else { return nil }
-        return store.allModels.first { $0.id == id && store.isInstalled($0) }
-    }
-
-    private func formattedSize(_ bytes: Int64) -> String {
-        let gb = Double(bytes) / 1_073_741_824
-        if gb >= 1 { return String(format: "%.1f GB", gb) }
-        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
-    }
-
-    var body: some View {
-        List {
-            if let model = activeModel {
-                Section("Active Model") {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                            Text(model.displayName).font(.headline)
-                        }
-                        Text("Active · Runs offline on this device")
-                            .font(.caption).foregroundStyle(.secondary)
-                        Label(formattedSize(store.totalStorageUsed), systemImage: "internaldrive")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                Section {
-                    Button("Change Model") {
-                        onChangeTapped()
-                    }
-                } footer: {
-                    Text("Opens the full model catalog to download a different model.")
-                }
-            } else {
-                Section {
-                    ContentUnavailableView("No Model Installed", systemImage: "cpu")
-                }
-            }
-        }
-        .navigationTitle("On-Device AI")
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Done") { dismiss() }
-            }
-        }
-    }
-}
