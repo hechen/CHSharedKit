@@ -137,6 +137,17 @@ public final class LocalModelStore {
         // a model in the picker. LocalModelStore's own store (App Group
         // UserDefaults) is the authoritative source for on-device
         // selection; we mirror it into CHAIManager here.
+        //
+        // 2.4.7: ALSO register the CHLocalLLMProvider instance, otherwise
+        // `CHAIManager.activeProvider` resolves to nil on cold launch
+        // whenever the persisted `activeProviderID == "on-device-llm"`
+        // and the active model is not the one a host app eagerly
+        // registers at launch. Symptom: the unified "Active Provider"
+        // label falls back to "None" while the on-device model picker
+        // still shows the model selected — see Chen's Closet Build 472
+        // screenshot. The 2.4.5 fix mirrored the model-name properties
+        // but missed the dict registration; the dict is not @Published
+        // so a later host registration cannot un-stick the label.
         if let id = activeModelID,
            let info = (LocalModelCatalog.all + customModels.map(localModelInfo(for:)))
                .first(where: { $0.id == id }) {
@@ -144,6 +155,13 @@ public final class LocalModelStore {
                 id: id,
                 displayName: info.displayName
             )
+            if isInstalled(info) {
+                let provider = CHLocalLLMProvider(
+                    modelURL: modelURL(for: info),
+                    modelInfo: info
+                )
+                CHAIManager.shared.registerProvider(provider)
+            }
         }
 
         // Migrate model files from per-app Application Support → shared container (runs once, background).

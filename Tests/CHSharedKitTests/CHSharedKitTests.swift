@@ -353,6 +353,65 @@ struct CHAIActiveOnDeviceModelTests {
         )
     }
 
+    /// **2.4.7 regression guard.** Cold-launch path: the host SDK
+    /// (`LocalModelStore.init`) restores `activeProviderID == "on-device-llm"`
+    /// from UserDefaults and mirrors the persisted model into
+    /// `setActiveOnDeviceModel(id:displayName:)`, BUT must also call
+    /// `registerProvider(CHLocalLLMProvider(...))` so the dict has an
+    /// entry for the persisted id. Skipping the registration was the
+    /// 2.4.5/2.4.6 gap — `providers` is not @Published, so a later
+    /// registration cannot un-stick the "Active Provider" label once it
+    /// has rendered "None".
+    ///
+    /// Test simulates the post-2.4.7 cold-launch state: register the
+    /// on-device provider stub, set the persisted IDs and model name,
+    /// assert `activeProvider` resolves and the label composes the
+    /// model suffix. If a future refactor drops the 2.4.7 registration
+    /// from `LocalModelStore.init`, this test still passes — it only
+    /// pins the contract that the host SDK must honor. The actual
+    /// `LocalModelStore.init` path is verified by the host CHLocalLLM
+    /// module's integration tests + on-sim verification.
+    @Test("2.4.7 cold-launch — host registration path produces a non-nil activeProvider")
+    func coldLaunchRegistrationProducesNonNilProvider() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            manager.activeProviderID = previousProvider
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        // Simulate the 2.4.7 LocalModelStore.init sequence: register
+        // first, then mirror persisted selection.
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+        manager.setActiveOnDeviceModel(
+            id: "deepseek-r1-1.5b",
+            displayName: "DeepSeek-R1 1.5B"
+        )
+
+        // The bug Chen reported: this used to resolve to nil because
+        // LocalModelStore.init mirrored the model name but didn't
+        // register the provider, leaving providers["on-device-llm"]
+        // unpopulated. The 2.4.7 fix in LocalModelStore.swift adds the
+        // missing `registerProvider()` call alongside the existing
+        // `setActiveOnDeviceModel()` call.
+        #expect(
+            manager.activeProvider != nil,
+            "Active provider must resolve on cold launch when host SDK registers + restores"
+        )
+        #expect(
+            CHAIActiveProviderLabel.text(for: manager)
+                == "On-Device AI (DeepSeek-R1 1.5B)",
+            "Cold-launch label must compose provider + model suffix from persisted state"
+        )
+    }
+
     @Test("Label falls back to bare provider displayName when no model selected")
     func labelOmitsSuffixWhenModelCleared() {
         let manager = CHAIManager.shared
