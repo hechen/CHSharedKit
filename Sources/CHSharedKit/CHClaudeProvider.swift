@@ -5,23 +5,18 @@ import Foundation
 /// Anthropic Claude provider for text and vision requests
 public struct CHClaudeProvider: CHAIProvider, Sendable {
     public static let providerID = "claude"
-    private static let keychainService = "app.chen.clawdappkit.claude"
-    
+
     public var id: String { Self.providerID }
     public var displayName: String { "Claude (Anthropic)" }
     public var supportsVision: Bool { true }
-    
+
     public init() {}
-    
+
+    /// API key for Anthropic Claude. Reads/writes route through
+    /// `CHAITokenStore` (2.4.8) — keyed by `<bundleID>.claude`.
     public static var apiKey: String? {
-        get { CHAIKeychain.load(service: keychainService) }
-        set {
-            if let key = newValue {
-                CHAIKeychain.save(key: key, service: keychainService)
-            } else {
-                CHAIKeychain.delete(service: keychainService)
-            }
-        }
+        get { CHAITokenStore.token(for: providerID) }
+        set { CHAITokenStore.setToken(newValue, for: providerID) }
     }
     
     public static var model: String {

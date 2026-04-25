@@ -6,23 +6,18 @@ import Foundation
 /// Uses OpenAI-compatible API format since most self-hosted solutions support it.
 public struct CHCustomEndpointProvider: CHAIProvider, Sendable {
     public static let providerID = "custom"
-    private static let keychainService = "app.chen.clawdappkit.custom"
-    
+
     public var id: String { Self.providerID }
     public var displayName: String { "Custom Endpoint" }
     public var supportsVision: Bool { true }
-    
+
     public init() {}
-    
+
+    /// API key for the custom endpoint. Reads/writes route through
+    /// `CHAITokenStore` (2.4.8) — keyed by `<bundleID>.custom`.
     public static var apiKey: String? {
-        get { CHAIKeychain.load(service: keychainService) }
-        set {
-            if let key = newValue {
-                CHAIKeychain.save(key: key, service: keychainService)
-            } else {
-                CHAIKeychain.delete(service: keychainService)
-            }
-        }
+        get { CHAITokenStore.token(for: providerID) }
+        set { CHAITokenStore.setToken(newValue, for: providerID) }
     }
     
     public static var baseURL: String {

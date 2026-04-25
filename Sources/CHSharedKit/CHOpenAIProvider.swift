@@ -5,23 +5,20 @@ import Foundation
 /// OpenAI GPT provider for text and vision requests
 public struct CHOpenAIProvider: CHAIProvider, Sendable {
     public static let providerID = "openai"
-    private static let keychainService = "app.chen.clawdappkit.openai"
-    
+
     public var id: String { Self.providerID }
     public var displayName: String { "OpenAI" }
     public var supportsVision: Bool { true }
-    
+
     public init() {}
-    
+
+    /// API key for OpenAI. Reads/writes route through `CHAITokenStore`,
+    /// which keys the keychain entry by `<bundleID>.openai` so each app
+    /// has its own slot AND switching between providers no longer
+    /// blows away the previously-entered token. (2.4.8)
     public static var apiKey: String? {
-        get { CHAIKeychain.load(service: keychainService) }
-        set {
-            if let key = newValue {
-                CHAIKeychain.save(key: key, service: keychainService)
-            } else {
-                CHAIKeychain.delete(service: keychainService)
-            }
-        }
+        get { CHAITokenStore.token(for: providerID) }
+        set { CHAITokenStore.setToken(newValue, for: providerID) }
     }
     
     public static var model: String {

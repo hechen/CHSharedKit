@@ -454,3 +454,227 @@ private struct StubOnDeviceProvider: CHAIProvider, Sendable {
         AsyncThrowingStream { $0.finish() }
     }
 }
+
+// MARK: - 2.4.8 — CHAIActiveProviderLabelView resolution
+//
+// Pins the resolver shape consumers (closet-ios SettingsView.swift:357-363,
+// GymLog SettingsView_GL.swift:23, EatWisely AIService.swift:176) hand-rolled
+// inline. The view is a bare-Text wrapper around `label(for:)` plus an
+// @ObservedObject binding to CHAIManager.shared, so test coverage on the
+// resolver is sufficient — SwiftUI body re-evaluation is the framework's
+// concern once the binding is in place, and the
+// `CHAIManager observability` suite above already pins that
+// `objectWillChange` fires on the writes the view observes.
+@MainActor
+@Suite("CHAIActiveProviderLabelView resolution (2.4.8)")
+struct CHAIActiveProviderLabelViewTests {
+
+    private let onDeviceProviderID = "on-device-llm"
+
+    @Test("Cloud provider set — label is the provider's displayName")
+    func cloudProviderRendersDisplayName() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        defer { manager.activeProviderID = previousProvider }
+
+        manager.activeProviderID = CHOpenAIProvider.providerID
+        #expect(CHAIActiveProviderLabelView.label(for: manager) == "OpenAI")
+
+        manager.activeProviderID = CHClaudeProvider.providerID
+        #expect(CHAIActiveProviderLabelView.label(for: manager) == "Claude (Anthropic)")
+    }
+
+    @Test("On-device with model — label is 'On-Device AI · <model>'")
+    func onDeviceWithModelComposesDotSeparator() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            manager.activeProviderID = previousProvider
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+        manager.setActiveOnDeviceModel(id: "phi-3.5-mini", displayName: "Phi-3.5 Mini")
+        #expect(
+            CHAIActiveProviderLabelView.label(for: manager)
+                == "On-Device AI · Phi-3.5 Mini"
+        )
+    }
+
+    @Test("On-device without model — label is bare 'On-Device AI'")
+    func onDeviceWithoutModelOmitsSuffix() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        let previousID = manager.activeModelID
+        let previousName = manager.activeModelDisplayName
+        defer {
+            manager.activeProviderID = previousProvider
+            if let id = previousID, let name = previousName {
+                manager.setActiveOnDeviceModel(id: id, displayName: name)
+            } else {
+                manager.clearActiveOnDeviceModel()
+            }
+        }
+
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+        manager.clearActiveOnDeviceModel()
+        #expect(CHAIActiveProviderLabelView.label(for: manager) == "On-Device AI")
+    }
+
+    @Test("Unknown provider ID — label is 'Not Set'")
+    func unknownProviderFallsBackToNotSet() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        defer { manager.activeProviderID = previousProvider }
+
+        manager.activeProviderID = "provider-does-not-exist"
+        #expect(CHAIActiveProviderLabelView.label(for: manager) == "Not Set")
+    }
+}
+
+// MARK: - 2.4.8 — CHAITokenStore per-provider isolation
+//
+// Pins the per-provider keychain isolation contract: writing a token
+// for provider A must not affect provider B's slot, and switching the
+// CHAIManager active provider back to A must surface A's token (not
+// the value that was overwriting it pre-2.4.8).
+//
+// Tests use `CHAITokenStore._testOverride` so they don't touch the
+// real keychain — `swift test` on macOS without entitlements often
+// returns errSecMissingEntitlement on `SecItemAdd`, and we don't want
+// CI flakiness here.
+@MainActor
+@Suite("CHAITokenStore per-provider isolation (2.4.8)")
+struct CHAITokenStoreTests {
+
+    /// Install the in-memory backing for each test and reset after.
+    /// `@MainActor` keeps the suite serialized so the static override
+    /// doesn't race between tests.
+    private func withInMemoryStore(_ body: (CHAITokenStore.TestBacking) -> Void) {
+        let backing = CHAITokenStore.TestBacking()
+        CHAITokenStore._testOverride = backing
+        defer { CHAITokenStore._testOverride = nil }
+        body(backing)
+    }
+
+    @Test("setToken / token round-trips per provider")
+    func roundTripPerProvider() {
+        withInMemoryStore { _ in
+            CHAITokenStore.setToken("sk-openai-A", for: "openai")
+            CHAITokenStore.setToken("sk-claude-B", for: "claude")
+            #expect(CHAITokenStore.token(for: "openai") == "sk-openai-A")
+            #expect(CHAITokenStore.token(for: "claude") == "sk-claude-B")
+        }
+    }
+
+    @Test("Setting provider B's token does not overwrite provider A's slot")
+    func writingBLeavesAIntact() {
+        withInMemoryStore { _ in
+            CHAITokenStore.setToken("sk-openai-A", for: "openai")
+            CHAITokenStore.setToken("sk-claude-B", for: "claude")
+            // Mutate B again — the bug spec scenario.
+            CHAITokenStore.setToken("sk-claude-B-rotated", for: "claude")
+            #expect(CHAITokenStore.token(for: "openai") == "sk-openai-A")
+            #expect(CHAITokenStore.token(for: "claude") == "sk-claude-B-rotated")
+        }
+    }
+
+    @Test("Chen scenario — pick OpenAI → switch to On-Device → switch back to OpenAI keeps the token")
+    func chenScenarioTokenSurvivesProviderSwitch() {
+        let manager = CHAIManager.shared
+        let previousProvider = manager.activeProviderID
+        defer { manager.activeProviderID = previousProvider }
+
+        withInMemoryStore { _ in
+            // 1. Pick OpenAI, enter token.
+            manager.activeProviderID = CHOpenAIProvider.providerID
+            CHOpenAIProvider.apiKey = "sk-openai-CHEN"
+            #expect(CHOpenAIProvider.apiKey == "sk-openai-CHEN")
+
+            // 2. Switch to on-device — token field for OpenAI no longer
+            // bound, but the keychain entry must survive.
+            manager.activeProviderID = "on-device-llm"
+
+            // 3. Switch back to OpenAI — token must still be there.
+            manager.activeProviderID = CHOpenAIProvider.providerID
+            #expect(
+                CHOpenAIProvider.apiKey == "sk-openai-CHEN",
+                "OpenAI token must survive provider-switch round-trip — this is the 2.4.8 keychain isolation contract"
+            )
+        }
+    }
+
+    @Test("deleteToken removes the slot but leaves siblings intact")
+    func deleteIsolatesPerProvider() {
+        withInMemoryStore { _ in
+            CHAITokenStore.setToken("sk-openai", for: "openai")
+            CHAITokenStore.setToken("sk-claude", for: "claude")
+            CHAITokenStore.deleteToken(for: "openai")
+            #expect(CHAITokenStore.token(for: "openai") == nil)
+            #expect(CHAITokenStore.token(for: "claude") == "sk-claude")
+        }
+    }
+
+    @Test("setToken(nil) is equivalent to delete")
+    func setNilDeletes() {
+        withInMemoryStore { _ in
+            CHAITokenStore.setToken("sk-openai", for: "openai")
+            CHAITokenStore.setToken(nil, for: "openai")
+            #expect(CHAITokenStore.token(for: "openai") == nil)
+        }
+    }
+
+    @Test("setToken(\"\") is equivalent to delete")
+    func setEmptyDeletes() {
+        withInMemoryStore { _ in
+            CHAITokenStore.setToken("sk-openai", for: "openai")
+            CHAITokenStore.setToken("", for: "openai")
+            #expect(CHAITokenStore.token(for: "openai") == nil)
+        }
+    }
+
+    @Test("account string embeds bundle ID and provider ID")
+    func accountFormatPinsBundleAndProviderID() {
+        let account = CHAITokenStore.account(for: "openai", bundleID: "com.chen.ClosetExample")
+        #expect(account == "com.chen.ClosetExample.openai")
+    }
+
+    @Test("Different bundle IDs get isolated slots")
+    func bundleIDIsolation() {
+        withInMemoryStore { backing in
+            // Simulate two apps: write directly via the backing using
+            // distinct bundle IDs.
+            backing.write(
+                value: "sk-closet",
+                service: CHAITokenStore.service,
+                account: CHAITokenStore.account(for: "openai", bundleID: "com.chen.Closet")
+            )
+            backing.write(
+                value: "sk-eatwisely",
+                service: CHAITokenStore.service,
+                account: CHAITokenStore.account(for: "openai", bundleID: "com.chen.EatWisely")
+            )
+
+            #expect(
+                backing.read(
+                    service: CHAITokenStore.service,
+                    account: CHAITokenStore.account(for: "openai", bundleID: "com.chen.Closet")
+                ) == "sk-closet"
+            )
+            #expect(
+                backing.read(
+                    service: CHAITokenStore.service,
+                    account: CHAITokenStore.account(for: "openai", bundleID: "com.chen.EatWisely")
+                ) == "sk-eatwisely"
+            )
+        }
+    }
+}
