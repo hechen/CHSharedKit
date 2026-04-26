@@ -330,18 +330,23 @@ public struct CHAISettingsContent: View {
             }
         }
         // Download/browse picker sheet — tapping "Change Model" on the
-        // detail row opens this directly (2.4.6). Removed a prior
-        // management-intermediate sheet that added a redundant screen
-        // plus a 0.35s dismiss-then-present delay.
-        #if os(iOS)
+        // detail row opens this directly (2.4.6). 2.5.2: macOS now uses
+        // the native macOS picker variant (`ModelPickerView+macOS.swift`),
+        // so the iOS-only guard is gone — same call site builds the right
+        // platform variant via `#if os(...)` inside ModelPickerView.
         .sheet(isPresented: $showModelPicker) {
+            #if os(iOS)
             NavigationStack {
                 ModelPickerView(appIdentifier: appIdentifier) {
                     showModelPicker = false
                 }
             }
+            #else
+            ModelPickerView(appIdentifier: appIdentifier) {
+                showModelPicker = false
+            }
+            #endif
         }
-        #endif
         .onAppear {
             openaiKey = CHOpenAIProvider.apiKey ?? ""
             claudeKey = CHClaudeProvider.apiKey ?? ""
