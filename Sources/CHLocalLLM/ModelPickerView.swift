@@ -12,7 +12,6 @@ public struct ModelPickerView: View {
 
     @State private var store = LocalModelStore.shared
     @State private var showAcknowledgmentFor: LocalModelInfo?
-    @State private var showPreDownloadFor: LocalModelInfo?
     @State private var showAddCustomModel = false
 
     private var deviceRAM_GB: Int {
@@ -96,17 +95,12 @@ public struct ModelPickerView: View {
         .sheet(item: $showAcknowledgmentFor) { model in
             LlamaAcknowledgmentSheet(model: model) {
                 showAcknowledgmentFor = nil
-                showPreDownloadFor = model
+                // 2.5.4: post-acknowledgment, kick straight into select-and-download.
+                // The previous two-step pre-download sheet is removed; the card
+                // already shows size, RAM, and license.
+                store.selectAndDownload(model)
             } onCancel: {
                 showAcknowledgmentFor = nil
-            }
-        }
-        .sheet(item: $showPreDownloadFor) { model in
-            PreDownloadSheet(model: model, deviceRAM_GB: deviceRAM_GB) {
-                showPreDownloadFor = nil
-                store.downloadModel(model)
-            } onCancel: {
-                showPreDownloadFor = nil
             }
         }
         .sheet(isPresented: $showAddCustomModel) {
@@ -119,7 +113,7 @@ public struct ModelPickerView: View {
                     chatTemplate: entry.chatTemplate
                 )
                 let modelInfo = store.localModelInfo(for: entry)
-                showPreDownloadFor = modelInfo
+                store.selectAndDownload(modelInfo)
             }
         }
     }
@@ -145,8 +139,8 @@ public struct ModelPickerView: View {
             isTopRecommendation: isTopRecommendation,
             deviceRAM_GB: deviceRAM_GB,
             store: store,
-            onDownloadTapped: { handleDownloadTapped(model) },
-            onUse: { store.setActiveModel(model) },
+            onSelectTapped: { handleSelectTapped(model) },
+            onCancelDownload: { store.cancelDownload() },
             onRemove: { store.deleteModel(model) }
         )
     }
@@ -179,17 +173,50 @@ public struct ModelPickerView: View {
         .buttonStyle(.plain)
     }
 
-    private func handleDownloadTapped(_ model: LocalModelInfo) {
+    /// 2.5.4: single-tap "Use" entry point. Replaces the 2.4.x two-step
+    /// (Download → Pre-download confirm sheet → Use). The card itself
+    /// shows size, RAM compatibility, and license — the sheet was
+    /// redundant. Only the Llama community-license acknowledgment sheet
+    /// is kept because Meta's terms require explicit one-time consent.
+    private func handleSelectTapped(_ model: LocalModelInfo) {
         let llamaAcked = UserDefaults.standard.bool(forKey: "chlocallm.acked.llama")
         if model.requiresAcknowledgment && !llamaAcked {
             showAcknowledgmentFor = model
         } else {
-            showPreDownloadFor = model
+            store.selectAndDownload(model)
         }
     }
 }
 
 // MARK: - ModelCard
+//
+// 2.5.4 state machine — derived once per render from the store + model:
+//
+//   notCompatible   — device RAM too low, even for borderline tier
+//   notInstalled    — bytes absent on disk
+//   downloading     — this model is the in-flight download
+//   pendingActive   — download for this model finished but auto-promote
+//                     hasn't fired yet (transient — usually one tick)
+//   installed       — bytes present, not the active model
+//   active          — bytes present AND store.activeModelID == model.id
+//
+// The previous 2.4.x layout had a contradictory branch: when the user's
+// `activeModelID` referred to a model whose bytes had been wiped (the
+// 2.5.0 GGUF→MLX migration cleared old GGUF files), the row showed both
+// "Active" and "Download" simultaneously. The fix is structural: derive
+// `.active` only when the model is also `isInstalled`. Stale activeModelID
+// pointing at a never-migrated GGUF model now renders as `.notInstalled`,
+// and the action button becomes "Use" — re-downloading restores it as
+// active automatically via `pendingActiveModelID`.
+
+private enum ModelCardState {
+    case notCompatible
+    case notInstalled(canStart: Bool)
+    case downloading(progress: Double, received: Int64, total: Int64, speed: Double?, eta: TimeInterval?)
+    case pendingActive
+    case installed
+    case active
+}
 
 private struct ModelCard: View {
     let model: LocalModelInfo
@@ -197,16 +224,34 @@ private struct ModelCard: View {
     let isTopRecommendation: Bool
     let deviceRAM_GB: Int
     var store: LocalModelStore
-    let onDownloadTapped: () -> Void
-    let onUse: () -> Void
+    let onSelectTapped: () -> Void
+    let onCancelDownload: () -> Void
     let onRemove: () -> Void
 
     private var isCompatible: Bool { deviceRAM_GB >= model.minRAM_GB }
     private var isBorderline: Bool { deviceRAM_GB == model.minRAM_GB - 1 }
     private var isInstalled: Bool { store.isInstalled(model) }
-    private var isActive: Bool { store.activeModelID == model.id }
+    private var isActive: Bool { store.activeModelID == model.id && isInstalled }
     private var isDownloadingThisModel: Bool { store.activeDownloadModelID == model.id }
     private var anyDownloadActive: Bool { store.activeDownloadModelID != nil }
+    private var isPendingActive: Bool { store.pendingActiveModelID == model.id }
+
+    private var state: ModelCardState {
+        if !isCompatible && !isBorderline { return .notCompatible }
+        if isDownloadingThisModel, case .downloading(let p, let r, let t) = store.downloadState {
+            return .downloading(
+                progress: p,
+                received: r,
+                total: t,
+                speed: store.currentDownloadSpeedBytesPerSecond,
+                eta: store.currentDownloadETA
+            )
+        }
+        if isActive { return .active }
+        if isInstalled { return .installed }
+        if isPendingActive { return .pendingActive }
+        return .notInstalled(canStart: !anyDownloadActive)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -221,19 +266,25 @@ private struct ModelCard: View {
                     .foregroundStyle(.indigo)
             }
             Divider()
-            actionRow
-            if isDownloadingThisModel, case .downloading(let p, _, _) = store.downloadState {
-                ProgressView(value: p).tint(.indigo)
-            }
+            actionView
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(isActive ? Color.green.opacity(0.5) : Color.clear, lineWidth: 1.5)
+                .strokeBorder(borderColor, lineWidth: borderLineWidth)
         )
         .opacity((isCompatible || isBorderline) ? 1.0 : 0.55)
+    }
+
+    private var borderColor: Color {
+        if case .active = state { return Color.green.opacity(0.55) }
+        return .clear
+    }
+    private var borderLineWidth: CGFloat {
+        if case .active = state { return 1.75 }
+        return 0
     }
 
     // MARK: Header
@@ -367,59 +418,138 @@ private struct ModelCard: View {
             .clipShape(Capsule())
     }
 
-    // MARK: Actions
+    // MARK: Actions (2.5.4 state-driven)
 
     @ViewBuilder
-    private var actionRow: some View {
-        HStack {
-            Group {
-                if isActive {
-                    Label("Active", systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                } else if isInstalled {
-                    Label("Installed", systemImage: "internaldrive")
-                        .foregroundStyle(.secondary)
-                }
+    private var actionView: some View {
+        switch state {
+        case .notCompatible:
+            HStack {
+                Spacer()
+                Text("Not supported on this device")
+                    .font(.caption).foregroundStyle(.tertiary)
             }
-            .font(.caption.weight(.medium))
-
-            Spacer()
-
-            if !isCompatible && !isBorderline {
-                Text("Not supported").font(.caption).foregroundStyle(.tertiary)
-            } else if isDownloadingThisModel {
-                downloadingButtons
-            } else if isInstalled {
-                if !isActive {
-                    Button("Use") { onUse() }
-                        .buttonStyle(.borderedProminent).controlSize(.small)
+        case .notInstalled(let canStart):
+            HStack {
+                Spacer()
+                Button {
+                    onSelectTapped()
+                } label: {
+                    Label("Use", systemImage: "checkmark.circle")
+                        .frame(minWidth: 80)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(!canStart)
+            }
+        case .downloading(let progress, let received, let total, let speed, let eta):
+            inlineProgress(progress: progress, received: received, total: total, speed: speed, eta: eta)
+        case .pendingActive:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Selected — finishing setup…")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
+        case .installed:
+            HStack {
+                Label("Installed", systemImage: "internaldrive")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    onSelectTapped()
+                } label: {
+                    Label("Use", systemImage: "checkmark.circle")
+                        .frame(minWidth: 80)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
                 Button(role: .destructive) { onRemove() } label: {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered).controlSize(.small)
-            } else {
-                Button("Download") { onDownloadTapped() }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
-                    .disabled(anyDownloadActive && !isDownloadingThisModel)
+            }
+        case .active:
+            HStack {
+                inUsePill
+                Spacer()
+                Button(role: .destructive) { onRemove() } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+                .help("Delete this model from disk")
             }
         }
     }
 
+    /// Inline progress + bytes + speed + ETA. Replaces both the small
+    /// percentage label and the full-width ProgressView from 2.4.x — now
+    /// one composed unit so the "0 MB / 0 MB" + missing speed bug
+    /// surfaces in the screenshot can't recur.
     @ViewBuilder
-    private var downloadingButtons: some View {
-        let label: String = {
-            switch store.downloadState {
-            case .downloading(let p, _, _): return "\(Int(p * 100))%"
-            case .installing: return "Installing…"
-            default: return "Downloading…"
+    private func inlineProgress(
+        progress: Double, received: Int64, total: Int64,
+        speed: Double?, eta: TimeInterval?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ProgressView(value: progress).tint(.indigo)
+            HStack(spacing: 8) {
+                Text(progressDetailLabel(received: received, total: total, speed: speed, eta: eta))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Cancel") { onCancelDownload() }
+                    .buttonStyle(.bordered).controlSize(.mini)
             }
-        }()
-        HStack(spacing: 8) {
-            Text(label).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-            Button("Cancel") { store.cancelDownload() }
-                .buttonStyle(.bordered).controlSize(.small)
         }
+    }
+
+    private func progressDetailLabel(
+        received: Int64, total: Int64, speed: Double?, eta: TimeInterval?
+    ) -> String {
+        let receivedStr = Self.byteFormatter.string(fromByteCount: received)
+        let totalStr = Self.byteFormatter.string(fromByteCount: total)
+        var parts = ["\(receivedStr) / \(totalStr)"]
+        if let speed, speed > 0 {
+            let speedStr = Self.byteFormatter.string(fromByteCount: Int64(speed)) + "/s"
+            parts.append(speedStr)
+        } else {
+            parts.append("calculating speed…")
+        }
+        if let eta {
+            parts.append("ETA \(Self.formatETA(eta))")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private var inUsePill: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "checkmark.circle.fill")
+            Text("In Use")
+        }
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background(Color.green.opacity(0.18))
+        .foregroundStyle(.green)
+        .clipShape(Capsule())
+    }
+
+    private static let byteFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.countStyle = .file
+        f.allowsNonnumericFormatting = false
+        f.zeroPadsFractionDigits = false
+        return f
+    }()
+
+    private static func formatETA(_ seconds: TimeInterval) -> String {
+        let s = Int(seconds.rounded())
+        if s < 60 { return "\(s)s" }
+        let m = s / 60
+        let r = s % 60
+        return r == 0 ? "\(m)m" : "\(m)m \(r)s"
     }
 
     private func formattedSize(_ bytes: Int64) -> String {
@@ -632,77 +762,9 @@ private struct LlamaAcknowledgmentSheet: View {
     }
 }
 
-// MARK: - PreDownloadSheet
-
-private struct PreDownloadSheet: View {
-    let model: LocalModelInfo
-    let deviceRAM_GB: Int
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    private var estimatedMinutes: Int {
-        max(1, Int(Double(model.sizeBytes) / (6 * 1_048_576) / 60))
-    }
-
-    private var ramUsagePercent: Int {
-        guard deviceRAM_GB > 0 else { return 0 }
-        let inferenceGB = Double(model.sizeBytes) * 1.5 / 1_073_741_824
-        return min(100, Int((inferenceGB / Double(deviceRAM_GB)) * 100))
-    }
-
-    var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    infoRow("Model", model.displayName)
-                    infoRow("Download size", formattedSize(model.sizeBytes))
-                    infoRow("RAM usage", "~\(ramUsagePercent)% of \(deviceRAM_GB) GB")
-                    infoRow("Estimated time on WiFi", "~\(estimatedMinutes) min")
-                    infoRow("License", model.license.rawValue)
-                } header: {
-                    Text("Download details")
-                } footer: {
-                    Text("Download continues in the background if you lock your phone or switch apps.")
-                }
-
-                Section {
-                    Button {
-                        onConfirm()
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text("Download \(model.displayName)")
-                                .fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                    .tint(.indigo)
-                }
-            }
-            .navigationTitle("Confirm Download")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { onCancel() }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func infoRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value).foregroundStyle(.secondary)
-        }
-    }
-
-    private func formattedSize(_ bytes: Int64) -> String {
-        let gb = Double(bytes) / 1_073_741_824
-        if gb >= 1 { return String(format: "%.1f GB", gb) }
-        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
-    }
-}
+// 2.5.4: PreDownloadSheet was removed. The card now shows size, RAM, and
+// license inline, and tapping "Use" starts the download immediately
+// (single-tap UX). The Llama community-license acknowledgment sheet stays
+// because Meta's terms require explicit one-time consent.
 
 #endif

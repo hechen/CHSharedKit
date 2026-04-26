@@ -1051,3 +1051,66 @@ struct VerifyOnLaunchTests {
         try? FileManager.default.removeItem(at: tmp)
     }
 }
+
+// MARK: - 2.5.4 — Picker state + pending-active + ETA
+
+@MainActor
+@Suite("LocalModelStore 2.5.4 picker state", .serialized)
+struct LocalModelStore254Tests {
+
+    @Test("selectAndDownload on installed model promotes immediately, no pendingActive")
+    func selectAndDownloadInstalledPromotesImmediately() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("Picker254-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmp
+        CHLocalMLXStorage.legacyBaseDirectories = []
+
+        let qwen = LocalModelCatalog.qwen2_5_3B
+        let dir = CHLocalMLXStorage.localDirectory(forRepoID: CHLocalMLXRepoID.from(qwen.downloadURL)!)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try? Data("{}".utf8).write(to: dir.appendingPathComponent("config.json"))
+        try? Data().write(to: dir.appendingPathComponent("model.safetensors"))
+
+        let store = LocalModelStore.shared
+        let priorActive = store.activeModelID
+        defer {
+            if let priorActive,
+               let info = LocalModelCatalog.all.first(where: { $0.id == priorActive }) {
+                store.setActiveModel(info)
+            } else {
+                store.clearActiveModel()
+            }
+        }
+
+        store.selectAndDownload(qwen)
+        #expect(store.activeModelID == qwen.id, "Installed model selectAndDownload sets active immediately")
+        #expect(store.pendingActiveModelID == nil, "Installed-path doesn't queue pending")
+        try? FileManager.default.removeItem(at: tmp)
+    }
+
+    @Test("currentDownloadETA is nil when not downloading")
+    func etaNilOutsideDownload() {
+        let store = LocalModelStore.shared
+        // No active download in test environment.
+        #expect(store.currentDownloadETA == nil)
+        #expect(store.currentDownloadSpeedBytesPerSecond == nil)
+    }
+
+    @Test("ModelDownloadState.downloading carries bytes that round-trip through CHLocalModelStore")
+    func downloadStateBytesShape() {
+        let s = ModelDownloadState.downloading(progress: 0.5, bytesReceived: 850_000_000, totalBytes: 1_700_000_000)
+        if case let .downloading(_, r, t) = s {
+            #expect(r == 850_000_000)
+            #expect(t == 1_700_000_000)
+        } else {
+            Issue.record("Wrong case")
+        }
+    }
+}

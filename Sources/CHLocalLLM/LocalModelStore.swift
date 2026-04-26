@@ -45,6 +45,31 @@ public final class LocalModelStore {
     public private(set) var activeDownloadModelID: String?
     /// ID of the model the user has chosen as active (persisted across launches).
     public private(set) var activeModelID: String?
+    /// 2.5.4: ID of the model the user tapped "Use" on while the bytes weren't
+    /// yet on disk. Once the corresponding download completes, the model is
+    /// auto-promoted to active and `pendingActiveModelID` clears. This drives
+    /// the picker's single-tap UX: `Use Phi-3.5 Mini` → kicks download +
+    /// queues the promotion → "In Use" pill appears once bytes arrive.
+    public private(set) var pendingActiveModelID: String?
+
+    /// 2.5.4: smoothed download speed in bytes/sec for the in-flight download,
+    /// nil before enough samples are collected (first ~2 s) and outside of
+    /// active downloads. The ring averages the most recent 3 ticks so the
+    /// displayed value doesn't jitter on bursty HTTP throughput.
+    public private(set) var currentDownloadSpeedBytesPerSecond: Double?
+
+    /// 2.5.4: ETA for the in-flight download. nil when speed is unknown.
+    public var currentDownloadETA: TimeInterval? {
+        guard let speed = currentDownloadSpeedBytesPerSecond, speed > 0,
+              case let .downloading(_, received, total) = downloadState,
+              total > received
+        else { return nil }
+        return Double(total - received) / speed
+    }
+
+    @ObservationIgnored private var speedRing: [Double] = []
+    @ObservationIgnored private var lastTickTime: Date?
+    @ObservationIgnored private var lastTickBytes: Int64 = 0
 
     // Configuration — apps can override appGroupID before first use.
     //
@@ -249,35 +274,30 @@ public final class LocalModelStore {
 
         activeDownloadModelID = model.id
         downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
+        // Reset 2.5.4 speed-tracking state for this download.
+        speedRing.removeAll()
+        lastTickTime = Date()
+        lastTickBytes = 0
+        currentDownloadSpeedBytesPerSecond = nil
         requestNotificationPermission()
 
         let totalEstimate = model.sizeBytes
+        let modelID = model.id
         activeTask = Task { [weak self] in
             do {
                 let hub = CHLocalMLXStorage.hubApi()
                 // 2.5.3: HubApi reports progress in *file count* (e.g. 8/10
-                // files), not bytes — `Progress.completedUnitCount` is "files
-                // downloaded" and `Progress.totalUnitCount` is "files total".
-                // The 2.5.0–2.5.2 code passed those raw numbers as
-                // `bytesReceived` / `totalBytes`, so the download UI rendered
-                // tiny integers (8, 10) through `ByteCountFormatter` as
-                // "0 MB / 0 MB" — Chen's screenshot at 85 % progress.
-                //
-                // Fix: keep `fractionCompleted` (which is correct) and
-                // synthesize byte counts from the catalog's known
-                // `model.sizeBytes` × fraction. Not byte-perfect (HF doesn't
-                // expose per-file byte progress through this surface), but
-                // the displayed numbers track reality and end at the right
-                // total when the download finishes.
+                // files), not bytes. We synthesize bytes from the catalog's
+                // known total × fraction; not byte-perfect but tracks reality.
                 let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
                     let fraction = progress.fractionCompleted
                     let total = totalEstimate
                     let received = Int64(Double(total) * fraction)
                     Task { @MainActor [weak self] in
-                        self?.downloadState = .downloading(
-                            progress: fraction,
-                            bytesReceived: received,
-                            totalBytes: total
+                        self?.applyDownloadProgress(
+                            fraction: fraction,
+                            received: received,
+                            total: total
                         )
                     }
                 }
@@ -290,8 +310,12 @@ public final class LocalModelStore {
                     guard let self else { return }
                     self.downloadState = .installed
                     self.activeDownloadModelID = nil
-                    self.fireCompletionNotification()
                     self.activeTask = nil
+                    self.currentDownloadSpeedBytesPerSecond = nil
+                    self.fireCompletionNotification()
+                    // 2.5.4: auto-promote pending → active if the user
+                    // selected this model before/during the download.
+                    self.promotePendingActiveIfMatches(modelID: modelID)
                 }
             } catch is CancellationError {
                 await MainActor.run { [weak self] in
@@ -299,6 +323,11 @@ public final class LocalModelStore {
                     self.downloadState = .idle
                     self.activeDownloadModelID = nil
                     self.activeTask = nil
+                    self.currentDownloadSpeedBytesPerSecond = nil
+                    // Cancellation drops any pending-active intent for this model.
+                    if self.pendingActiveModelID == modelID {
+                        self.pendingActiveModelID = nil
+                    }
                 }
             } catch {
                 let message = error.localizedDescription
@@ -307,6 +336,10 @@ public final class LocalModelStore {
                     self.downloadState = .failed(message)
                     self.activeDownloadModelID = nil
                     self.activeTask = nil
+                    self.currentDownloadSpeedBytesPerSecond = nil
+                    if self.pendingActiveModelID == modelID {
+                        self.pendingActiveModelID = nil
+                    }
                 }
             }
         }
@@ -318,7 +351,79 @@ public final class LocalModelStore {
         if case .downloading = downloadState {
             downloadState = .idle
             activeDownloadModelID = nil
+            pendingActiveModelID = nil
+            currentDownloadSpeedBytesPerSecond = nil
         }
+    }
+
+    // MARK: - 2.5.4 — single-tap select-and-download
+
+    /// Single-tap UX entry point used by the picker's "Use \(model)" button.
+    ///
+    /// - If the model is already installed: promotes to active immediately,
+    ///   no download.
+    /// - If the model is not installed and no other download is in flight:
+    ///   marks this model as the user's intended-active and starts the
+    ///   download. The model becomes active automatically when the download
+    ///   completes (handled in `downloadModel`'s success branch).
+    /// - If a different download is already in flight: cancels it (the
+    ///   caller is expected to confirm with the user first), then starts
+    ///   this one.
+    public func selectAndDownload(_ model: LocalModelInfo) {
+        if isInstalled(model) {
+            setActiveModel(model)
+            return
+        }
+        if let inFlight = activeDownloadModelID, inFlight != model.id {
+            cancelDownload()
+        }
+        pendingActiveModelID = model.id
+        downloadModel(model)
+    }
+
+    @MainActor
+    private func applyDownloadProgress(fraction: Double, received: Int64, total: Int64) {
+        downloadState = .downloading(
+            progress: fraction,
+            bytesReceived: received,
+            totalBytes: total
+        )
+        // Speed sampling: take a tick at most once per second so bursty
+        // HTTP doesn't pollute the average.
+        let now = Date()
+        if let lastTick = lastTickTime {
+            let elapsed = now.timeIntervalSince(lastTick)
+            if elapsed >= 1.0 {
+                let bytesDelta = received - lastTickBytes
+                let speed = elapsed > 0 ? Double(bytesDelta) / elapsed : 0
+                lastTickTime = now
+                lastTickBytes = received
+                if speed >= 0 {
+                    speedRing.append(speed)
+                    if speedRing.count > 3 { speedRing.removeFirst() }
+                    if speedRing.count >= 2 {
+                        let avg = speedRing.reduce(0, +) / Double(speedRing.count)
+                        currentDownloadSpeedBytesPerSecond = avg
+                    }
+                }
+            }
+        } else {
+            lastTickTime = now
+            lastTickBytes = received
+        }
+    }
+
+    @MainActor
+    private func promotePendingActiveIfMatches(modelID: String) {
+        guard pendingActiveModelID == modelID else { return }
+        let candidate = (LocalModelCatalog.all + customModels.map { localModelInfo(for: $0) })
+            .first { $0.id == modelID }
+        guard let model = candidate else {
+            pendingActiveModelID = nil
+            return
+        }
+        pendingActiveModelID = nil
+        setActiveModel(model)
     }
 
     /// Resume a previously paused download. With HubApi the snapshot resumes

@@ -21,7 +21,6 @@ public struct ModelPickerView: View {
 
     @State private var store = LocalModelStore.shared
     @State private var showAcknowledgmentFor: LocalModelInfo?
-    @State private var showPreDownloadFor: LocalModelInfo?
     @State private var showAddCustomModel = false
 
     private var deviceRAM_GB: Int {
@@ -64,8 +63,8 @@ public struct ModelPickerView: View {
                         isTopRecommendation: index == 0,
                         deviceRAM_GB: deviceRAM_GB,
                         store: store,
-                        onDownloadTapped: { handleDownloadTapped(model) },
-                        onUse: { store.setActiveModel(model) },
+                        onSelectTapped: { handleSelectTapped(model) },
+                        onCancelDownload: { store.cancelDownload() },
                         onRemove: { store.deleteModel(model) }
                     )
                 }
@@ -79,8 +78,8 @@ public struct ModelPickerView: View {
                         isTopRecommendation: false,
                         deviceRAM_GB: deviceRAM_GB,
                         store: store,
-                        onDownloadTapped: { handleDownloadTapped(model) },
-                        onUse: { store.setActiveModel(model) },
+                        onSelectTapped: { handleSelectTapped(model) },
+                        onCancelDownload: { store.cancelDownload() },
                         onRemove: { store.deleteModel(model) }
                     )
                 }
@@ -95,8 +94,8 @@ public struct ModelPickerView: View {
                             isTopRecommendation: false,
                             deviceRAM_GB: deviceRAM_GB,
                             store: store,
-                            onDownloadTapped: { handleDownloadTapped(model) },
-                            onUse: { store.setActiveModel(model) },
+                            onSelectTapped: { handleSelectTapped(model) },
+                            onCancelDownload: { store.cancelDownload() },
                             onRemove: { store.deleteModel(model) }
                         )
                     }
@@ -139,17 +138,10 @@ public struct ModelPickerView: View {
         .sheet(item: $showAcknowledgmentFor) { model in
             MacLlamaAcknowledgmentSheet(model: model) {
                 showAcknowledgmentFor = nil
-                showPreDownloadFor = model
+                // 2.5.4: post-acknowledgment, single-tap select-and-download.
+                store.selectAndDownload(model)
             } onCancel: {
                 showAcknowledgmentFor = nil
-            }
-        }
-        .sheet(item: $showPreDownloadFor) { model in
-            MacPreDownloadSheet(model: model, deviceRAM_GB: deviceRAM_GB) {
-                showPreDownloadFor = nil
-                store.downloadModel(model)
-            } onCancel: {
-                showPreDownloadFor = nil
             }
         }
         .sheet(isPresented: $showAddCustomModel) {
@@ -162,17 +154,19 @@ public struct ModelPickerView: View {
                     chatTemplate: entry.chatTemplate
                 )
                 let modelInfo = store.localModelInfo(for: entry)
-                showPreDownloadFor = modelInfo
+                store.selectAndDownload(modelInfo)
             }
         }
     }
 
-    private func handleDownloadTapped(_ model: LocalModelInfo) {
+    /// 2.5.4: same single-tap flow as iOS — acknowledgment if Llama (one-time
+    /// per device), otherwise straight to `selectAndDownload`.
+    private func handleSelectTapped(_ model: LocalModelInfo) {
         let llamaAcked = UserDefaults.standard.bool(forKey: "chlocallm.acked.llama")
         if model.requiresAcknowledgment && !llamaAcked {
             showAcknowledgmentFor = model
         } else {
-            showPreDownloadFor = model
+            store.selectAndDownload(model)
         }
     }
 }
@@ -190,16 +184,44 @@ private struct MacModelRow: View {
     let isTopRecommendation: Bool
     let deviceRAM_GB: Int
     var store: LocalModelStore
-    let onDownloadTapped: () -> Void
-    let onUse: () -> Void
+    let onSelectTapped: () -> Void
+    let onCancelDownload: () -> Void
     let onRemove: () -> Void
 
     private var isCompatible: Bool { deviceRAM_GB >= model.minRAM_GB }
     private var isBorderline: Bool { deviceRAM_GB == model.minRAM_GB - 1 }
     private var isInstalled: Bool { store.isInstalled(model) }
-    private var isActive: Bool { store.activeModelID == model.id }
+    private var isActive: Bool { store.activeModelID == model.id && isInstalled }
     private var isDownloadingThisModel: Bool { store.activeDownloadModelID == model.id }
     private var anyDownloadActive: Bool { store.activeDownloadModelID != nil }
+    private var isPendingActive: Bool { store.pendingActiveModelID == model.id }
+
+    /// 2.5.4: shared state machine — see iOS `ModelCardState` doc comment in
+    /// `ModelPickerView.swift`. The macOS row mirrors the iOS card's logic
+    /// so behavior stays in lockstep across platforms.
+    private enum CardState {
+        case notCompatible
+        case notInstalled(canStart: Bool)
+        case downloading(progress: Double, received: Int64, total: Int64, speed: Double?, eta: TimeInterval?)
+        case pendingActive
+        case installed
+        case active
+    }
+
+    private var cardState: CardState {
+        if !isCompatible && !isBorderline { return .notCompatible }
+        if isDownloadingThisModel, case .downloading(let p, let r, let t) = store.downloadState {
+            return .downloading(
+                progress: p, received: r, total: t,
+                speed: store.currentDownloadSpeedBytesPerSecond,
+                eta: store.currentDownloadETA
+            )
+        }
+        if isActive { return .active }
+        if isInstalled { return .installed }
+        if isPendingActive { return .pendingActive }
+        return .notInstalled(canStart: !anyDownloadActive)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -213,10 +235,7 @@ private struct MacModelRow: View {
                     .font(.caption)
                     .foregroundStyle(.indigo)
             }
-            if isDownloadingThisModel, case .downloading(let p, _, _) = store.downloadState {
-                ProgressView(value: p).tint(.indigo)
-            }
-            actionRow
+            actionView
         }
         .padding(.vertical, 6)
         .opacity((isCompatible || isBorderline) ? 1.0 : 0.55)
@@ -360,51 +379,130 @@ private struct MacModelRow: View {
             .clipShape(Capsule())
     }
 
+    // 2.5.4 state-driven action area (parity with iOS card).
+
     @ViewBuilder
-    private var actionRow: some View {
-        HStack {
-            if isInstalled && !isActive {
+    private var actionView: some View {
+        switch cardState {
+        case .notCompatible:
+            HStack {
+                Spacer()
+                Text("Not supported on this device").font(.caption).foregroundStyle(.tertiary)
+            }
+        case .notInstalled(let canStart):
+            HStack {
+                Spacer()
+                Button {
+                    onSelectTapped()
+                } label: {
+                    Label("Use", systemImage: "checkmark.circle")
+                        .frame(minWidth: 70)
+                }
+                .buttonStyle(.borderedProminent).controlSize(.small)
+                .disabled(!canStart)
+            }
+        case .downloading(let progress, let received, let total, let speed, let eta):
+            inlineProgress(progress: progress, received: received, total: total, speed: speed, eta: eta)
+        case .pendingActive:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text("Selected — finishing setup…").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
+        case .installed:
+            HStack {
                 Label("Installed", systemImage: "internaldrive")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-            }
-            Spacer()
-            if !isCompatible && !isBorderline {
-                Text("Not supported").font(.caption).foregroundStyle(.tertiary)
-            } else if isDownloadingThisModel {
-                downloadingButtons
-            } else if isInstalled {
-                if !isActive {
-                    Button("Use") { onUse() }
-                        .buttonStyle(.borderedProminent).controlSize(.small)
+                Spacer()
+                Button {
+                    onSelectTapped()
+                } label: {
+                    Label("Use", systemImage: "checkmark.circle")
+                        .frame(minWidth: 70)
                 }
+                .buttonStyle(.borderedProminent).controlSize(.small)
                 Button(role: .destructive) { onRemove() } label: {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered).controlSize(.small)
                 .help("Delete this model from disk")
-            } else {
-                Button("Download") { onDownloadTapped() }
-                    .buttonStyle(.borderedProminent).controlSize(.small)
-                    .disabled(anyDownloadActive && !isDownloadingThisModel)
+            }
+        case .active:
+            HStack {
+                inUsePill
+                Spacer()
+                Button(role: .destructive) { onRemove() } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+                .help("Delete this model from disk")
             }
         }
     }
 
     @ViewBuilder
-    private var downloadingButtons: some View {
-        let label: String = {
-            switch store.downloadState {
-            case .downloading(let p, _, _): return "\(Int(p * 100))%"
-            case .installing: return "Installing…"
-            default: return "Downloading…"
+    private func inlineProgress(
+        progress: Double, received: Int64, total: Int64,
+        speed: Double?, eta: TimeInterval?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ProgressView(value: progress).tint(.indigo)
+            HStack(spacing: 8) {
+                Text(progressDetailLabel(received: received, total: total, speed: speed, eta: eta))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Cancel") { onCancelDownload() }
+                    .buttonStyle(.bordered).controlSize(.small)
             }
-        }()
-        HStack(spacing: 8) {
-            Text(label).font(.caption.weight(.medium)).foregroundStyle(.secondary)
-            Button("Cancel") { store.cancelDownload() }
-                .buttonStyle(.bordered).controlSize(.small)
         }
+    }
+
+    private func progressDetailLabel(
+        received: Int64, total: Int64, speed: Double?, eta: TimeInterval?
+    ) -> String {
+        let receivedStr = Self.byteFormatter.string(fromByteCount: received)
+        let totalStr = Self.byteFormatter.string(fromByteCount: total)
+        var parts = ["\(receivedStr) / \(totalStr)"]
+        if let speed, speed > 0 {
+            parts.append(Self.byteFormatter.string(fromByteCount: Int64(speed)) + "/s")
+        } else {
+            parts.append("calculating speed…")
+        }
+        if let eta {
+            parts.append("ETA \(Self.formatETA(eta))")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private var inUsePill: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "checkmark.circle.fill")
+            Text("In Use")
+        }
+        .font(.caption.weight(.semibold))
+        .padding(.horizontal, 10).padding(.vertical, 5)
+        .background(Color.green.opacity(0.18))
+        .foregroundStyle(.green)
+        .clipShape(Capsule())
+    }
+
+    private static let byteFormatter: ByteCountFormatter = {
+        let f = ByteCountFormatter()
+        f.countStyle = .file
+        f.allowsNonnumericFormatting = false
+        f.zeroPadsFractionDigits = false
+        return f
+    }()
+
+    private static func formatETA(_ seconds: TimeInterval) -> String {
+        let s = Int(seconds.rounded())
+        if s < 60 { return "\(s)s" }
+        let m = s / 60
+        let r = s % 60
+        return r == 0 ? "\(m)m" : "\(m)m \(r)s"
     }
 
     private func formattedSize(_ bytes: Int64) -> String {
@@ -637,63 +735,8 @@ private struct MacLlamaAcknowledgmentSheet: View {
     }
 }
 
-// MARK: - MacPreDownloadSheet
-
-private struct MacPreDownloadSheet: View {
-    let model: LocalModelInfo
-    let deviceRAM_GB: Int
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Confirm Download")
-                .font(.title3.bold())
-                .padding(.bottom, 12)
-
-            Form {
-                Section("\(model.displayName)") {
-                    infoRow("Quality", model.quality.rawValue)
-                    infoRow("License", model.license.rawValue)
-                    infoRow("Size", formattedSize(model.sizeBytes))
-                    infoRow("Min RAM", "\(model.minRAM_GB) GB")
-                    infoRow("Your RAM", "\(deviceRAM_GB) GB")
-                }
-                Section {
-                    Text("Download continues in the background. The file is stored in the app's shared model directory and is shared across iOS, iPadOS, and Mac apps that use CHLocalLLM.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .formStyle(.grouped)
-
-            HStack {
-                Spacer()
-                Button("Cancel") { onCancel() }
-                Button("Download") { onConfirm() }
-                    .buttonStyle(.borderedProminent)
-                    .keyboardShortcut(.defaultAction)
-            }
-            .padding(.top, 12)
-        }
-        .padding(20)
-        .frame(minWidth: 480, minHeight: 380)
-    }
-
-    @ViewBuilder
-    private func infoRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-            Spacer()
-            Text(value).foregroundStyle(.secondary)
-        }
-    }
-
-    private func formattedSize(_ bytes: Int64) -> String {
-        let gb = Double(bytes) / 1_073_741_824
-        if gb >= 1 { return String(format: "%.1f GB", gb) }
-        return String(format: "%.0f MB", Double(bytes) / 1_048_576)
-    }
-}
+// 2.5.4: MacPreDownloadSheet was removed. The card now shows size, RAM,
+// and license inline; tapping "Use" starts the download immediately. See
+// the matching iOS picker note in `ModelPickerView.swift`.
 
 #endif
