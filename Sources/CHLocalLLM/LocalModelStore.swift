@@ -46,12 +46,18 @@ public final class LocalModelStore {
     /// ID of the model the user has chosen as active (persisted across launches).
     public private(set) var activeModelID: String?
 
-    // Configuration — apps can override appGroupID before first use
+    // Configuration — apps can override appGroupID before first use.
+    //
+    // 2.5.3 P0 storage fix: changing `appGroupID` no longer relocates model
+    // storage. Models always live in `Application Support/CHSharedKit/`
+    // (see `CHLocalMLXStorage.baseDirectory`) — the 2.5.0–2.5.2 default of
+    // preferring the App Group container (`group.app.chen.sharedllm`) wiped
+    // 1.7 GB+ of downloaded models on TestFlight reinstall when only one
+    // app in the group was installed. `appGroupID` still controls the
+    // shared `UserDefaults` suite used for persisting `activeModelID` +
+    // `customModels` across apps in the same group.
     public var appGroupID: String = "group.app.chen.sharedllm" {
-        didSet {
-            _sharedDefaults = nil
-            CHLocalMLXStorage.baseDirectory = Self.resolveBaseDirectory(appGroupID: appGroupID)
-        }
+        didSet { _sharedDefaults = nil }
     }
 
     /// Identifies the consuming app. Drives the default onboarding copy and
@@ -84,8 +90,10 @@ public final class LocalModelStore {
     @ObservationIgnored private var activeTask: Task<Void, Never>?
 
     private init() {
-        // Point shared MLX storage at the App Group container before first use.
-        CHLocalMLXStorage.baseDirectory = Self.resolveBaseDirectory(appGroupID: appGroupID)
+        // 2.5.3: storage location is now fixed at `Application Support/CHSharedKit/`
+        // (see CHLocalMLXStorage). The 2.5.0–2.5.2 line that overrode it to the
+        // App Group container is gone — App Group containers were wiped on TF
+        // reinstall when only one app in the group was installed.
 
         // Restore active model id (prefer App Group suite; migrate from .standard if needed).
         let sharedSuite = UserDefaults(suiteName: "group.app.chen.sharedllm") ?? .standard
@@ -153,20 +161,16 @@ public final class LocalModelStore {
 
     // MARK: - Storage
 
-    private static func resolveBaseDirectory(appGroupID: String) -> URL {
-        let base = FileManager.default
-            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("CHSharedKit", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
-    }
-
-    /// Local on-disk directory for a model (whether or not it's downloaded).
-    /// Layout: `<base>/models/<repo-org>/<repo-name>/`.
+    /// Local on-disk directory for a model.
+    ///
+    /// 2.5.3: returns wherever the bytes actually live — canonical
+    /// `Application Support/CHSharedKit/models/<repo>/` if present, else any
+    /// 2.5.0–2.5.2 legacy App Group container path that still has the
+    /// snapshot. New downloads always land at the canonical path. See
+    /// ``CHLocalMLXStorage/resolvedDirectory(forRepoID:)``.
     public func modelURL(for model: LocalModelInfo) -> URL {
         if let repoID = CHLocalMLXRepoID.from(model.downloadURL) {
-            return CHLocalMLXStorage.localDirectory(forRepoID: repoID)
+            return CHLocalMLXStorage.resolvedDirectory(forRepoID: repoID)
         }
         // Fall back: derive a stable folder name from the model id so custom
         // entries that don't parse as Hub URLs still have a local home.
@@ -180,13 +184,7 @@ public final class LocalModelStore {
     /// True when the model snapshot exists locally with the files required
     /// to load via MLX (`config.json` + at least one `.safetensors`).
     public func isInstalled(_ model: LocalModelInfo) -> Bool {
-        let dir = modelURL(for: model)
-        let fm = FileManager.default
-        guard fm.fileExists(atPath: dir.path) else { return false }
-        let configURL = dir.appendingPathComponent("config.json")
-        guard fm.fileExists(atPath: configURL.path) else { return false }
-        let contents = (try? fm.contentsOfDirectory(atPath: dir.path)) ?? []
-        return contents.contains { $0.hasSuffix(".safetensors") }
+        CHLocalMLXStorage.isSnapshotPresent(at: modelURL(for: model))
     }
 
     public var installedModels: [LocalModelInfo] {
@@ -257,11 +255,24 @@ public final class LocalModelStore {
         activeTask = Task { [weak self] in
             do {
                 let hub = CHLocalMLXStorage.hubApi()
+                // 2.5.3: HubApi reports progress in *file count* (e.g. 8/10
+                // files), not bytes — `Progress.completedUnitCount` is "files
+                // downloaded" and `Progress.totalUnitCount` is "files total".
+                // The 2.5.0–2.5.2 code passed those raw numbers as
+                // `bytesReceived` / `totalBytes`, so the download UI rendered
+                // tiny integers (8, 10) through `ByteCountFormatter` as
+                // "0 MB / 0 MB" — Chen's screenshot at 85 % progress.
+                //
+                // Fix: keep `fractionCompleted` (which is correct) and
+                // synthesize byte counts from the catalog's known
+                // `model.sizeBytes` × fraction. Not byte-perfect (HF doesn't
+                // expose per-file byte progress through this surface), but
+                // the displayed numbers track reality and end at the right
+                // total when the download finishes.
                 let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
                     let fraction = progress.fractionCompleted
-                    let total = progress.totalUnitCount > 0
-                        ? progress.totalUnitCount : totalEstimate
-                    let received = progress.completedUnitCount
+                    let total = totalEstimate
+                    let received = Int64(Double(total) * fraction)
                     Task { @MainActor [weak self] in
                         self?.downloadState = .downloading(
                             progress: fraction,
@@ -438,7 +449,119 @@ public final class LocalModelStore {
             try? fm.removeItem(at: dir)
         }
     }
+
+    // MARK: - 2.5.3 — verifyOnLaunch
+
+    /// Snapshot of where on-device models live and what's installed. Use this
+    /// to log storage state on app launch + surface in a Storage panel for
+    /// users.
+    public struct StorageReport: Sendable {
+        /// Canonical write location (`Application Support/CHSharedKit/`).
+        public let canonicalDirectory: URL
+        /// Legacy locations scanned for backwards-compat reads. Empty in
+        /// fresh installs.
+        public let legacyDirectories: [URL]
+        /// Each installed model's id, on-disk location, and total snapshot
+        /// size in bytes.
+        public let installedModels: [ModelEntry]
+
+        public struct ModelEntry: Sendable {
+            public let id: String
+            public let displayName: String
+            public let directory: URL
+            public let sizeBytes: Int64
+            /// True if the model lives in `legacyDirectories` rather than the
+            /// canonical path. Indicates a 2.5.0–2.5.2 install that hasn't
+            /// been migrated yet.
+            public let isLegacyLocation: Bool
+        }
+
+        /// Total bytes used by installed models.
+        public var totalBytes: Int64 {
+            installedModels.reduce(0) { $0 + $1.sizeBytes }
+        }
+
+        /// Human-readable one-liner suitable for a console log.
+        ///
+        ///   `CHSharedKit: 2 models installed (Qwen2.5-3B, Phi-3-mini), total 3.20 GB. Path: <canonical>`
+        public var summary: String {
+            let names = installedModels.map(\.displayName).joined(separator: ", ")
+            let totalGB = Double(totalBytes) / 1_073_741_824
+            let count = installedModels.count
+            let names_ = names.isEmpty ? "" : " (\(names))"
+            let legacyNote = installedModels.contains(where: \.isLegacyLocation)
+                ? " — \(installedModels.filter(\.isLegacyLocation).count) in legacy location"
+                : ""
+            return "CHSharedKit: \(count) model\(count == 1 ? "" : "s") installed\(names_), total \(String(format: "%.2f", totalGB)) GB. Path: \(canonicalDirectory.path)\(legacyNote)"
+        }
+    }
+
+    /// Inspects the canonical + legacy storage paths, returns an inventory of
+    /// what's actually on disk, and prints a one-line summary to the system
+    /// log so missing-models bug reports can be diagnosed at a glance.
+    ///
+    /// Call from your `App.init` (or as early as possible at launch):
+    ///
+    /// ```swift
+    /// @main
+    /// struct YourApp: App {
+    ///     init() {
+    ///         CHLocalModelStore.verifyOnLaunch()
+    ///     }
+    /// }
+    /// ```
+    @discardableResult
+    public static func verifyOnLaunch() -> StorageReport {
+        let canonical = CHLocalMLXStorage.baseDirectory
+        let legacy = CHLocalMLXStorage.legacyBaseDirectories
+        let fm = FileManager.default
+
+        var entries: [StorageReport.ModelEntry] = []
+        for model in LocalModelCatalog.all {
+            guard let repoID = CHLocalMLXRepoID.from(model.downloadURL) else { continue }
+            let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: repoID)
+            guard CHLocalMLXStorage.isSnapshotPresent(at: resolved) else { continue }
+            let canonicalDir = CHLocalMLXStorage.localDirectory(forRepoID: repoID)
+            let isLegacy = resolved.standardizedFileURL != canonicalDir.standardizedFileURL
+            let size = directorySize(at: resolved, fm: fm)
+            entries.append(.init(
+                id: model.id,
+                displayName: model.displayName,
+                directory: resolved,
+                sizeBytes: size,
+                isLegacyLocation: isLegacy
+            ))
+        }
+        let report = StorageReport(
+            canonicalDirectory: canonical,
+            legacyDirectories: legacy,
+            installedModels: entries
+        )
+        print("[CHSharedKit] " + report.summary)
+        return report
+    }
+
+    private static func directorySize(at url: URL, fm: FileManager) -> Int64 {
+        guard let enumerator = fm.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let item as URL in enumerator {
+            let values = try? item.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            if values?.isRegularFile == true {
+                total += Int64(values?.fileSize ?? 0)
+            }
+        }
+        return total
+    }
 }
+
+/// Spec-canonical name. The implementation lives on ``LocalModelStore`` (the
+/// existing 2.4.x type name); this typealias matches what 2.5.x docs and
+/// public APIs reference (`CHLocalModelStore.shared`,
+/// `CHLocalModelStore.verifyOnLaunch()`).
+public typealias CHLocalModelStore = LocalModelStore
 
 // MARK: - CustomModelEntry
 

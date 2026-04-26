@@ -880,3 +880,174 @@ struct LocalModelStoreAPITests {
     }
 }
 
+// MARK: - 2.5.3 — P0 storage path stability
+
+@Suite("CHLocalMLXStorage 2.5.3 (P0 fix)", .serialized)
+struct CHLocalMLXStorage253Tests {
+
+    @Test("baseDirectory points at Application Support, never the App Group container")
+    func baseDirectoryIsApplicationSupport() {
+        let path = CHLocalMLXStorage.baseDirectory.path
+        #expect(path.contains("Application Support"))
+        #expect(!path.contains("Containers/Shared/AppGroup"))
+    }
+
+    @Test("baseDirectory has no version components")
+    func baseDirectoryHasNoVersionComponents() {
+        let path = CHLocalMLXStorage.baseDirectory.path
+        // Sanity guard against accidental Bundle.main.shortVersionString
+        // creeping into the path. Always bare "<App Support>/CHSharedKit/".
+        #expect(path.hasSuffix("/CHSharedKit") || path.hasSuffix("/CHSharedKit/"))
+    }
+
+    @Test("resolvedDirectory returns canonical when canonical has the snapshot")
+    func resolvedReturnsCanonicalWhenPresent() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CHStorage253-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmp.appendingPathComponent("canonical")
+        CHLocalMLXStorage.legacyBaseDirectories = [tmp.appendingPathComponent("legacy")]
+
+        let canonicalDir = CHLocalMLXStorage.localDirectory(forRepoID: "mlx-community/Test-1B")
+        try? FileManager.default.createDirectory(at: canonicalDir, withIntermediateDirectories: true)
+        try? Data("{}".utf8).write(to: canonicalDir.appendingPathComponent("config.json"))
+        try? Data().write(to: canonicalDir.appendingPathComponent("model.safetensors"))
+
+        let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: "mlx-community/Test-1B")
+        #expect(resolved.standardizedFileURL == canonicalDir.standardizedFileURL)
+        try? FileManager.default.removeItem(at: tmp)
+    }
+
+    @Test("resolvedDirectory falls back to legacy when canonical is missing but legacy has it")
+    func resolvedFallsBackToLegacy() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CHStorage253-\(UUID().uuidString)", isDirectory: true)
+        let canonical = tmp.appendingPathComponent("canonical")
+        let legacy = tmp.appendingPathComponent("legacy")
+        CHLocalMLXStorage.baseDirectory = canonical
+        CHLocalMLXStorage.legacyBaseDirectories = [legacy]
+
+        let legacyDir = legacy
+            .appendingPathComponent("models", isDirectory: true)
+            .appendingPathComponent("mlx-community/Test-1B", isDirectory: true)
+        try? FileManager.default.createDirectory(at: legacyDir, withIntermediateDirectories: true)
+        try? Data("{}".utf8).write(to: legacyDir.appendingPathComponent("config.json"))
+        try? Data().write(to: legacyDir.appendingPathComponent("model.safetensors"))
+
+        let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: "mlx-community/Test-1B")
+        #expect(
+            resolved.standardizedFileURL == legacyDir.standardizedFileURL,
+            "2.5.3 must read from legacy App Group container so 2.5.0–2.5.2 downloads keep working"
+        )
+        try? FileManager.default.removeItem(at: tmp)
+    }
+
+    @Test("resolvedDirectory returns canonical (write target) when nothing is on disk")
+    func resolvedReturnsCanonicalWhenAbsent() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CHStorage253-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmp.appendingPathComponent("canonical")
+        CHLocalMLXStorage.legacyBaseDirectories = [tmp.appendingPathComponent("legacy")]
+
+        let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: "mlx-community/Nothing-Here")
+        let canonical = CHLocalMLXStorage.localDirectory(forRepoID: "mlx-community/Nothing-Here")
+        #expect(resolved.standardizedFileURL == canonical.standardizedFileURL)
+    }
+
+    @Test("isSnapshotPresent requires config.json + at least one .safetensors file")
+    func snapshotPresenceHeuristic() {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CHStorage253-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        #expect(!CHLocalMLXStorage.isSnapshotPresent(at: tmp))
+
+        try? Data("{}".utf8).write(to: tmp.appendingPathComponent("config.json"))
+        #expect(!CHLocalMLXStorage.isSnapshotPresent(at: tmp))
+
+        try? Data().write(to: tmp.appendingPathComponent("model.safetensors"))
+        #expect(CHLocalMLXStorage.isSnapshotPresent(at: tmp))
+    }
+}
+
+// MARK: - 2.5.3 — verifyOnLaunch storage report
+
+@MainActor
+@Suite("CHLocalModelStore.verifyOnLaunch (2.5.3)", .serialized)
+struct VerifyOnLaunchTests {
+
+    @Test("CHLocalModelStore typealias resolves to LocalModelStore")
+    func typealiasResolves() {
+        let store: CHLocalModelStore = LocalModelStore.shared
+        _ = store
+    }
+
+    @Test("verifyOnLaunch reports zero models on a fresh canonical directory")
+    func zeroModelsOnFreshDir() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("verifyOnLaunchTest-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmp
+        CHLocalMLXStorage.legacyBaseDirectories = []
+
+        let report = CHLocalModelStore.verifyOnLaunch()
+        #expect(report.installedModels.isEmpty)
+        #expect(report.totalBytes == 0)
+        #expect(report.summary.contains("0 models installed"))
+    }
+
+    @Test("verifyOnLaunch finds a model in legacy directory and flags isLegacyLocation")
+    func findsLegacyModel() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        let originalLegacy = CHLocalMLXStorage.legacyBaseDirectories
+        defer {
+            CHLocalMLXStorage.baseDirectory = originalBase
+            CHLocalMLXStorage.legacyBaseDirectories = originalLegacy
+        }
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("verifyOnLaunchTest-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmp.appendingPathComponent("canonical")
+        CHLocalMLXStorage.legacyBaseDirectories = [tmp.appendingPathComponent("legacy")]
+
+        let qwen = LocalModelCatalog.qwen2_5_3B
+        let repoID = CHLocalMLXRepoID.from(qwen.downloadURL)!
+        let legacyDir = tmp.appendingPathComponent("legacy")
+            .appendingPathComponent("models", isDirectory: true)
+            .appendingPathComponent(repoID, isDirectory: true)
+        try? FileManager.default.createDirectory(at: legacyDir, withIntermediateDirectories: true)
+        try? Data("{}".utf8).write(to: legacyDir.appendingPathComponent("config.json"))
+        try? Data(repeating: 0, count: 1024).write(to: legacyDir.appendingPathComponent("model.safetensors"))
+
+        let report = CHLocalModelStore.verifyOnLaunch()
+        let qwenEntry = report.installedModels.first { $0.id == qwen.id }
+        #expect(qwenEntry != nil, "Qwen 2.5 3B planted in legacy dir should be detected")
+        #expect(qwenEntry?.isLegacyLocation == true, "Legacy-located models must be flagged as such")
+        #expect(qwenEntry?.sizeBytes == Int64(1024 + 2)) // safetensors + config.json ("{}" = 2 bytes)
+
+        try? FileManager.default.removeItem(at: tmp)
+    }
+}

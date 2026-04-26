@@ -88,15 +88,31 @@ public enum CHLocalMLXRepoID {
 ///
 ///   <baseDirectory>/models/<repo-id>/
 ///
-/// where `<repo-id>` is e.g. `mlx-community/Qwen2.5-3B-Instruct-4bit`. The
-/// `models/` segment is appended by `HubApi` itself; we configure
-/// `HubApi.downloadBase = baseDirectory` so the spec-stated path
-/// `Application Support/CHSharedKit/models/` is materialized.
+/// where `<repo-id>` is e.g. `mlx-community/Qwen2.5-3B-Instruct-4bit`.
 ///
-/// Apps that share an App Group can replace `baseDirectory` with the group
-/// container's URL on first use.
+/// **2.5.3 — P0 storage stability fix.** The canonical path is now always
+/// `Application Support/CHSharedKit/`, never the App Group container. The
+/// 2.5.0–2.5.2 default of preferring the App Group container
+/// (`group.app.chen.sharedllm`) was fragile on TestFlight rebuilds: when
+/// only one app in the group was installed and got reinstalled, iOS would
+/// wipe the group container, taking 1.7+ GB of downloaded models with it.
+/// Application Support is owned by the app sandbox and persists across
+/// app updates as long as the user doesn't delete the app.
+///
+/// To stay backwards-compatible with 2.5.0–2.5.2 installs, ``resolvedDirectory(forRepoID:)``
+/// transparently falls back to ``legacyBaseDirectories`` when reading. New
+/// downloads always land in the canonical ``baseDirectory``.
 public enum CHLocalMLXStorage {
+    /// Canonical model storage root. Always `Application Support/CHSharedKit/`.
+    /// `HubApi` is configured with this as `downloadBase`, so new model
+    /// snapshots always land in `<canonical>/models/<repo-id>/`.
     nonisolated(unsafe) public static var baseDirectory: URL = defaultBase()
+
+    /// Prior locations to scan when reading a model snapshot. Models that
+    /// were downloaded under 2.5.0–2.5.2 live in the App Group container;
+    /// `resolvedDirectory(forRepoID:)` checks these so existing downloads
+    /// keep working without forcing a re-download.
+    nonisolated(unsafe) public static var legacyBaseDirectories: [URL] = legacyBases()
 
     private static func defaultBase() -> URL {
         let appSupport = FileManager.default
@@ -106,17 +122,56 @@ public enum CHLocalMLXStorage {
         return dir
     }
 
-    /// Local directory for a Hugging Face model repo, regardless of whether
-    /// it has been downloaded yet.
+    private static func legacyBases() -> [URL] {
+        var result: [URL] = []
+        // 2.5.0–2.5.2 default: App Group container shared across the suite.
+        if let appGroup = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: "group.app.chen.sharedllm") {
+            result.append(appGroup.appendingPathComponent("CHSharedKit", isDirectory: true))
+        }
+        return result
+    }
+
+    /// Canonical local directory for a model repo (where new downloads land).
+    /// Layout: `<baseDirectory>/models/<repo-id>/`.
     public static func localDirectory(forRepoID repoID: String) -> URL {
         baseDirectory
             .appendingPathComponent("models", isDirectory: true)
             .appendingPathComponent(repoID, isDirectory: true)
     }
 
+    /// Returns the directory where the model is *actually on disk* — canonical
+    /// path if present there, otherwise the first legacy base that still has
+    /// it. Used by reads (`isInstalled`, provider load) so 2.5.0–2.5.2
+    /// downloads continue to work after the 2.5.3 path change.
+    ///
+    /// Returns the canonical path if the model isn't found anywhere — that's
+    /// the path a fresh download will land at.
+    public static func resolvedDirectory(forRepoID repoID: String) -> URL {
+        let canonical = localDirectory(forRepoID: repoID)
+        if isSnapshotPresent(at: canonical) { return canonical }
+        for legacy in legacyBaseDirectories {
+            let dir = legacy
+                .appendingPathComponent("models", isDirectory: true)
+                .appendingPathComponent(repoID, isDirectory: true)
+            if isSnapshotPresent(at: dir) { return dir }
+        }
+        return canonical
+    }
+
+    /// Heuristic for "this directory contains a usable MLX model snapshot":
+    /// `config.json` plus at least one `.safetensors` file at the top level.
+    public static func isSnapshotPresent(at directory: URL) -> Bool {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: directory.appendingPathComponent("config.json").path)
+        else { return false }
+        let contents = (try? fm.contentsOfDirectory(atPath: directory.path)) ?? []
+        return contents.contains { $0.hasSuffix(".safetensors") }
+    }
+
     #if canImport(Hub)
-    /// HubApi instance pointed at the shared models directory so all
-    /// CHLocalLLM-aware code downloads to the same place.
+    /// HubApi instance pointed at the canonical base directory so all new
+    /// downloads land at the spec-stated `Application Support/CHSharedKit/models/`.
     public static func hubApi() -> HubApi {
         HubApi(downloadBase: baseDirectory)
     }
