@@ -166,10 +166,28 @@ public struct CHAISettingsContent: View {
         }
 
         // OpenAI settings
+        //
+        // 2.5.5: persist on every keystroke via `.onChange(of:)` instead of
+        // only on Return via `.onSubmit`. The bug was that users who typed
+        // their API key and then navigated away (the common path on iOS —
+        // backswipe to settings list, never tap Return) lost the key. The
+        // @State-bound text was never written to keychain, and on the next
+        // appearance `.onAppear` reloaded from keychain → empty/old value.
+        //
+        // The same fix is applied to Claude key, custom endpoint URL,
+        // custom endpoint model name, and custom endpoint key. Per-provider
+        // keychain isolation (added in 2.4.8 via `CHAITokenStore`) is
+        // unchanged — this is purely the picker-layer save trigger.
+        //
+        // `.onChange` fires on every text edit; keychain writes are atomic
+        // and cheap so per-keystroke persistence is fine. The initial
+        // .onAppear-driven load from keychain DOES trigger a no-op
+        // .onChange (load value → write same value back), which is
+        // harmless.
         if selectedProvider == CHOpenAIProvider.providerID {
             Section {
                 keyField("sk-...", key: $openaiKey)
-                    .onSubmit { CHOpenAIProvider.apiKey = openaiKey }
+                    .onChange(of: openaiKey) { _, val in CHOpenAIProvider.apiKey = val }
 
                 Picker("Model", selection: $openaiModel) {
                     ForEach(CHOpenAIProvider.availableModels) { model in
@@ -190,13 +208,14 @@ public struct CHAISettingsContent: View {
                     Text("API key stored securely in Keychain.")
                 }
             }
+            .onAppear { openaiKey = CHOpenAIProvider.apiKey ?? "" }
         }
 
         // Claude settings
         if selectedProvider == CHClaudeProvider.providerID {
             Section {
                 keyField("sk-ant-...", key: $claudeKey)
-                    .onSubmit { CHClaudeProvider.apiKey = claudeKey }
+                    .onChange(of: claudeKey) { _, val in CHClaudeProvider.apiKey = val }
 
                 Picker("Model", selection: $claudeModel) {
                     ForEach(CHClaudeProvider.availableModels) { model in
@@ -217,6 +236,7 @@ public struct CHAISettingsContent: View {
                     Text("API key stored securely in Keychain.")
                 }
             }
+            .onAppear { claudeKey = CHClaudeProvider.apiKey ?? "" }
         }
 
         // Custom endpoint settings
@@ -229,35 +249,40 @@ public struct CHAISettingsContent: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
-                        .onSubmit { CHCustomEndpointProvider.baseURL = customURL }
                 }
                 LabeledContent("Model") {
                     TextField("llama3", text: $customModel)
                         .multilineTextAlignment(.trailing)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .onSubmit { CHCustomEndpointProvider.model = customModel }
                 }
                 #else
                 LabeledContent("Base URL") {
                     TextField("http://localhost:11434/v1", text: $customURL)
                         .multilineTextAlignment(.trailing)
                         .autocorrectionDisabled()
-                        .onSubmit { CHCustomEndpointProvider.baseURL = customURL }
                 }
                 LabeledContent("Model") {
                     TextField("llama3", text: $customModel)
                         .multilineTextAlignment(.trailing)
                         .autocorrectionDisabled()
-                        .onSubmit { CHCustomEndpointProvider.model = customModel }
                 }
                 #endif
                 keyField("API Key (optional)", key: $customKey)
-                    .onSubmit { CHCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
             } header: {
                 Text("Custom Endpoint")
             } footer: {
                 Text("OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.")
+            }
+            .onChange(of: customURL) { _, val in CHCustomEndpointProvider.baseURL = val }
+            .onChange(of: customModel) { _, val in CHCustomEndpointProvider.model = val }
+            .onChange(of: customKey) { _, val in
+                CHCustomEndpointProvider.apiKey = val.isEmpty ? nil : val
+            }
+            .onAppear {
+                customKey = CHCustomEndpointProvider.apiKey ?? ""
+                customURL = CHCustomEndpointProvider.baseURL
+                customModel = CHCustomEndpointProvider.model
             }
         }
 
