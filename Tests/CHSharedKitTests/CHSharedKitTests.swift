@@ -1,7 +1,9 @@
 import Testing
 import Combine
 import SwiftUI
+import Foundation
 @testable import CHSharedKit
+@testable import CHLocalLLM
 
 // MARK: - CHAIProviderFilter
 
@@ -678,3 +680,203 @@ struct CHAITokenStoreTests {
         }
     }
 }
+
+// MARK: - 2.5.0 — MLX repo-id parsing
+
+@Suite("CHLocalMLXRepoID")
+struct CHLocalMLXRepoIDTests {
+
+    @Test("Parses canonical mlx-community repo URL")
+    func parsesCanonicalRepoURL() {
+        let url = URL(string: "https://huggingface.co/mlx-community/Qwen2.5-3B-Instruct-4bit")!
+        #expect(CHLocalMLXRepoID.from(url) == "mlx-community/Qwen2.5-3B-Instruct-4bit")
+    }
+
+    @Test("Parses repo URL with trailing slash")
+    func parsesTrailingSlash() {
+        let url = URL(string: "https://huggingface.co/mlx-community/Qwen2-VL-2B-Instruct-4bit/")!
+        #expect(CHLocalMLXRepoID.from(url) == "mlx-community/Qwen2-VL-2B-Instruct-4bit")
+    }
+
+    @Test("Stops at /resolve/ path component (file-view URL)")
+    func stopsAtResolvePath() {
+        let url = URL(string: "https://huggingface.co/mlx-community/Qwen2.5-3B-Instruct-4bit/resolve/main/config.json")!
+        #expect(CHLocalMLXRepoID.from(url) == "mlx-community/Qwen2.5-3B-Instruct-4bit")
+    }
+
+    @Test("Stops at /tree/ path component")
+    func stopsAtTreePath() {
+        let url = URL(string: "https://huggingface.co/mlx-community/Phi-3.5-mini-instruct-4bit/tree/main")!
+        #expect(CHLocalMLXRepoID.from(url) == "mlx-community/Phi-3.5-mini-instruct-4bit")
+    }
+
+    @Test("Returns nil for non-Hugging-Face URLs")
+    func nilForNonHF() {
+        let url = URL(string: "https://example.com/foo/bar")!
+        #expect(CHLocalMLXRepoID.from(url) == nil)
+    }
+
+    @Test("Returns nil for HF URL with only one path segment")
+    func nilForBareOrgPath() {
+        let url = URL(string: "https://huggingface.co/mlx-community")!
+        #expect(CHLocalMLXRepoID.from(url) == nil)
+    }
+}
+
+// MARK: - 2.5.0 — Cold-start latency estimate
+
+@Suite("CHLocalMLXColdStart")
+struct CHLocalMLXColdStartTests {
+
+    @Test("Estimate is monotonic in model size")
+    func monotonicInSize() {
+        let small = CHLocalMLXColdStart.estimate(forBytes: 280_000_000)   // 280 MB
+        let mid   = CHLocalMLXColdStart.estimate(forBytes: 1_700_000_000) // 1.7 GB
+        let big   = CHLocalMLXColdStart.estimate(forBytes: 3_500_000_000) // 3.5 GB
+        #expect(small <= mid)
+        #expect(mid <= big)
+    }
+
+    @Test("Tiny models still get the 1.5 s floor")
+    func tinyModelGetsFloor() {
+        let tiny = CHLocalMLXColdStart.estimate(forBytes: 50_000_000) // 50 MB
+        #expect(tiny >= 1.5)
+    }
+
+    @Test("3 GB model is at least 5 s")
+    func multiGBHasReasonableEstimate() {
+        let est = CHLocalMLXColdStart.estimate(forBytes: 3_000_000_000)
+        #expect(est >= 5.0)
+    }
+}
+
+// MARK: - 2.5.0 — Catalog & vision capability
+
+@Suite("LocalModelCatalog (MLX 2.5.0)")
+struct LocalModelCatalogMLXTests {
+
+    @Test("Default model is Qwen 2.5 3B per 2.5.0 spec")
+    func defaultIsQwen3B() {
+        #expect(LocalModelCatalog.default.id == "qwen2.5-3b-q4km")
+    }
+
+    @Test("Every catalog entry has a parseable Hugging Face repo id")
+    func everyEntryParsesAsRepo() {
+        for model in LocalModelCatalog.all {
+            let repoID = CHLocalMLXRepoID.from(model.downloadURL)
+            #expect(repoID != nil, "\(model.id) downloadURL must parse: \(model.downloadURL)")
+            // mlx-community is the canonical org for the 2.5.0 catalog,
+            // but custom forks (e.g. Microsoft's official Phi-3 4-bit)
+            // use other orgs — just check the form is org/name.
+            #expect(repoID?.split(separator: "/").count == 2)
+        }
+    }
+
+    @Test("Vision-capable check matches Qwen2-VL only")
+    func visionCapabilityMatchesCatalog() {
+        #expect(LocalModelCatalog.isVisionCapable("qwen2-vl-2b-q4"))
+        #expect(!LocalModelCatalog.isVisionCapable("qwen2.5-3b-q4km"))
+        #expect(!LocalModelCatalog.isVisionCapable("phi3.5-mini-q4km"))
+        #expect(!LocalModelCatalog.isVisionCapable("does-not-exist"))
+    }
+
+    @Test("All 2.4.x catalog ids are still present (recommendation/taskHint switches keep resolving)")
+    func legacyIdsPreserved() {
+        let legacyIDs: Set<String> = [
+            "qwen2.5-0.5b-q4km", "qwen2.5-1.5b-q4km", "qwen2.5-3b-q4km",
+            "llama3.2-1b-q4km", "llama3.2-3b-q4km",
+            "phi3-mini-4k-q4", "phi3.5-mini-q4km",
+            "gemma2-2b-q4km", "smollm2-1.7b-q4km", "deepseek-r1-1.5b-q4km",
+        ]
+        let presentIDs = Set(LocalModelCatalog.all.map(\.id))
+        for id in legacyIDs {
+            #expect(presentIDs.contains(id), "Legacy id \(id) missing — recommendationScore/taskHint switches will break for it")
+        }
+    }
+}
+
+// MARK: - 2.5.0 — Storage layout
+
+@Suite("CHLocalMLXStorage")
+struct CHLocalMLXStorageTests {
+
+    @Test("Local directory layout matches HubApi convention (<base>/models/<repo>)")
+    func localDirectoryLayout() {
+        let originalBase = CHLocalMLXStorage.baseDirectory
+        defer { CHLocalMLXStorage.baseDirectory = originalBase }
+
+        let tmpBase = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("CHLocalMLXStorageTest-\(UUID().uuidString)", isDirectory: true)
+        CHLocalMLXStorage.baseDirectory = tmpBase
+
+        let dir = CHLocalMLXStorage.localDirectory(forRepoID: "mlx-community/Qwen2.5-3B-Instruct-4bit")
+        let relative = dir.path.replacingOccurrences(of: tmpBase.path, with: "")
+        #expect(relative == "/models/mlx-community/Qwen2.5-3B-Instruct-4bit")
+    }
+}
+
+// MARK: - 2.5.0 — Error cases
+
+@Suite("CHAIError 2.5.0 cases")
+struct CHAIError250Tests {
+
+    @Test("modelLoadFailed surfaces its associated message")
+    func modelLoadFailedMessage() {
+        let err = CHAIError.modelLoadFailed("Insufficient memory — close other apps and try again.")
+        #expect(err.errorDescription == "Insufficient memory — close other apps and try again.")
+    }
+
+    @Test("unsupportedPlatform has a stable user-facing message")
+    func unsupportedPlatformMessage() {
+        let err = CHAIError.unsupportedPlatform
+        #expect(err.errorDescription == "On-device AI is not supported on this platform.")
+    }
+}
+
+// MARK: - 2.5.0 — LocalModelStore preserved API
+
+@MainActor
+@Suite("LocalModelStore preserved API (2.5.0)")
+struct LocalModelStoreAPITests {
+
+    @Test("modelURL routes catalog entries through CHLocalMLXStorage layout")
+    func modelURLLayout() {
+        let store = LocalModelStore.shared
+        let qwen3B = LocalModelCatalog.qwen2_5_3B
+        let url = store.modelURL(for: qwen3B)
+        #expect(url.path.contains("models/mlx-community/Qwen2.5-3B-Instruct-4bit"))
+    }
+
+    @Test("isInstalled is false when the model directory doesn't exist")
+    func isInstalledFalseForMissing() {
+        let store = LocalModelStore.shared
+        let qwen3B = LocalModelCatalog.qwen2_5_3B
+        // Smoke-test runs may have downloaded this; only assert when missing.
+        if !FileManager.default.fileExists(atPath: store.modelURL(for: qwen3B).path) {
+            #expect(!store.isInstalled(qwen3B))
+        }
+    }
+
+    @Test("Custom model registration surfaces it in allModels")
+    func customModelRegistration() {
+        let store = LocalModelStore.shared
+        let id = "test-custom-\(UUID().uuidString)"
+        let url = URL(string: "https://huggingface.co/mlx-community/SmolLM2-1.7B-Instruct-4bit")!
+        store.addCustomModel(
+            id: id,
+            displayName: "Test Custom",
+            downloadURL: url,
+            sizeBytes: 1_000_000_000,
+            chatTemplate: .chatML
+        )
+        defer {
+            // No public delete by id; deleteModel removes the entry too.
+            if let entry = store.customModels.first(where: { $0.id == id }) {
+                store.deleteModel(store.localModelInfo(for: entry))
+            }
+        }
+        let ids = store.allModels.map(\.id)
+        #expect(ids.contains(id))
+    }
+}
+

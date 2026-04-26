@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import UserNotifications
 import CHSharedKit
+import Hub
 
 // MARK: - Download state
 
@@ -27,7 +28,13 @@ public enum ModelDownloadState: Equatable, Sendable {
 // MARK: - LocalModelStore
 
 /// Manages on-device LLM model downloads and storage.
-/// Uses the App Group container so models are shared across all CHLocalLLM-enabled apps.
+///
+/// 2.5.0: Reworked to download MLX-format Hugging Face repos via
+/// `HubApi.snapshot(...)` instead of single-file GGUF URLs over a background
+/// `URLSession`. The public API surface is preserved; the iOS background
+/// continuation behavior is the only intentional behavior change (HubApi
+/// uses a foreground session, so multi-file downloads pause when the app
+/// suspends — we resume on next foreground).
 @Observable
 @MainActor
 public final class LocalModelStore {
@@ -41,22 +48,20 @@ public final class LocalModelStore {
 
     // Configuration — apps can override appGroupID before first use
     public var appGroupID: String = "group.app.chen.sharedllm" {
-        didSet { _sharedDefaults = nil } // invalidate cache when group changes
+        didSet {
+            _sharedDefaults = nil
+            CHLocalMLXStorage.baseDirectory = Self.resolveBaseDirectory(appGroupID: appGroupID)
+        }
     }
 
     /// Identifies the consuming app. Drives the default onboarding copy and
-    /// the local notification fired when a model finishes downloading, so
-    /// each app shows text that matches its own use case instead of the
-    /// Distill-flavored defaults that shipped in 1.2.0/1.3.0.
-    /// Set this at app launch, before the first download starts.
+    /// the local notification fired when a model finishes downloading.
     public var appIdentifier: AppIdentifier = .distill
 
     /// Optional override for the "download complete" notification title.
-    /// When nil, uses ``AppIdentifier/defaultDownloadCompletionTitle``.
     public var downloadCompletionTitle: String?
 
     /// Optional override for the "download complete" notification body.
-    /// When nil, uses ``AppIdentifier/defaultDownloadCompletionBody``.
     public var downloadCompletionBody: String?
 
     private static let activeModelKey = "chlocallm.activeModelID"
@@ -65,7 +70,7 @@ public final class LocalModelStore {
     // Custom models added by the user
     public private(set) var customModels: [CustomModelEntry] = []
 
-    // Cached shared UserDefaults suite — invalidated when appGroupID changes
+    // Cached shared UserDefaults suite
     @ObservationIgnored private var _sharedDefaults: UserDefaults?
     private var sharedDefaults: UserDefaults {
         if let cached = _sharedDefaults { return cached }
@@ -74,22 +79,25 @@ public final class LocalModelStore {
         return suite
     }
 
-    // Background session delegate — persists for app lifetime so iOS can reconnect downloads
-    let bgDelegate: BackgroundDownloadDelegate
+    // Active download task (HubApi.snapshot wrapped in Task) — non-nil while a
+    // download is running; cancelled by `cancelDownload()`.
+    @ObservationIgnored private var activeTask: Task<Void, Never>?
 
     private init() {
-        // Load persisted active model ID — prefer shared suite, fall back + migrate from standard
+        // Point shared MLX storage at the App Group container before first use.
+        CHLocalMLXStorage.baseDirectory = Self.resolveBaseDirectory(appGroupID: appGroupID)
+
+        // Restore active model id (prefer App Group suite; migrate from .standard if needed).
         let sharedSuite = UserDefaults(suiteName: "group.app.chen.sharedllm") ?? .standard
         if let id = sharedSuite.string(forKey: LocalModelStore.activeModelKey) {
             activeModelID = id
         } else if let legacyID = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey) {
-            // Migrate legacy per-app value to shared suite on first launch after update
             activeModelID = legacyID
             sharedSuite.set(legacyID, forKey: LocalModelStore.activeModelKey)
             UserDefaults.standard.removeObject(forKey: LocalModelStore.activeModelKey)
         }
 
-        // Load custom models — prefer shared suite, migrate from standard if needed
+        // Restore custom models.
         if let data = sharedSuite.data(forKey: LocalModelStore.customModelsKey),
            let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: data) {
             customModels = entries
@@ -100,54 +108,9 @@ public final class LocalModelStore {
             UserDefaults.standard.removeObject(forKey: LocalModelStore.customModelsKey)
         }
 
-        // BackgroundDownloadDelegate resolves its models directory lazily so appGroupID overrides
-        // (set after init but before the first download) are respected. Using LocalModelStore.shared
-        // inside the closure is safe: by the time any download completes, the singleton exists.
-        bgDelegate = BackgroundDownloadDelegate(
-            resolveModelsDir: { LocalModelStore.shared.modelsDirectory }
-        )
-        // Eagerly create the session — must happen before iOS delivers background events
-        _ = bgDelegate.session
-
-        bgDelegate.onStateChange = { [weak self] state, modelID in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.downloadState = state
-                switch state {
-                case .installed:
-                    self.activeDownloadModelID = nil
-                    self.fireCompletionNotification()
-                case .failed:
-                    self.activeDownloadModelID = nil
-                case .downloading, .installing, .paused, .idle:
-                    if let modelID { self.activeDownloadModelID = modelID }
-                }
-            }
-        }
-
-        // Reconnect any in-flight background download (e.g. after app relaunch)
-        reconnectPendingTasks()
-
-        // 2.4.5: seed CHAIManager's @Published model selection from the
-        // persisted activeModelID so the unified "Active Provider"
-        // label renders the correct model suffix on cold launch —
-        // without this, CHAIManager's own persistence (UserDefaults.standard)
-        // would start at nil for apps upgrading from 2.4.4 and the label
-        // would fall back to bare "On-Device AI" until the user re-taps
-        // a model in the picker. LocalModelStore's own store (App Group
-        // UserDefaults) is the authoritative source for on-device
-        // selection; we mirror it into CHAIManager here.
-        //
-        // 2.4.7: ALSO register the CHLocalLLMProvider instance, otherwise
-        // `CHAIManager.activeProvider` resolves to nil on cold launch
-        // whenever the persisted `activeProviderID == "on-device-llm"`
-        // and the active model is not the one a host app eagerly
-        // registers at launch. Symptom: the unified "Active Provider"
-        // label falls back to "None" while the on-device model picker
-        // still shows the model selected — see Chen's Closet Build 472
-        // screenshot. The 2.4.5 fix mirrored the model-name properties
-        // but missed the dict registration; the dict is not @Published
-        // so a later host registration cannot un-stick the label.
+        // Cold-launch: if the user had selected an on-device model that's still
+        // installed (now in MLX format), wire up the provider with CHAIManager
+        // so the unified "Active Provider" label resolves on first render.
         if let id = activeModelID,
            let info = (LocalModelCatalog.all + customModels.map(localModelInfo(for:)))
                .first(where: { $0.id == id }) {
@@ -164,21 +127,16 @@ public final class LocalModelStore {
             }
         }
 
-        // Migrate model files from per-app Application Support → shared container (runs once, background).
-        let sharedDir = Self.resolveModelsDirectory(appGroupID: "group.app.chen.sharedllm")
-        let legacyDir = FileManager.default
-            .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("CHLocalModels")
+        // 2.5.0 migration: legacy `<group>/CHLocalModels/*.gguf` files are
+        // useless under MLX. Sweep them on a background task to reclaim disk.
+        let legacyDir = Self.legacyGGUFDirectory(appGroupID: appGroupID)
         Task.detached(priority: .background) {
-            Self.migrateModelFilesIfNeeded(from: legacyDir, to: sharedDir)
+            Self.removeLegacyGGUFFilesIfNeeded(at: legacyDir)
         }
     }
 
     // MARK: - Completion notification
 
-    /// Fires a local "download complete" notification using app-specific copy.
-    /// Title/body default to the active ``appIdentifier``'s strings and can be
-    /// overridden via ``downloadCompletionTitle`` / ``downloadCompletionBody``.
     private func fireCompletionNotification() {
         let content = UNMutableNotificationContent()
         content.title = downloadCompletionTitle ?? appIdentifier.defaultDownloadCompletionTitle
@@ -188,38 +146,47 @@ public final class LocalModelStore {
         let request = UNNotificationRequest(
             identifier: appIdentifier.downloadCompletionNotificationIdentifier,
             content: content,
-            trigger: nil // deliver immediately
+            trigger: nil
         )
         UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Storage
 
-    private static func resolveModelsDirectory(appGroupID: String) -> URL {
+    private static func resolveBaseDirectory(appGroupID: String) -> URL {
         let base = FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
             ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("CHLocalModels", isDirectory: true)
+        let dir = base.appendingPathComponent("CHSharedKit", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
 
-    private var modelsDirectory: URL {
-        Self.resolveModelsDirectory(appGroupID: appGroupID)
-    }
-
+    /// Local on-disk directory for a model (whether or not it's downloaded).
+    /// Layout: `<base>/models/<repo-org>/<repo-name>/`.
     public func modelURL(for model: LocalModelInfo) -> URL {
-        modelsDirectory.appendingPathComponent("\(model.id).gguf")
+        if let repoID = CHLocalMLXRepoID.from(model.downloadURL) {
+            return CHLocalMLXStorage.localDirectory(forRepoID: repoID)
+        }
+        // Fall back: derive a stable folder name from the model id so custom
+        // entries that don't parse as Hub URLs still have a local home.
+        return CHLocalMLXStorage.baseDirectory
+            .appendingPathComponent("custom", isDirectory: true)
+            .appendingPathComponent(model.id, isDirectory: true)
     }
 
     // MARK: - Queries
 
-    /// Returns true if the model file exists and is at least 80 % of the expected size.
+    /// True when the model snapshot exists locally with the files required
+    /// to load via MLX (`config.json` + at least one `.safetensors`).
     public func isInstalled(_ model: LocalModelInfo) -> Bool {
-        let url = modelURL(for: model)
-        guard FileManager.default.fileExists(atPath: url.path) else { return false }
-        let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-        return Int64(fileSize) > model.sizeBytes * 4 / 5
+        let dir = modelURL(for: model)
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: dir.path) else { return false }
+        let configURL = dir.appendingPathComponent("config.json")
+        guard fm.fileExists(atPath: configURL.path) else { return false }
+        let contents = (try? fm.contentsOfDirectory(atPath: dir.path)) ?? []
+        return contents.contains { $0.hasSuffix(".safetensors") }
     }
 
     public var installedModels: [LocalModelInfo] {
@@ -230,12 +197,10 @@ public final class LocalModelStore {
         LocalModelCatalog.all.filter { !isInstalled($0) }
     }
 
-    /// All models: catalog + user-added custom models.
     public var allModels: [LocalModelInfo] {
         LocalModelCatalog.all + customModels.map { localModelInfo(for: $0) }
     }
 
-    /// Convert a CustomModelEntry to a LocalModelInfo for use in the download/install flow.
     public func localModelInfo(for entry: CustomModelEntry) -> LocalModelInfo {
         let minRAM = max(2, Int(Double(entry.sizeBytes) * 1.5 / 1_073_741_824) + 1)
         return LocalModelInfo(
@@ -261,17 +226,14 @@ public final class LocalModelStore {
         return String(format: "%.0f MB", Double(bytes) / 1_048_576)
     }
 
-    /// The default catalog model if already installed, else nil.
     public var installedDefaultModel: LocalModelInfo? {
         isInstalled(LocalModelCatalog.default) ? LocalModelCatalog.default : nil
     }
 
-    /// Total bytes used by installed models.
+    /// Total bytes used by installed models (recursive directory size).
     public var totalStorageUsed: Int64 {
         installedModels.reduce(0) { acc, model in
-            let url = modelURL(for: model)
-            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
-            return acc + Int64(size)
+            acc + Self.directorySize(at: modelURL(for: model))
         }
     }
 
@@ -280,46 +242,85 @@ public final class LocalModelStore {
     public func downloadModel(_ model: LocalModelInfo) {
         switch downloadState {
         case .idle, .installed, .failed: break
-        default: return  // don't interrupt an active download
+        default: return
         }
+        guard let repoID = CHLocalMLXRepoID.from(model.downloadURL) else {
+            downloadState = .failed("Model URL is not a Hugging Face repo: \(model.downloadURL.absoluteString)")
+            return
+        }
+
         activeDownloadModelID = model.id
         downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
-
         requestNotificationPermission()
 
-        let task = bgDelegate.session.downloadTask(with: model.downloadURL)
-        task.resume()
-    }
-
-    public func cancelDownload() {
-        bgDelegate.session.getAllTasks { tasks in
-            tasks.compactMap { $0 as? URLSessionDownloadTask }.forEach { task in
-                task.cancel { resumeData in
+        let totalEstimate = model.sizeBytes
+        activeTask = Task { [weak self] in
+            do {
+                let hub = CHLocalMLXStorage.hubApi()
+                let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
+                    let fraction = progress.fractionCompleted
+                    let total = progress.totalUnitCount > 0
+                        ? progress.totalUnitCount : totalEstimate
+                    let received = progress.completedUnitCount
                     Task { @MainActor [weak self] in
-                        guard let self else { return }
-                        self.activeDownloadModelID = nil
-                        if let data = resumeData {
-                            self.downloadState = .paused(resumeData: data)
-                        } else {
-                            self.downloadState = .idle
-                        }
+                        self?.downloadState = .downloading(
+                            progress: fraction,
+                            bytesReceived: received,
+                            totalBytes: total
+                        )
                     }
+                }
+                _ = try await hub.snapshot(
+                    from: Hub.Repo(id: repoID),
+                    matching: ["*.safetensors", "*.json"],
+                    progressHandler: progressHandler
+                )
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.downloadState = .installed
+                    self.activeDownloadModelID = nil
+                    self.fireCompletionNotification()
+                    self.activeTask = nil
+                }
+            } catch is CancellationError {
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.downloadState = .idle
+                    self.activeDownloadModelID = nil
+                    self.activeTask = nil
+                }
+            } catch {
+                let message = error.localizedDescription
+                await MainActor.run { [weak self] in
+                    guard let self else { return }
+                    self.downloadState = .failed(message)
+                    self.activeDownloadModelID = nil
+                    self.activeTask = nil
                 }
             }
         }
     }
 
-    public func resumeDownload(model: LocalModelInfo, resumeData: Data) {
-        guard case .paused = downloadState else { return }
-        activeDownloadModelID = model.id
-        downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
+    public func cancelDownload() {
+        activeTask?.cancel()
+        activeTask = nil
+        if case .downloading = downloadState {
+            downloadState = .idle
+            activeDownloadModelID = nil
+        }
+    }
 
-        let task = bgDelegate.session.downloadTask(withResumeData: resumeData)
-        task.resume()
+    /// Resume a previously paused download. With HubApi the snapshot resumes
+    /// missing files automatically — `resumeData` is ignored and we just
+    /// re-issue `downloadModel(_:)`.
+    public func resumeDownload(model: LocalModelInfo, resumeData: Data) {
+        downloadState = .idle
+        downloadModel(model)
     }
 
     public func deleteModel(_ model: LocalModelInfo) {
-        try? FileManager.default.removeItem(at: modelURL(for: model))
+        let dir = modelURL(for: model)
+        try? FileManager.default.removeItem(at: dir)
         if activeModelID == model.id {
             clearActiveModel()
         }
@@ -331,7 +332,6 @@ public final class LocalModelStore {
 
     // MARK: - Custom models
 
-    /// Register a new custom model. Caller should then call downloadModel(_:) with localModelInfo(for:).
     public func addCustomModel(
         id: String = UUID().uuidString,
         displayName: String,
@@ -357,15 +357,6 @@ public final class LocalModelStore {
 
     // MARK: - Active model
 
-    /// Make `model` the active on-device provider. Registers `CHLocalLLMProvider` and persists the choice.
-    ///
-    /// 2.4.5: also propagates the selection to
-    /// `CHAIManager.setActiveOnDeviceModel(id:displayName:)` so the
-    /// unified "Active Provider" label composes the correct model name
-    /// from a single observable source. Before 2.4.5 the label relied
-    /// on the provider instance's `displayName`, which embedded the
-    /// model name captured at construction and drifted stale on model
-    /// switches and cold launches.
     public func setActiveModel(_ model: LocalModelInfo) {
         guard isInstalled(model) else { return }
         activeModelID = model.id
@@ -382,93 +373,79 @@ public final class LocalModelStore {
         CHAIManager.shared.activeProviderID = CHLocalLLMProvider.providerID
     }
 
-    /// Clear the active model selection (e.g. after deleting it).
-    ///
-    /// 2.4.5: also clears `CHAIManager.activeModelID` /
-    /// `activeModelDisplayName` so the "Active Provider" label drops
-    /// the stale model suffix immediately.
     public func clearActiveModel() {
         activeModelID = nil
         sharedDefaults.removeObject(forKey: Self.activeModelKey)
         CHAIManager.shared.clearActiveOnDeviceModel()
     }
 
-    /// Reset download state to idle (call after a failed download to allow retry).
     public func resetDownloadState() {
         downloadState = .idle
         activeDownloadModelID = nil
     }
 
-    // MARK: - Background events
+    // MARK: - Background events (no-op in 2.5.0)
 
-    /// Called by AppDelegate.handleEventsForBackgroundURLSession. Stores the system-provided
-    /// completion handler so it can be called after all delegate callbacks have fired.
+    /// Retained for source compatibility with apps that wired up
+    /// `application(_:handleEventsForBackgroundURLSession:completionHandler:)`
+    /// in 2.4.x. HubApi-based downloads do not use a background URLSession,
+    /// so the system will never call this for our identifier — the handler is
+    /// invoked immediately so the OS doesn't keep the app alive waiting.
     public func handleBackgroundEvents(identifier: String, completionHandler: @escaping () -> Void) {
-        guard identifier == bgDelegate.sessionIdentifier else {
-            completionHandler()
-            return
-        }
-        bgDelegate.backgroundCompletionHandler = completionHandler
-        // Session was already created at init, but ensure it's alive
-        _ = bgDelegate.session
+        completionHandler()
     }
 
-    // MARK: - Private helpers
-
-    private func reconnectPendingTasks() {
-        bgDelegate.session.getAllTasks { [weak self] tasks in
-            guard let task = tasks.compactMap({ $0 as? URLSessionDownloadTask }).first else { return }
-            guard let url = task.originalRequest?.url,
-                  let model = LocalModelCatalog.all.first(where: { $0.downloadURL == url }) else { return }
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.activeDownloadModelID = model.id
-                let written = task.countOfBytesReceived
-                let expected = task.countOfBytesExpectedToReceive
-                let total = expected > 0 ? expected : model.sizeBytes
-                let progress = total > 0 ? Double(written) / Double(total) : 0
-                self.downloadState = .downloading(progress: progress, bytesReceived: written, totalBytes: total)
-            }
-        }
-    }
+    // MARK: - Helpers
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    // MARK: - Legacy file migration
-
-    /// Moves GGUF files from the old per-app Application Support path to the shared group container.
-    /// Called once at init on a background task. Idempotent: safe to call repeatedly.
-    /// - If shared copy already exists, deletes the per-app copy to reclaim disk space.
-    /// - If only per-app copy exists, moves it atomically to shared location.
-    private nonisolated static func migrateModelFilesIfNeeded(from legacyDir: URL, to sharedDir: URL) {
+    private static func directorySize(at url: URL) -> Int64 {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: legacyDir.path) else { return }
-        do {
-            let files = try fm.contentsOfDirectory(at: legacyDir, includingPropertiesForKeys: [.fileSizeKey])
-            for file in files where file.pathExtension == "gguf" {
-                let dest = sharedDir.appendingPathComponent(file.lastPathComponent)
-                if fm.fileExists(atPath: dest.path) {
-                    // Shared copy already present — remove stale per-app copy
-                    try? fm.removeItem(at: file)
-                } else {
-                    // Only per-app copy exists — move to shared container
-                    try fm.moveItem(at: file, to: dest)
-                }
+        guard let enumerator = fm.enumerator(
+            at: url,
+            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]
+        ) else { return 0 }
+        var total: Int64 = 0
+        for case let item as URL in enumerator {
+            let values = try? item.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey])
+            if values?.isRegularFile == true {
+                total += Int64(values?.fileSize ?? 0)
             }
-            // Remove empty legacy directory
-            let remaining = try? fm.contentsOfDirectory(atPath: legacyDir.path)
-            if remaining?.isEmpty == true {
-                try? fm.removeItem(at: legacyDir)
-            }
-        } catch { /* non-fatal: model will re-download if needed */ }
+        }
+        return total
+    }
+
+    // MARK: - Legacy GGUF cleanup
+
+    private static func legacyGGUFDirectory(appGroupID: String) -> URL {
+        let base = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return base.appendingPathComponent("CHLocalModels", isDirectory: true)
+    }
+
+    private nonisolated static func removeLegacyGGUFFilesIfNeeded(at dir: URL) {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: dir.path) else { return }
+        guard let files = try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
+        else { return }
+        for file in files where file.pathExtension == "gguf" {
+            try? fm.removeItem(at: file)
+        }
+        if let remaining = try? fm.contentsOfDirectory(atPath: dir.path), remaining.isEmpty {
+            try? fm.removeItem(at: dir)
+        }
     }
 }
 
 // MARK: - CustomModelEntry
 
 /// A user-supplied model added via URL. Persisted in UserDefaults as JSON.
+/// In 2.5.0 the `downloadURL` should be a Hugging Face repo URL
+/// (e.g. `https://huggingface.co/mlx-community/Qwen2.5-1.5B-Instruct-4bit`);
+/// custom GGUF URLs are no longer loadable.
 public struct CustomModelEntry: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let displayName: String
@@ -477,103 +454,19 @@ public struct CustomModelEntry: Codable, Sendable, Identifiable, Equatable {
     public let chatTemplate: LocalModelInfo.ChatTemplate
 }
 
-// MARK: - BackgroundDownloadDelegate
+// MARK: - BackgroundDownloadDelegate (deprecated stub)
 
-/// Persistent URLSession delegate for background model downloads.
-/// A single instance lives for the app's lifetime to ensure iOS can always deliver callbacks.
-public final class BackgroundDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-
-    /// Session identifier — derived from appGroupID so each app gets a unique background session.
-    /// e.g. "group.app.chen.sharedllm" → "app.chen.sharedllm.llm-download"
+/// Retained as a no-op stub for source compatibility. 2.5.0 downloads use
+/// Hugging Face `HubApi` (foreground `URLSession`) so this delegate is never
+/// invoked. Apps may safely stop wiring it into `AppDelegate`.
+@available(*, deprecated, message: "2.5.0 uses HubApi for downloads; this delegate is unused.")
+public final class BackgroundDownloadDelegate: NSObject, @unchecked Sendable {
     public let sessionIdentifier: String
-
-    /// Set by AppDelegate.handleEventsForBackgroundURLSession; called in urlSessionDidFinishEvents.
     public var backgroundCompletionHandler: (() -> Void)?
 
-    /// Callback bridge to LocalModelStore (set at store init).
-    var onStateChange: ((ModelDownloadState, String?) -> Void)?
-
-    /// Closure that resolves the models directory lazily — called when a download finishes.
-    private let resolveModelsDir: () -> URL
-
-    public private(set) lazy var session: URLSession = {
-        let config = URLSessionConfiguration.background(withIdentifier: sessionIdentifier)
-        config.isDiscretionary = false
-        config.sessionSendsLaunchEvents = true
-        return URLSession(configuration: config, delegate: self, delegateQueue: nil)
-    }()
-
-    init(resolveModelsDir: @escaping () -> URL, appGroupID: String = "group.app.chen.sharedllm") {
-        self.resolveModelsDir = resolveModelsDir
-        // Derive a per-app session ID from the app group, e.g.:
-        // "group.app.chen.sharedllm" → "app.chen.sharedllm.llm-download"
-        let stripped = appGroupID.hasPrefix("group.") ? String(appGroupID.dropFirst("group.".count)) : appGroupID
+    public init(appGroupID: String = "group.app.chen.sharedllm") {
+        let stripped = appGroupID.hasPrefix("group.")
+            ? String(appGroupID.dropFirst("group.".count)) : appGroupID
         self.sessionIdentifier = "\(stripped).llm-download"
-    }
-
-    // MARK: Helpers
-
-    private func modelInfo(for task: URLSessionDownloadTask) -> LocalModelInfo? {
-        guard let url = task.originalRequest?.url else { return nil }
-        return LocalModelCatalog.all.first { $0.downloadURL == url }
-    }
-
-    private func destURL(for model: LocalModelInfo) -> URL {
-        resolveModelsDir().appendingPathComponent("\(model.id).gguf")
-    }
-
-    // MARK: URLSessionDownloadDelegate
-
-    public func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didWriteData bytesWritten: Int64,
-        totalBytesWritten: Int64,
-        totalBytesExpectedToWrite: Int64
-    ) {
-        let modelID = modelInfo(for: downloadTask)?.id
-        let total = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : totalBytesWritten
-        let progress = totalBytesExpectedToWrite > 0
-            ? Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) : 0
-        onStateChange?(.downloading(progress: progress, bytesReceived: totalBytesWritten, totalBytes: total), modelID)
-    }
-
-    public func urlSession(
-        _ session: URLSession,
-        downloadTask: URLSessionDownloadTask,
-        didFinishDownloadingTo location: URL
-    ) {
-        guard let model = modelInfo(for: downloadTask) else {
-            onStateChange?(.failed("Internal error: unrecognized download URL"), nil)
-            return
-        }
-        let dest = destURL(for: model)
-        onStateChange?(.installing, model.id)
-        do {
-            try? FileManager.default.removeItem(at: dest)
-            try FileManager.default.moveItem(at: location, to: dest)
-            onStateChange?(.installed, model.id)
-        } catch {
-            onStateChange?(.failed("Failed to save model: \(error.localizedDescription)"), model.id)
-        }
-    }
-
-    public func urlSession(
-        _ session: URLSession,
-        task: URLSessionTask,
-        didCompleteWithError error: Error?
-    ) {
-        guard let error else { return }
-        let nsError = error as NSError
-        if nsError.code == NSURLErrorCancelled { return }
-        let modelID = (task as? URLSessionDownloadTask).flatMap { modelInfo(for: $0)?.id }
-        onStateChange?(.failed(error.localizedDescription), modelID)
-    }
-
-    public func urlSessionDidFinishEvents(forBackgroundURLSession session: URLSession) {
-        DispatchQueue.main.async { [weak self] in
-            self?.backgroundCompletionHandler?()
-            self?.backgroundCompletionHandler = nil
-        }
     }
 }

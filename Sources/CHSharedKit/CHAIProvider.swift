@@ -77,7 +77,12 @@ public enum CHAIError: LocalizedError {
     case invalidKey
     case visionNotSupported
     case appleIntelligenceUnavailable
-    
+    /// On-device model could not be loaded (file missing, corrupted, OOM, etc.).
+    /// The associated string is an actionable user-facing message.
+    case modelLoadFailed(String)
+    /// The current platform (e.g. Mac Catalyst) cannot run on-device inference.
+    case unsupportedPlatform
+
     public var errorDescription: String? {
         switch self {
         case .noProvider: return "No AI provider configured"
@@ -88,6 +93,8 @@ public enum CHAIError: LocalizedError {
         case .invalidKey: return "Invalid API key. Please check your key in Settings."
         case .visionNotSupported: return "This provider does not support vision/image inputs"
         case .appleIntelligenceUnavailable: return "Apple Intelligence requires iOS 26 or later"
+        case .modelLoadFailed(let msg): return msg
+        case .unsupportedPlatform: return "On-device AI is not supported on this platform."
         }
     }
 }

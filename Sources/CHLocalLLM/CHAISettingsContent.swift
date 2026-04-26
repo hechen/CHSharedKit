@@ -333,6 +333,7 @@ public struct CHAISettingsContent: View {
         // detail row opens this directly (2.4.6). Removed a prior
         // management-intermediate sheet that added a redundant screen
         // plus a 0.35s dismiss-then-present delay.
+        #if os(iOS)
         .sheet(isPresented: $showModelPicker) {
             NavigationStack {
                 ModelPickerView(appIdentifier: appIdentifier) {
@@ -340,6 +341,7 @@ public struct CHAISettingsContent: View {
                 }
             }
         }
+        #endif
         .onAppear {
             openaiKey = CHOpenAIProvider.apiKey ?? ""
             claudeKey = CHClaudeProvider.apiKey ?? ""
