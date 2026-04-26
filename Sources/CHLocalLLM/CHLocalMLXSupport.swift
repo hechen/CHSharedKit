@@ -129,9 +129,15 @@ public enum CHLocalMLXStorage {
 /// MLX model is installed. Returns the registered provider, or nil if no model
 /// is installed (in which case nothing was registered and the picker should
 /// hide the on-device row).
+///
+/// 2.5.1: renamed from `registerOnDeviceLLMProvider()` (which collided with
+/// app-side helpers — every consumer naturally picks that name for a private
+/// `func registerOnDeviceLLMProvider()` in their App entry-point that wires
+/// app-specific provider subclasses). The `CH` prefix matches the kit's
+/// type namespace and won't clash with any consumer-side helper.
 @MainActor
 @discardableResult
-public func registerOnDeviceLLMProvider() -> CHLocalLLMProvider? {
+public func registerCHLocalLLMProvider() -> CHLocalLLMProvider? {
     let installed = LocalModelStore.shared.installedModels
     guard let model = installed.first(where: { $0.id == LocalModelCatalog.default.id })
             ?? installed.first else { return nil }
@@ -145,9 +151,13 @@ public func registerOnDeviceLLMProvider() -> CHLocalLLMProvider? {
 
 /// Registers a default on-device VLM provider with `CHAIManager` if at least one
 /// vision-capable MLX model is installed.
+///
+/// 2.5.1: renamed from `registerOnDeviceVLMProvider()` for the same reason as
+/// the LLM helper above — `CH`-prefixed name avoids clashing with consumer
+/// app-side helpers.
 @MainActor
 @discardableResult
-public func registerOnDeviceVLMProvider() -> CHLocalVLMProvider? {
+public func registerCHLocalVLMProvider() -> CHLocalVLMProvider? {
     let installed = LocalModelStore.shared.installedModels
         .filter { LocalModelCatalog.isVisionCapable($0.id) }
     guard let model = installed.first else { return nil }
