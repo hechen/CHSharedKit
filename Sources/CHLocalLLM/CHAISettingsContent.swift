@@ -4,11 +4,14 @@ import CHSharedKit
 
 // MARK: - CHAIProviderPickerView
 
-/// Full-screen standalone AI provider picker.
+/// Full-screen AI provider picker — designed as a **navigation destination**
+/// (push), NOT a self-contained scene.
 ///
-/// A ready-to-push navigation destination — has its own `List {}` and
-/// `navigationTitle`. Use this when you want a dedicated "AI Provider"
-/// screen with no extra sections.
+/// Sets `.navigationTitle` and a keyboard-dismiss toolbar but does NOT wrap
+/// itself in `NavigationStack`. The caller's surrounding `NavigationStack`
+/// supplies the nav bar.
+///
+/// ## Push (recommended)
 ///
 /// ```swift
 /// NavigationLink {
@@ -17,6 +20,25 @@ import CHSharedKit
 ///     Label("AI Provider", systemImage: "sparkles")
 /// }
 /// ```
+///
+/// ## Modal presentation
+///
+/// Use ``CHAISettingsSheet`` instead — it owns the `NavigationStack` + Done
+/// button. **Do NOT wrap `CHAIProviderPickerView` in your own `NavigationStack`
+/// inside a `.sheet { ... }`** — the picker's `.navigationTitle` will pick
+/// up the wrapping stack and you'll get a double nav bar (the consumer's
+/// outer push stack + the sheet's inner one). Use `CHAISettingsSheet` and
+/// the kit handles the modal chrome correctly:
+///
+/// ```swift
+/// .sheet(isPresented: $showAISettings) {
+///     CHAISettingsSheet(appIdentifier: .spendwisely)
+/// }
+/// ```
+///
+/// ## Embed inside an existing `List`
+///
+/// Use ``CHAISettingsContent`` (this view's body inlined) for that case.
 public struct CHAIProviderPickerView: View {
     public let appIdentifier: AppIdentifier
 
@@ -47,6 +69,55 @@ public struct CHAIProviderPickerView: View {
             }
         }
         #endif
+    }
+}
+
+// MARK: - CHAISettingsSheet (2.7.1)
+
+/// Modal-presentation wrapper around ``CHAIProviderPickerView``.
+///
+/// Owns its own `NavigationStack` + a top-trailing **Done** button that
+/// dismisses the sheet. Use this for `.sheet { ... }` presentation so
+/// consumer apps don't need to hand-roll a NavigationStack wrapping (which
+/// causes a double nav bar when the same view is also pushed from
+/// somewhere else, or when the sheet is presented from inside an existing
+/// nav stack).
+///
+/// ```swift
+/// .sheet(isPresented: $showAISettings) {
+///     CHAISettingsSheet(appIdentifier: .spendwisely)
+/// }
+/// ```
+///
+/// Pass `onDismiss` to react to the user tapping Done (defaults to nil —
+/// the sheet just dismisses).
+public struct CHAISettingsSheet: View {
+    public let appIdentifier: AppIdentifier
+    public let onDismiss: (() -> Void)?
+
+    public init(
+        appIdentifier: AppIdentifier,
+        onDismiss: (() -> Void)? = nil
+    ) {
+        self.appIdentifier = appIdentifier
+        self.onDismiss = onDismiss
+    }
+
+    @Environment(\.dismiss) private var dismiss
+
+    public var body: some View {
+        NavigationStack {
+            CHAIProviderPickerView(appIdentifier: appIdentifier)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            dismiss()
+                            onDismiss?()
+                        }
+                        .fontWeight(.semibold)
+                    }
+                }
+        }
     }
 }
 
