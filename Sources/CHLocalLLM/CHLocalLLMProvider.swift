@@ -93,11 +93,25 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         return _modelURL
     }
 
-    /// Rough seconds-until-first-token estimate for the *currently active* model
-    /// (cold start). Surface to UI so the spinner before the first token doesn't
-    /// look like a hang.
+    /// True when the model container is loaded and the next `sendMessage`
+    /// will be warm (sub-second prompt-to-first-token). Driven by the
+    /// internal `_container` cache. False after init, after `setActiveModel`,
+    /// and during in-flight load — call ``warmUp()`` to flip it to true
+    /// without generating tokens.
+    public var isModelLoaded: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return _container != nil
+    }
+
+    /// Rough seconds-until-first-token estimate for the currently active
+    /// model. When the model isn't loaded yet, this is the cold-start window
+    /// (model size × per-GB load time, minimum 1.5 s — see
+    /// ``CHLocalMLXColdStart``). When loaded, returns ~0.5 s for the
+    /// generation-only path. Use to drive UI: `if estimate > 2 { show
+    /// "Warming up…" }` and otherwise show a normal spinner.
     public var coldStartLatencyEstimate: TimeInterval {
-        CHLocalMLXColdStart.estimate(forBytes: modelInfo.sizeBytes)
+        if isModelLoaded { return 0.5 }
+        return CHLocalMLXColdStart.estimate(forBytes: modelInfo.sizeBytes)
     }
 
     /// Switch to a different model at runtime. Drops the cached container so
@@ -179,17 +193,32 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
     private static func performLoad(
         url: URL, info: LocalModelInfo
     ) async throws -> ModelContainer {
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        let t0 = Date()
+        print("[CHLocalLLM] performLoad start id=\(info.id) name=\(info.displayName) url=\(url.path)")
+
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: url.path) else {
+            print("[CHLocalLLM] performLoad ERROR: directory missing at \(url.path)")
             throw CHAIError.modelLoadFailed(
                 "Model files for \(info.displayName) are missing. Re-download from Settings → AI Provider."
             )
         }
         let configURL = url.appendingPathComponent("config.json")
-        guard FileManager.default.fileExists(atPath: configURL.path) else {
+        guard fm.fileExists(atPath: configURL.path) else {
+            print("[CHLocalLLM] performLoad ERROR: config.json missing at \(configURL.path)")
             throw CHAIError.modelLoadFailed(
                 "Model snapshot for \(info.displayName) is incomplete (missing config.json). Re-download to fix."
             )
         }
+        // Surface every file the snapshot has — when Chen's report says
+        // "Qwen 2.5 doesn't work", this single line in the device console
+        // reveals whether the snapshot is missing tokenizer.json,
+        // model.safetensors, or any other expected MLX input.
+        let entries = (try? fm.contentsOfDirectory(atPath: url.path)) ?? []
+        let safetensorsCount = entries.filter { $0.hasSuffix(".safetensors") }.count
+        let hasTokenizer = entries.contains("tokenizer.json")
+        let hasTokenizerConfig = entries.contains("tokenizer_config.json")
+        print("[CHLocalLLM] performLoad files: total=\(entries.count) safetensors=\(safetensorsCount) tokenizer.json=\(hasTokenizer) tokenizer_config.json=\(hasTokenizerConfig)")
 
         await MainActor.run {
             NotificationCenter.default.post(
@@ -199,12 +228,15 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         }
 
         do {
+            print("[CHLocalLLM] performLoad calling LLMModelFactory.shared.loadContainer (this is the cold-start step, ~3-8 s on Apple Silicon)")
             let configuration = ModelConfiguration(directory: url)
             let container = try await LLMModelFactory.shared.loadContainer(
                 hub: CHLocalMLXStorage.hubApi(),
                 configuration: configuration,
                 progressHandler: { _ in }
             )
+            let elapsed = Date().timeIntervalSince(t0)
+            print("[CHLocalLLM] performLoad SUCCESS id=\(info.id) elapsed=\(String(format: "%.2f", elapsed))s")
             await MainActor.run {
                 NotificationCenter.default.post(
                     name: .chLocalLLMDidLoad, object: nil,
@@ -214,8 +246,7 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
             return container
         } catch {
             let nserror = error as NSError
-            // MLX surfaces Metal allocation failures as runtime errors; the
-            // most common phrasing on iOS is "out of memory" or "alloc".
+            print("[CHLocalLLM] performLoad ERROR id=\(info.id) domain=\(nserror.domain) code=\(nserror.code) desc=\(nserror.localizedDescription)")
             let lowered = nserror.localizedDescription.lowercased()
             if lowered.contains("memory") || lowered.contains("alloc") {
                 throw CHAIError.modelLoadFailed(
@@ -270,19 +301,50 @@ extension CHLocalLLMProvider: CHAIProvider {
     public var supportsVision: Bool { false }
 
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
+        let t0 = Date()
+        let modelID = modelInfo.id
+        print("[CHLocalLLM] sendMessage start id=\(modelID) prompt.count=\(prompt.count) systemPrompt.set=\(systemPrompt != nil)")
         do {
             let result = try await runChat(prompt: prompt, systemPrompt: systemPrompt)
             try Task.checkCancellation()
             let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty { throw CHAIError.invalidResponse }
+            if trimmed.isEmpty {
+                print("[CHLocalLLM] sendMessage ERROR id=\(modelID) reason=empty-response elapsed=\(String(format: "%.2f", Date().timeIntervalSince(t0)))s")
+                throw CHAIError.invalidResponse
+            }
+            print("[CHLocalLLM] sendMessage SUCCESS id=\(modelID) chars=\(trimmed.count) elapsed=\(String(format: "%.2f", Date().timeIntervalSince(t0)))s")
             return trimmed
         } catch let e as CHAIError {
+            print("[CHLocalLLM] sendMessage ERROR id=\(modelID) CHAIError=\(e.errorDescription ?? "nil")")
             throw e
         } catch is CancellationError {
+            print("[CHLocalLLM] sendMessage CANCELLED id=\(modelID)")
             throw CancellationError()
         } catch {
+            print("[CHLocalLLM] sendMessage ERROR id=\(modelID) underlying=\(error.localizedDescription)")
             throw CHAIError.modelLoadFailed(error.localizedDescription)
         }
+    }
+
+    /// 2.5.6: eager-load the model container without generating anything.
+    ///
+    /// Call from view-appear of an AI feature, or right after
+    /// `setActiveModel(...)`, so the expensive cold-start (~3-8 s for
+    /// Qwen 2.5 3B on Apple Silicon) happens BEFORE the user triggers
+    /// the feature. Without this, the first `sendMessage` on a
+    /// freshly-activated provider blocks for that whole cold-start
+    /// window — visually indistinguishable from a hang. TrainInsight
+    /// hit exactly this on first use.
+    ///
+    /// Idempotent. Safe to call multiple times concurrently — the
+    /// underlying load task is shared. No-op if the container is
+    /// already loaded. Cancellation-safe: if the calling Task is
+    /// cancelled, the load itself continues in the background so the
+    /// next `sendMessage` is still warm.
+    public func warmUp() async throws {
+        print("[CHLocalLLM] warmUp start id=\(modelInfo.id) alreadyLoaded=\(isModelLoaded)")
+        _ = try await container()
+        print("[CHLocalLLM] warmUp complete id=\(modelInfo.id)")
     }
 
     public func validate() async throws -> Bool {

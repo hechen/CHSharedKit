@@ -1206,3 +1206,84 @@ struct ProviderKeyPersistenceTests {
         #expect(CHCustomEndpointProvider.apiKey == nil)
     }
 }
+
+// MARK: - 2.5.6 — Cold-start UX: isModelLoaded + warmUp + estimate
+
+/// `warmUp()` and the actual model-load path can't run in `swift test` —
+/// they call into MLX's `LLMModelFactory.loadContainer` which requires the
+/// Metal toolchain (only available via Xcode-built apps). So these tests
+/// exercise the *structural* surface: initial state, the early-return error
+/// branch when the snapshot is missing, and the loaded/unloaded estimate
+/// crossover. End-to-end load timing is validated by `mlx-smoke` on the
+/// developer's machine, not here.
+@Suite("CHLocalLLMProvider 2.5.6 cold-start UX")
+struct CHLocalLLMProvider256ColdStartTests {
+
+    @Test("isModelLoaded is false on a fresh provider (no load triggered yet)")
+    func freshProviderIsNotLoaded() {
+        let model = LocalModelCatalog.qwen2_5_3B
+        let provider = CHLocalLLMProvider(
+            modelURL: URL(fileURLWithPath: "/tmp/does-not-exist"),
+            modelInfo: model
+        )
+        #expect(provider.isModelLoaded == false)
+    }
+
+    @Test("coldStartLatencyEstimate uses model-size estimate when not loaded")
+    func coldStartEstimateMatchesSizeWhenNotLoaded() {
+        let model = LocalModelCatalog.qwen2_5_3B
+        let provider = CHLocalLLMProvider(
+            modelURL: URL(fileURLWithPath: "/tmp/does-not-exist"),
+            modelInfo: model
+        )
+        let expected = CHLocalMLXColdStart.estimate(forBytes: model.sizeBytes)
+        #expect(provider.coldStartLatencyEstimate == expected)
+        #expect(provider.coldStartLatencyEstimate > 1.0,
+                "Multi-GB model should be reported as >1s cold-start so UI shows 'warming up'")
+    }
+
+    @Test("warmUp throws modelLoadFailed when the snapshot directory is missing")
+    func warmUpThrowsForMissingSnapshot() async {
+        let model = LocalModelCatalog.qwen2_5_3B
+        let provider = CHLocalLLMProvider(
+            modelURL: URL(fileURLWithPath: "/tmp/does-not-exist-\(UUID().uuidString)"),
+            modelInfo: model
+        )
+        do {
+            try await provider.warmUp()
+            Issue.record("warmUp should have thrown for missing snapshot")
+        } catch let CHAIError.modelLoadFailed(message) {
+            #expect(message.contains("missing") || message.contains("Re-download"))
+        } catch CHAIError.unsupportedPlatform {
+            // Catalyst — also acceptable; warmUp short-circuits before any
+            // file I/O on unsupported platforms.
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+        #expect(provider.isModelLoaded == false)
+    }
+
+    @Test("warmUp throws modelLoadFailed when config.json is missing from a present directory")
+    func warmUpThrowsForIncompleteSnapshot() async {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("warmUpTest-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: tmp) }
+
+        let provider = CHLocalLLMProvider(
+            modelURL: tmp,
+            modelInfo: LocalModelCatalog.qwen2_5_3B
+        )
+        do {
+            try await provider.warmUp()
+            Issue.record("warmUp should have thrown for incomplete snapshot")
+        } catch let CHAIError.modelLoadFailed(message) {
+            #expect(message.contains("config.json") || message.contains("Re-download"))
+        } catch CHAIError.unsupportedPlatform {
+            // Catalyst path — see test above.
+        } catch {
+            Issue.record("Unexpected error type: \(error)")
+        }
+        #expect(provider.isModelLoaded == false)
+    }
+}
