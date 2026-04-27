@@ -1582,4 +1582,82 @@ struct IAPGating260Tests {
             }
         }
     }
+
+    // MARK: - 2.6.1 regressions (Chen's LiftCoach Build 64 screenshot)
+
+    /// **Chen's screenshot bug.** Apple Intelligence appeared with a lock icon
+    /// even though it has the "Free" pill. Root cause was an upstream
+    /// misconfiguration where the consumer app's `gatedProviderIDs` ended
+    /// up containing Apple Intelligence's id. The kit now defends:
+    /// `isLocked` short-circuits to `false` for ids in
+    /// `alwaysFreeProviderIDs` regardless of what's in `gatedProviderIDs`.
+    @Test("isLocked returns false for Apple Intelligence even when its id is in gatedProviderIDs (defensive)")
+    func appleIntelligenceImmuneToGatingMisconfig() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            // Worst case: consumer app accidentally adds ALL provider ids,
+            // including Apple Intelligence.
+            manager.gatedProviderIDs = [
+                "openai", "claude", "custom",
+                CHAppleIntelligenceProvider.providerID,
+                "on-device-llm",
+            ]
+            mock.hasUnlockedProviders = false
+
+            #expect(
+                manager.isLocked(providerID: CHAppleIntelligenceProvider.providerID) == false,
+                "Apple Intelligence must NEVER render as locked, regardless of gatedProviderIDs contents"
+            )
+            #expect(manager.isLocked(providerID: "openai"))
+            #expect(manager.isLocked(providerID: "on-device-llm"))
+        }
+    }
+
+    @Test("isGatingActive false when only always-free providers are in gatedProviderIDs")
+    func gatingInactiveWhenOnlyAppleIntelligenceGated() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = [CHAppleIntelligenceProvider.providerID]
+            mock.hasUnlockedProviders = false
+            #expect(manager.isGatingActive == false,
+                    "If the only gated provider is Apple Intelligence (always free), the banner must not show")
+        }
+    }
+
+    @Test("isGatingActive true when at least one non-always-free provider is gated, even if Apple Intelligence is also in the set")
+    func gatingActiveWhenMixedSet() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = [
+                "openai",
+                CHAppleIntelligenceProvider.providerID,
+            ]
+            mock.hasUnlockedProviders = false
+            #expect(manager.isGatingActive,
+                    "openai is gated and locked → banner must show")
+        }
+    }
+
+    @Test("displayName falls back for kit-known IDs that aren't currently registered")
+    func displayNameFallback() {
+        let manager = CHAIManager.shared
+        // The on-device-llm provider may not be registered (no model
+        // installed), but the banner subtitle still needs a sane name.
+        #expect(manager.displayName(forProviderID: "on-device-llm") == "On-Device AI")
+        #expect(manager.displayName(forProviderID: CHAppleIntelligenceProvider.providerID) == "Apple Intelligence")
+        #expect(manager.displayName(forProviderID: "openai") == "OpenAI")
+        #expect(manager.displayName(forProviderID: "claude") == "Claude (Anthropic)")
+        #expect(manager.displayName(forProviderID: "custom") == "Custom Endpoint")
+    }
+
+    @Test("displayName returns the raw id for unknown providers (no crash, no silent drop)")
+    func displayNameUnknownReturnsRawID() {
+        let manager = CHAIManager.shared
+        #expect(manager.displayName(forProviderID: "unknown-provider-xyz") == "unknown-provider-xyz")
+    }
+
+    @Test("alwaysFreeProviderIDs contains Apple Intelligence by default")
+    func alwaysFreeDefaultMembership() {
+        #expect(CHAIManager.alwaysFreeProviderIDs.contains(CHAppleIntelligenceProvider.providerID))
+    }
 }

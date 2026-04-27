@@ -647,10 +647,16 @@ public struct CHAISettingsContent: View {
     }
 
     private var lockedProviderDisplayNames: [String] {
+        // 2.6.1: subtract `alwaysFreeProviderIDs` (Apple Intelligence) so a
+        // misconfigured `gatedProviderIDs` doesn't leak Apple Intelligence
+        // into the banner subtitle. Use `displayName(forProviderID:)` so
+        // unregistered providers (e.g. on-device-llm before a model is
+        // downloaded) still show their kit-canonical name instead of being
+        // dropped silently — Chen's screenshot of LiftCoach Build 64 had
+        // "On-Device AI" missing from the subtitle for exactly this reason.
         aiManager.gatedProviderIDs
-            .compactMap { id -> String? in
-                aiManager.allProviders.first(where: { $0.id == id })?.name
-            }
+            .subtracting(CHAIManager.alwaysFreeProviderIDs)
+            .map { aiManager.displayName(forProviderID: $0) }
             .sorted()
     }
 

@@ -45,7 +45,7 @@ public struct CHAIProviderUnlockBanner: View {
                 Image(systemName: "lock.fill")
                     .font(.title3)
                     .foregroundStyle(.indigo)
-                Text("Unlock all AI providers")
+                Text(Self.localizedTitle)
                     .font(.headline)
                 Spacer()
             }
@@ -61,7 +61,7 @@ public struct CHAIProviderUnlockBanner: View {
                     HStack {
                         if isPurchasing {
                             ProgressView().controlSize(.small).tint(.white)
-                            Text("Processing…")
+                            Text(Self.localizedProcessing)
                         } else {
                             Image(systemName: "lock.open.fill")
                             Text(buttonLabel)
@@ -75,11 +75,18 @@ public struct CHAIProviderUnlockBanner: View {
                 .tint(.indigo)
                 .disabled(priceLabel == nil || isPurchasing)
 
-                Button("Restore", action: onRestore)
+                Button(Self.localizedRestore, action: onRestore)
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
                     .disabled(isPurchasing)
             }
+
+            // 2.6.1: surface the always-free provider so users don't think
+            // they're paying for Apple Intelligence (which they aren't —
+            // Apple Intelligence is OS-provided and free regardless).
+            Text(Self.localizedAlwaysFreeCaption)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
         }
         .padding(14)
         .background(
@@ -105,18 +112,91 @@ public struct CHAIProviderUnlockBanner: View {
 
     private var subtitle: String {
         let names = lockedProviderNames.isEmpty
-            ? "all AI providers"
+            ? Self.localizedTitle  // covers the "all AI providers" fallback
             : lockedProviderNames.joined(separator: " · ")
         if let price = priceLabel {
-            return "\(names) · \(price) one-time"
+            return "\(names) · \(price)"
         }
         return names
     }
 
     private var buttonLabel: String {
         if let price = priceLabel {
-            return "Unlock for \(price)"
+            return Self.localizedUnlockFor(price: price)
         }
-        return "Loading…"
+        return Self.localizedLoading
+    }
+
+    // MARK: - 2.6.1 Localization
+    //
+    // Lightweight Locale-keyed strings — no .xcstrings catalog or
+    // `defaultLocalization` Package change needed. Covers the four target
+    // locales Chen named (en / zh-Hans / zh-Hant / ja). Adding more later
+    // is a matter of expanding the switch.
+
+    private enum Lang { case en, zhHans, zhHant, ja }
+    private static var lang: Lang {
+        let code = Locale.current.language.languageCode?.identifier ?? "en"
+        switch code {
+        case "zh":
+            let script = Locale.current.language.script?.identifier
+            return script == "Hant" ? .zhHant : .zhHans
+        case "ja": return .ja
+        default: return .en
+        }
+    }
+
+    static var localizedTitle: String {
+        switch lang {
+        case .zhHans: return "解锁 AI 提供商"
+        case .zhHant: return "解鎖 AI 供應商"
+        case .ja:     return "AI プロバイダーを解放"
+        case .en:     return "Unlock AI providers"
+        }
+    }
+
+    static var localizedAlwaysFreeCaption: String {
+        switch lang {
+        case .zhHans: return "Apple Intelligence 始终免费"
+        case .zhHant: return "Apple Intelligence 始終免費"
+        case .ja:     return "Apple Intelligence は常に無料"
+        case .en:     return "Apple Intelligence stays free"
+        }
+    }
+
+    static var localizedRestore: String {
+        switch lang {
+        case .zhHans: return "恢复购买"
+        case .zhHant: return "恢復購買"
+        case .ja:     return "復元"
+        case .en:     return "Restore"
+        }
+    }
+
+    static var localizedProcessing: String {
+        switch lang {
+        case .zhHans: return "处理中…"
+        case .zhHant: return "處理中…"
+        case .ja:     return "処理中…"
+        case .en:     return "Processing…"
+        }
+    }
+
+    static var localizedLoading: String {
+        switch lang {
+        case .zhHans: return "加载中…"
+        case .zhHant: return "載入中…"
+        case .ja:     return "読み込み中…"
+        case .en:     return "Loading…"
+        }
+    }
+
+    static func localizedUnlockFor(price: String) -> String {
+        switch lang {
+        case .zhHans: return "以 \(price) 解锁"
+        case .zhHant: return "以 \(price) 解鎖"
+        case .ja:     return "\(price) で解放"
+        case .en:     return "Unlock for \(price)"
+        }
     }
 }
