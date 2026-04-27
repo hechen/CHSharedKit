@@ -38,6 +38,16 @@ public struct CHAIProviderUnlockBanner: View {
     }
 
     @State private var pulseScale: CGFloat = 1.0
+    /// 2.7.0: after 1 s without a price, swap "Loading…" button label for
+    /// a generic "Unlock" so the button doesn't look frozen on cold launch
+    /// (StoreKit's `Product.products(for:)` typically takes 1–3 s on first
+    /// query). Tap still triggers purchase — StoreKit resolves the price
+    /// inside its own sheet anyway.
+    @State private var priceWaitElapsed: Bool = false
+    /// 2.7.0: after 5 s without a price, surface a tiny dot indicator so
+    /// users know the kit is still trying to load the price (vs the fall-
+    /// back label suggesting a stable state).
+    @State private var priceLoadStillPending: Bool = false
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -56,15 +66,34 @@ public struct CHAIProviderUnlockBanner: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
+            // 2.7.0: value-prop bullets between subtitle and CTA.
+            VStack(alignment: .leading, spacing: 4) {
+                bulletRow(
+                    icon: "lock.shield.fill",
+                    text: Self.localizedPrivacyBullet
+                )
+                bulletRow(
+                    icon: "key.fill",
+                    text: Self.localizedBYOKBullet
+                )
+            }
+
             HStack(spacing: 8) {
                 Button(action: onPurchase) {
-                    HStack {
+                    HStack(spacing: 6) {
                         if isPurchasing {
                             ProgressView().controlSize(.small).tint(.white)
                             Text(Self.localizedProcessing)
                         } else {
                             Image(systemName: "lock.open.fill")
                             Text(buttonLabel)
+                            if priceLoadStillPending && priceLabel == nil {
+                                // Tiny dot tells the user we're still trying
+                                // to load the price; doesn't block the tap.
+                                Text("•")
+                                    .font(.caption.weight(.bold))
+                                    .opacity(0.7)
+                            }
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -73,7 +102,9 @@ public struct CHAIProviderUnlockBanner: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.regular)
                 .tint(.indigo)
-                .disabled(priceLabel == nil || isPurchasing)
+                // 2.7.0: enable the button after 1 s even if the price
+                // hasn't loaded — StoreKit's purchase sheet will fetch it.
+                .disabled(isPurchasing || (priceLabel == nil && !priceWaitElapsed))
 
                 Button(Self.localizedRestore, action: onRestore)
                     .buttonStyle(.bordered)
@@ -108,6 +139,43 @@ public struct CHAIProviderUnlockBanner: View {
                 pulseScale = 1.0
             }
         }
+        .task(id: priceLabel) {
+            // 2.7.0: price-wait timer. Re-runs whenever priceLabel changes
+            // (Task is cancelled and re-spawned). Timeline:
+            //   t=0 ms       priceLabel == nil → button shows "Loading…",
+            //                disabled.
+            //   t=1000 ms    if still nil, swap label to "Unlock", enable
+            //                button (StoreKit will resolve price in its
+            //                sheet).
+            //   t=5000 ms    if still nil, show subtle "•" indicator next
+            //                to "Unlock" so the user sees the kit hasn't
+            //                given up.
+            // Reset on price arrival.
+            priceWaitElapsed = false
+            priceLoadStillPending = false
+            guard priceLabel == nil else { return }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard !Task.isCancelled, priceLabel == nil else { return }
+            priceWaitElapsed = true
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled, priceLabel == nil else { return }
+            priceLoadStillPending = true
+        }
+    }
+
+    @ViewBuilder
+    private func bulletRow(icon: String, text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(.indigo.opacity(0.85))
+                .frame(width: 14)
+            Text(text)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
     }
 
     private var subtitle: String {
@@ -123,6 +191,12 @@ public struct CHAIProviderUnlockBanner: View {
     private var buttonLabel: String {
         if let price = priceLabel {
             return Self.localizedUnlockFor(price: price)
+        }
+        // 2.7.0: after 1 s of waiting, swap the dead-looking "Loading…"
+        // for a plain "Unlock" — tap still works, StoreKit's sheet
+        // resolves the price there.
+        if priceWaitElapsed {
+            return Self.localizedUnlockNoPrice
         }
         return Self.localizedLoading
     }
@@ -197,6 +271,38 @@ public struct CHAIProviderUnlockBanner: View {
         case .zhHant: return "以 \(price) 解鎖"
         case .ja:     return "\(price) で解放"
         case .en:     return "Unlock for \(price)"
+        }
+    }
+
+    /// 2.7.0: fallback CTA when the price hasn't arrived yet but we don't
+    /// want to keep showing "Loading…" past 1 s. StoreKit resolves the
+    /// price inside its purchase sheet anyway.
+    static var localizedUnlockNoPrice: String {
+        switch lang {
+        case .zhHans: return "解锁"
+        case .zhHant: return "解鎖"
+        case .ja:     return "解放"
+        case .en:     return "Unlock"
+        }
+    }
+
+    /// 2.7.0: "Private offline LLMs — no cloud, no rate limits"
+    static var localizedPrivacyBullet: String {
+        switch lang {
+        case .zhHans: return "私密的本地大模型 — 无云端，无次数限制"
+        case .zhHant: return "私密的本機大模型 — 無雲端，無次數限制"
+        case .ja:     return "プライベートなオンデバイス LLM — クラウドなし、回数制限なし"
+        case .en:     return "Private offline LLMs — no cloud, no rate limits"
+        }
+    }
+
+    /// 2.7.0: "Bring your own keys for cloud providers — you control the cost"
+    static var localizedBYOKBullet: String {
+        switch lang {
+        case .zhHans: return "自带云端 API 密钥 — 您掌控成本"
+        case .zhHant: return "自帶雲端 API 金鑰 — 您掌控成本"
+        case .ja:     return "自分のクラウド API キーを使用 — コストを自分で管理"
+        case .en:     return "Bring your own keys for cloud providers — you control the cost"
         }
     }
 }

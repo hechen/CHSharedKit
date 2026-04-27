@@ -99,6 +99,20 @@ public final class CHAIManager: ObservableObject {
     /// Defaults to `.all` so existing integrations behave as before.
     @Published public var availableProvidersFilter: CHAIProviderFilter = .all
 
+    /// 2.7.0: domain-context injector. When set, the manager calls
+    /// `buildContext()` before every `send`/`stream`/`sendWithVision` and
+    /// prepends the result (plus the anti-disclaimer instruction) to the
+    /// caller-supplied `systemPrompt`. Apps wire this once at launch:
+    ///
+    /// ```swift
+    /// CHAIManager.shared.contextProvider = LiftCoachContextProvider.shared
+    /// ```
+    ///
+    /// Set to `nil` (default) for apps that don't need automatic context
+    /// injection. See `docs/CHAT_UI.md` for integration patterns and the
+    /// per-app context shapes (LiftCoach, EatWisely, Closet, etc.).
+    @Published public var contextProvider: (any CHAIContextProvider)?
+
     /// 2.6.0: provider IDs gated behind a one-time IAP. Empty by default
     /// (no gating). When non-empty AND `CHIAPGateRegistry.shared` is set
     /// AND the gate's `hasUnlockedProviders == false`, calls to `send` /
@@ -237,12 +251,13 @@ public final class CHAIManager: ObservableObject {
             throw CHAIError.noProvider
         }
         try checkProviderUnlocked(provider)
+        let composedSystem = await composedSystemPrompt(systemPrompt)
         isProcessing = true
         lastError = nil
         defer { isProcessing = false }
 
         do {
-            let result = try await provider.sendMessage(prompt: prompt, systemPrompt: systemPrompt)
+            let result = try await provider.sendMessage(prompt: prompt, systemPrompt: composedSystem)
             // Estimate tokens and log usage
             let inputTokens = (prompt.count + (systemPrompt?.count ?? 0)) / 4
             let outputTokens = result.count / 4
@@ -268,7 +283,8 @@ public final class CHAIManager: ObservableObject {
     public func stream(prompt: String, systemPrompt: String? = nil) async throws -> AsyncThrowingStream<String, Error> {
         guard let provider = activeProvider else { throw CHAIError.noProvider }
         try checkProviderUnlocked(provider)
-        return try await provider.stream(prompt: prompt, systemPrompt: systemPrompt)
+        let composedSystem = await composedSystemPrompt(systemPrompt)
+        return try await provider.stream(prompt: prompt, systemPrompt: composedSystem)
     }
 
     /// Send a message with an image using the active provider
@@ -280,13 +296,35 @@ public final class CHAIManager: ObservableObject {
         guard provider.supportsVision else {
             throw CHAIError.visionNotSupported
         }
+        // 2.7.0: vision providers don't accept a separate system prompt
+        // (`sendVisionMessage(prompt:imageData:)`). Prepend the context
+        // provider's output to the prompt itself when set, with a small
+        // header so the model knows what's data vs question.
+        let composedPromptForVision: String
+        if let provider = contextProvider {
+            let context = await provider.buildContext()
+            if !context.isEmpty {
+                composedPromptForVision = """
+                User data:
+                \(context)
+
+                \(CHAIContextSystemPrompt.antiDisclaimerInstruction)
+
+                Question: \(prompt)
+                """
+            } else {
+                composedPromptForVision = prompt
+            }
+        } else {
+            composedPromptForVision = prompt
+        }
         isProcessing = true
         lastError = nil
         defer { isProcessing = false }
 
         do {
-            let result = try await provider.sendVisionMessage(prompt: prompt, imageData: imageData)
-            let inputTokens = (prompt.count / 4) + (imageData.count / 750)
+            let result = try await provider.sendVisionMessage(prompt: composedPromptForVision, imageData: imageData)
+            let inputTokens = (composedPromptForVision.count / 4) + (imageData.count / 750)
             let outputTokens = result.count / 4
             let imageTokens = imageData.count / 750
             let tracker = CHAIUsageTracker.shared
@@ -337,6 +375,31 @@ public final class CHAIManager: ObservableObject {
         guard let gate = CHIAPGateRegistry.shared else { return }
         if gate.hasUnlockedProviders { return }
         throw CHAIError.providerLocked(displayName: provider.displayName)
+    }
+
+    // MARK: - 2.7.0 Context provider composition
+
+    /// Composes the final system prompt for `send` / `stream`. Combines (in
+    /// order): the context provider's `buildContext()` output, the
+    /// anti-disclaimer instruction, and the caller-supplied `userSystem`.
+    /// Returns nil only if there's nothing to prepend AND no caller system
+    /// prompt — otherwise returns a non-nil composed string.
+    ///
+    /// Public so consumer apps can inspect what the kit actually sent (the
+    /// composed prompt is logged to the AI Request Log if enabled, but
+    /// having a programmatic accessor is useful for debugging context
+    /// providers that misbehave).
+    public func composedSystemPrompt(_ userSystem: String?) async -> String? {
+        guard let contextProvider else { return userSystem }
+        let context = await contextProvider.buildContext()
+        guard !context.isEmpty else { return userSystem }
+        let userTail = (userSystem?.isEmpty == false) ? "\n\n\(userSystem!)" : ""
+        return """
+        \(CHAIContextSystemPrompt.antiDisclaimerInstruction)
+
+        User data:
+        \(context)\(userTail)
+        """
     }
 }
 

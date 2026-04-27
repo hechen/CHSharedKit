@@ -1661,3 +1661,131 @@ struct IAPGating260Tests {
         #expect(CHAIManager.alwaysFreeProviderIDs.contains(CHAppleIntelligenceProvider.providerID))
     }
 }
+
+// MARK: - 2.7.0 — Context provider + chat types
+
+/// In-test mock that returns a fixed context string.
+struct MockContextProvider: CHAIContextProvider {
+    let context: String
+    func buildContext() async -> String { context }
+}
+
+@MainActor
+@Suite("CHAIContextProvider auto-prepend (2.7.0)", .serialized)
+struct CHAIContextProvider270Tests {
+
+    private func withCleanProvider(_ body: () async throws -> Void) async rethrows {
+        let manager = CHAIManager.shared
+        let prior = manager.contextProvider
+        defer { manager.contextProvider = prior }
+        try await body()
+    }
+
+    @Test("composedSystemPrompt returns nil when no context provider AND no caller systemPrompt")
+    func composedSystemPromptNoContextNoCaller() async {
+        await withCleanProvider {
+            CHAIManager.shared.contextProvider = nil
+            let composed = await CHAIManager.shared.composedSystemPrompt(nil)
+            #expect(composed == nil)
+        }
+    }
+
+    @Test("composedSystemPrompt returns caller systemPrompt unchanged when no context provider")
+    func composedSystemPromptPassthroughNoProvider() async {
+        await withCleanProvider {
+            CHAIManager.shared.contextProvider = nil
+            let composed = await CHAIManager.shared.composedSystemPrompt("You are a helpful assistant.")
+            #expect(composed == "You are a helpful assistant.")
+        }
+    }
+
+    @Test("composedSystemPrompt prepends context + anti-disclaimer when provider returns content")
+    func composedSystemPromptWithProvider() async {
+        await withCleanProvider {
+            CHAIManager.shared.contextProvider = MockContextProvider(context: "Last 7 days: 3 workouts, avg HRV 58.")
+            let composed = await CHAIManager.shared.composedSystemPrompt("Answer concisely.")
+            guard let composed else {
+                Issue.record("composedSystemPrompt should not be nil")
+                return
+            }
+            #expect(composed.contains("3 workouts"))
+            #expect(composed.contains("HRV 58"))
+            #expect(composed.contains("User data is provided below"),
+                    "Anti-disclaimer instruction must be in the composed prompt")
+            #expect(composed.contains("Answer concisely."),
+                    "Caller's systemPrompt must still be present")
+        }
+    }
+
+    @Test("composedSystemPrompt drops the empty caller systemPrompt cleanly")
+    func composedSystemPromptEmptyCallerSystem() async {
+        await withCleanProvider {
+            CHAIManager.shared.contextProvider = MockContextProvider(context: "Workouts: 3.")
+            let composed = await CHAIManager.shared.composedSystemPrompt(nil)
+            #expect(composed != nil)
+            #expect(composed!.contains("Workouts: 3"))
+            // Should not contain stray double newlines from missing caller suffix.
+            #expect(composed!.hasSuffix("Workouts: 3\n") == false)
+        }
+    }
+
+    @Test("composedSystemPrompt returns caller systemPrompt unchanged when provider returns empty")
+    func composedSystemPromptEmptyContext() async {
+        await withCleanProvider {
+            CHAIManager.shared.contextProvider = MockContextProvider(context: "")
+            let composed = await CHAIManager.shared.composedSystemPrompt("Be concise.")
+            #expect(composed == "Be concise.")
+        }
+    }
+
+    @Test("antiDisclaimerInstruction is overridable per app voice")
+    func antiDisclaimerOverridable() {
+        let prior = CHAIContextSystemPrompt.antiDisclaimerInstruction
+        defer { CHAIContextSystemPrompt.antiDisclaimerInstruction = prior }
+        CHAIContextSystemPrompt.antiDisclaimerInstruction = "Custom override."
+        #expect(CHAIContextSystemPrompt.antiDisclaimerInstruction == "Custom override.")
+    }
+}
+
+// MARK: - CHAIChatMessage / CHAIChatRole
+
+@Suite("CHAIChatMessage + CHAIChatRole (2.7.0)")
+struct ChatMessageTypes270Tests {
+
+    struct TestMessage: CHAIChatMessage {
+        let id: UUID
+        let role: CHAIChatRole
+        let content: String
+        let timestamp: Date
+    }
+
+    @Test("CHAIChatRole has the four expected cases")
+    func roleHasFourCases() {
+        let all = CHAIChatRole.allCases
+        #expect(all.contains(.user))
+        #expect(all.contains(.assistant))
+        #expect(all.contains(.system))
+        #expect(all.contains(.error))
+        #expect(all.count == 4)
+    }
+
+    @Test("CHAIChatRole round-trips through Codable")
+    func roleCodableRoundTrip() throws {
+        let original = CHAIChatRole.assistant
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(CHAIChatRole.self, from: data)
+        #expect(decoded == original)
+    }
+
+    @Test("CHAIChatMessage protocol satisfaction with a minimal struct")
+    func protocolSatisfaction() {
+        let msg = TestMessage(
+            id: UUID(),
+            role: .assistant,
+            content: "Here's a **markdown** reply.",
+            timestamp: Date()
+        )
+        #expect(msg.role == .assistant)
+        #expect(msg.content.contains("**markdown**"))
+    }
+}

@@ -31,6 +31,12 @@ let package = Package(
         .package(
             url: "https://github.com/huggingface/swift-transformers",
             .upToNextMinor(from: "1.0.0")
+        ),
+        // 2.7.0: MarkdownUI for chat-bubble rendering. MIT-licensed, ~one
+        // additional dep (swift-cmark, transitively). Used by CHAIChatBubble.
+        .package(
+            url: "https://github.com/gonzalezreal/swift-markdown-ui",
+            .upToNextMajor(from: "2.4.1")
         )
     ],
     targets: [
@@ -43,7 +49,8 @@ let package = Package(
                 .product(name: "MLXVLM", package: "mlx-swift-examples"),
                 .product(name: "MLXLMCommon", package: "mlx-swift-examples"),
                 .product(name: "Hub", package: "swift-transformers"),
-                .product(name: "Tokenizers", package: "swift-transformers")
+                .product(name: "Tokenizers", package: "swift-transformers"),
+                .product(name: "MarkdownUI", package: "swift-markdown-ui")
             ]
         ),
         .testTarget(name: "CHSharedKitTests", dependencies: ["CHSharedKit", "CHLocalLLM"]),

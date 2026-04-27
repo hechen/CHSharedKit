@@ -420,13 +420,15 @@ public struct CHAISettingsContent: View {
                 providerIcon("cpu", color: .indigo, available: true)
                     .opacity(isLocked ? 0.6 : 1.0)
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
+                    // 2.7.0: same lock-alignment polish as cloud rows.
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("On-Device AI")
                             .font(.system(size: 16))
                             .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
                         if isLocked {
                             Image(systemName: "lock.fill")
-                                .font(.caption)
+                                .font(.subheadline)
+                                .imageScale(.small)
                                 .foregroundStyle(.indigo)
                         }
                         badge("Private", color: .indigo)
@@ -572,14 +574,19 @@ public struct CHAISettingsContent: View {
                 providerIcon(icon, color: iconColor, available: available)
                     .opacity(isLocked ? 0.6 : 1.0)
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
+                    // 2.7.0: align lock icon with text baseline (was floating
+                    // mid-row before) and use a consistent imageScale across
+                    // every row's lock — `.subheadline` matches the 16 pt
+                    // name font visually.
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(name)
                             .font(.system(size: 16))
                             .foregroundStyle(available ? .primary : .secondary)
                             .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
                         if isLocked {
                             Image(systemName: "lock.fill")
-                                .font(.caption)
+                                .font(.subheadline)
+                                .imageScale(.small)
                                 .foregroundStyle(.indigo)
                         }
                         if let badge {
