@@ -40,7 +40,19 @@ public extension AppIdentifier {
         case .spendwisely:
             return "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone."
         case .eatwisely:
-            return "AI Quick Add and daily insights now run on your iPhone. Photo meal scanning still uses cloud AI."
+            // NB: Notification body copy. Reads aloud cleanly, names the
+            // exact features that work offline, AND tells the user that
+            // photo scan can also be on-device if they grab the vision
+            // model — otherwise users assume "text local, photos forever
+            // cloud" which is wrong. Wrapped in NSLocalizedString so a
+            // future .strings catalog can translate without a code edit.
+            // TODO: Full SDK localization pass — every case in this
+            // file is currently a Swift literal; convert all six apps'
+            // copy together so we set up SPM resources once.
+            return NSLocalizedString(
+                "AI for Quick Add and daily insights now runs on your iPhone — no network needed. Photo meal scanning still uses cloud AI by default. To run photos on-device too, download the vision model in Settings → AI Provider → On-Device.",
+                comment: "EatWisely body for the on-device-LLM-ready local notification"
+            )
         case .traininsight:
             return "TrainInsight can now generate your daily readiness advice privately on your iPhone."
         case .gymlog:
