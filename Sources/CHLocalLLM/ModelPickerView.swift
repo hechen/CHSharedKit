@@ -141,6 +141,7 @@ public struct ModelPickerView: View {
             store: store,
             onSelectTapped: { handleSelectTapped(model) },
             onCancelDownload: { store.cancelDownload() },
+            onRetryDownload: { store.retryDownload(model) },
             onRemove: { store.deleteModel(model) }
         )
     }
@@ -212,7 +213,11 @@ public struct ModelPickerView: View {
 private enum ModelCardState {
     case notCompatible
     case notInstalled(canStart: Bool)
-    case downloading(progress: Double, received: Int64, total: Int64, speed: Double?, eta: TimeInterval?)
+    /// 2.5.8: `stalled` flips true when the underlying store hasn't seen a
+    /// progress callback for `stallThresholdSeconds` (default 30 s). The
+    /// inline progress UI shows a "Stalled — Retry" banner instead of the
+    /// frozen byte/speed numbers.
+    case downloading(progress: Double, received: Int64, total: Int64, speed: Double?, eta: TimeInterval?, stalled: Bool)
     case pendingActive
     case installed
     case active
@@ -226,6 +231,7 @@ private struct ModelCard: View {
     var store: LocalModelStore
     let onSelectTapped: () -> Void
     let onCancelDownload: () -> Void
+    let onRetryDownload: () -> Void
     let onRemove: () -> Void
 
     private var isCompatible: Bool { deviceRAM_GB >= model.minRAM_GB }
@@ -244,7 +250,8 @@ private struct ModelCard: View {
                 received: r,
                 total: t,
                 speed: store.currentDownloadSpeedBytesPerSecond,
-                eta: store.currentDownloadETA
+                eta: store.currentDownloadETA,
+                stalled: store.isDownloadStalled
             )
         }
         if isActive { return .active }
@@ -442,8 +449,11 @@ private struct ModelCard: View {
                 .controlSize(.small)
                 .disabled(!canStart)
             }
-        case .downloading(let progress, let received, let total, let speed, let eta):
-            inlineProgress(progress: progress, received: received, total: total, speed: speed, eta: eta)
+        case .downloading(let progress, let received, let total, let speed, let eta, let stalled):
+            inlineProgress(
+                progress: progress, received: received, total: total,
+                speed: speed, eta: eta, stalled: stalled
+            )
         case .pendingActive:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
@@ -483,22 +493,31 @@ private struct ModelCard: View {
         }
     }
 
-    /// Inline progress + bytes + speed + ETA. Replaces both the small
-    /// percentage label and the full-width ProgressView from 2.4.x — now
-    /// one composed unit so the "0 MB / 0 MB" + missing speed bug
-    /// surfaces in the screenshot can't recur.
+    /// Inline progress + bytes + speed + ETA. 2.5.8 adds a stalled banner
+    /// + Retry button when the underlying store has gone
+    /// `stallThresholdSeconds` without a progress callback.
     @ViewBuilder
     private func inlineProgress(
         progress: Double, received: Int64, total: Int64,
-        speed: Double?, eta: TimeInterval?
+        speed: Double?, eta: TimeInterval?, stalled: Bool
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            ProgressView(value: progress).tint(.indigo)
+            ProgressView(value: progress).tint(stalled ? .orange : .indigo)
             HStack(spacing: 8) {
-                Text(progressDetailLabel(received: received, total: total, speed: speed, eta: eta))
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                if stalled {
+                    Label("Stalled — \(Int(progress * 100))% complete", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(progressDetailLabel(received: received, total: total, speed: speed, eta: eta))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
+                if stalled {
+                    Button("Retry") { onRetryDownload() }
+                        .buttonStyle(.borderedProminent).controlSize(.mini).tint(.orange)
+                }
                 Button("Cancel") { onCancelDownload() }
                     .buttonStyle(.bordered).controlSize(.mini)
             }

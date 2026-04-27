@@ -58,6 +58,20 @@ public final class LocalModelStore {
     /// displayed value doesn't jitter on bursty HTTP throughput.
     public private(set) var currentDownloadSpeedBytesPerSecond: Double?
 
+    /// 2.5.8: true when an in-flight download has gone `stallThresholdSeconds`
+    /// without a progress callback. The picker / `LocalModelDownloadView`
+    /// surface a "Stalled — Retry" UI when this is set; tapping Retry calls
+    /// `retryDownload(_:)` which re-issues the snapshot (HubApi resumes
+    /// per-file from cached partials, so re-issued downloads pick up where
+    /// they stalled).
+    public private(set) var isDownloadStalled: Bool = false
+
+    /// Seconds without a progress callback before `isDownloadStalled` flips
+    /// true. Default 30 s — long enough that brief HTTP retries don't trip
+    /// it, short enough that users notice within a minute. Configurable for
+    /// tests (use a tiny value to assert behavior synchronously).
+    public var stallThresholdSeconds: TimeInterval = 30
+
     /// 2.5.4: ETA for the in-flight download. nil when speed is unknown.
     public var currentDownloadETA: TimeInterval? {
         guard let speed = currentDownloadSpeedBytesPerSecond, speed > 0,
@@ -113,6 +127,11 @@ public final class LocalModelStore {
     // Active download task (HubApi.snapshot wrapped in Task) — non-nil while a
     // download is running; cancelled by `cancelDownload()`.
     @ObservationIgnored private var activeTask: Task<Void, Never>?
+    /// 2.5.8: companion task that polls every 5 s during a download and flips
+    /// `isDownloadStalled` if the most recent progress tick is older than
+    /// `stallThresholdSeconds`. Cancelled when `activeTask` finishes,
+    /// fails, or is cancelled.
+    @ObservationIgnored private var stallWatcher: Task<Void, Never>?
 
     private init() {
         // 2.5.3: storage location is now fixed at `Application Support/CHSharedKit/`
@@ -279,6 +298,14 @@ public final class LocalModelStore {
         lastTickTime = Date()
         lastTickBytes = 0
         currentDownloadSpeedBytesPerSecond = nil
+        // 2.5.8: reset stall state and arm the watcher. HubApi can stall
+        // mid-download (network drop, server-side pause); the watcher flips
+        // `isDownloadStalled` after `stallThresholdSeconds` of progress
+        // silence so the picker UI shows a Retry button instead of a
+        // frozen 72%.
+        isDownloadStalled = false
+        startStallWatcher()
+        print("[CHLocalModelStore] downloadModel start id=\(model.id) repoID=\(repoID) sizeBytes=\(model.sizeBytes)")
         requestNotificationPermission()
 
         let totalEstimate = model.sizeBytes
@@ -293,6 +320,9 @@ public final class LocalModelStore {
                     let fraction = progress.fractionCompleted
                     let total = totalEstimate
                     let received = Int64(Double(total) * fraction)
+                    let filesDone = progress.completedUnitCount
+                    let filesTotal = progress.totalUnitCount
+                    print("[CHLocalModelStore] progress fraction=\(String(format: "%.3f", fraction)) files=\(filesDone)/\(filesTotal) bytesEst=\(received)/\(total)")
                     Task { @MainActor [weak self] in
                         self?.applyDownloadProgress(
                             fraction: fraction,
@@ -308,9 +338,12 @@ public final class LocalModelStore {
                 )
                 await MainActor.run { [weak self] in
                     guard let self else { return }
+                    print("[CHLocalModelStore] downloadModel SUCCESS id=\(modelID)")
                     self.downloadState = .installed
                     self.activeDownloadModelID = nil
                     self.activeTask = nil
+                    self.stopStallWatcher()
+                    self.isDownloadStalled = false
                     self.currentDownloadSpeedBytesPerSecond = nil
                     self.fireCompletionNotification()
                     // 2.5.4: auto-promote pending → active if the user
@@ -320,9 +353,12 @@ public final class LocalModelStore {
             } catch is CancellationError {
                 await MainActor.run { [weak self] in
                     guard let self else { return }
+                    print("[CHLocalModelStore] downloadModel CANCELLED id=\(modelID)")
                     self.downloadState = .idle
                     self.activeDownloadModelID = nil
                     self.activeTask = nil
+                    self.stopStallWatcher()
+                    self.isDownloadStalled = false
                     self.currentDownloadSpeedBytesPerSecond = nil
                     // Cancellation drops any pending-active intent for this model.
                     if self.pendingActiveModelID == modelID {
@@ -333,9 +369,12 @@ public final class LocalModelStore {
                 let message = error.localizedDescription
                 await MainActor.run { [weak self] in
                     guard let self else { return }
+                    print("[CHLocalModelStore] downloadModel ERROR id=\(modelID) underlying=\(message)")
                     self.downloadState = .failed(message)
                     self.activeDownloadModelID = nil
                     self.activeTask = nil
+                    self.stopStallWatcher()
+                    self.isDownloadStalled = false
                     self.currentDownloadSpeedBytesPerSecond = nil
                     if self.pendingActiveModelID == modelID {
                         self.pendingActiveModelID = nil
@@ -348,12 +387,62 @@ public final class LocalModelStore {
     public func cancelDownload() {
         activeTask?.cancel()
         activeTask = nil
+        stopStallWatcher()
+        isDownloadStalled = false
         if case .downloading = downloadState {
             downloadState = .idle
             activeDownloadModelID = nil
             pendingActiveModelID = nil
             currentDownloadSpeedBytesPerSecond = nil
         }
+    }
+
+    /// 2.5.8: re-issue a stalled or failed download for the same model.
+    /// HubApi resumes per-file from the partial-cache metadata so files
+    /// that already completed don't re-download — only the remaining
+    /// shards do. Calling `retryDownload` while another download is in
+    /// flight is a no-op (caller should call `cancelDownload()` first).
+    public func retryDownload(_ model: LocalModelInfo) {
+        // Reset terminal state so `downloadModel`'s guard accepts the call.
+        if case .failed = downloadState {
+            downloadState = .idle
+        }
+        // If we got here while marked stalled but `activeTask` is still alive,
+        // cancel it first so the new download can take over the in-flight
+        // URLSession connections cleanly.
+        if isDownloadStalled, activeTask != nil {
+            cancelDownload()
+        }
+        downloadModel(model)
+    }
+
+    // 2.5.8 — stall watcher
+
+    @MainActor
+    private func startStallWatcher() {
+        stallWatcher?.cancel()
+        let threshold = stallThresholdSeconds
+        stallWatcher = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                if Task.isCancelled { break }
+                await MainActor.run { [weak self] in
+                    guard let self, let lastTick = self.lastTickTime else { return }
+                    let elapsed = Date().timeIntervalSince(lastTick)
+                    let stalled = elapsed > threshold
+                    if stalled != self.isDownloadStalled {
+                        print("[CHLocalModelStore] stallWatcher: isDownloadStalled \(self.isDownloadStalled) → \(stalled) (elapsed=\(String(format: "%.1f", elapsed))s threshold=\(threshold)s)")
+                        self.isDownloadStalled = stalled
+                    }
+                }
+            }
+        }
+    }
+
+    @MainActor
+    private func stopStallWatcher() {
+        stallWatcher?.cancel()
+        stallWatcher = nil
     }
 
     // MARK: - 2.5.4 — single-tap select-and-download
@@ -388,6 +477,11 @@ public final class LocalModelStore {
             bytesReceived: received,
             totalBytes: total
         )
+        // 2.5.8: any progress callback resets the stall state. Useful for the
+        // "stall recovers on its own" path — HubApi may pause for >30 s during
+        // a slow shard but eventually resume. We don't want a stuck "Stalled"
+        // banner if bytes are still flowing.
+        if isDownloadStalled { isDownloadStalled = false }
         // Speed sampling: take a tick at most once per second so bursty
         // HTTP doesn't pollute the average.
         let now = Date()

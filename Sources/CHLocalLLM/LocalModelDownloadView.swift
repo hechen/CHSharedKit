@@ -58,18 +58,30 @@ public struct LocalModelDownloadView: View {
     }
 
     private func downloadingView(progress: Double, received: Int64, total: Int64) -> some View {
-        VStack(spacing: 14) {
-            Image(systemName: "arrow.down.circle.fill")
+        // 2.5.8: surface stall + retry inline. Without this, a download that
+        // hits a 30 s+ silence (HF Hub mid-shard pause, network drop while
+        // app foregrounded) shows a frozen 72% with no recovery path —
+        // exactly what Chen's iPad screenshot captured.
+        let stalled = store.isDownloadStalled
+        return VStack(spacing: 14) {
+            Image(systemName: stalled ? "exclamationmark.triangle.fill" : "arrow.down.circle.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(.indigo)
+                .foregroundStyle(stalled ? .orange : .indigo)
                 .symbolEffect(.bounce, value: progress)
 
-            Text("Downloading \(model.displayName)")
+            Text(stalled ? "Download stalled" : "Downloading \(model.displayName)")
                 .font(.headline)
+
+            if stalled {
+                Text("No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
 
             ProgressView(value: progress)
                 .progressViewStyle(.linear)
-                .tint(.indigo)
+                .tint(stalled ? .orange : .indigo)
 
             HStack {
                 Text(formattedSize(received))
@@ -78,21 +90,40 @@ public struct LocalModelDownloadView: View {
                 Spacer()
                 Text("\(Int(progress * 100))%")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(stalled ? .orange : .indigo)
                 Spacer()
                 Text(formattedSize(total))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Button(role: .destructive) {
-                store.cancelDownload()
-            } label: {
-                Label("Cancel", systemImage: "xmark.circle")
-                    .frame(maxWidth: .infinity)
+            if let speed = store.currentDownloadSpeedBytesPerSecond, speed > 0, !stalled {
+                Text("\(formattedSize(Int64(speed)))/s")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
+
+            HStack(spacing: 10) {
+                if stalled {
+                    Button {
+                        store.retryDownload(model)
+                    } label: {
+                        Label("Retry", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.orange)
+                    .controlSize(.regular)
+                }
+                Button(role: .destructive) {
+                    store.cancelDownload()
+                } label: {
+                    Label("Cancel", systemImage: "xmark.circle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.regular)
+            }
         }
     }
 
