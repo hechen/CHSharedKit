@@ -82,6 +82,11 @@ public enum CHAIError: LocalizedError {
     case modelLoadFailed(String)
     /// The current platform (e.g. Mac Catalyst) cannot run on-device inference.
     case unsupportedPlatform
+    /// 2.6.0: the active provider is in `CHAIManager.gatedProviderIDs` and
+    /// `CHIAPGateRegistry.shared.hasUnlockedProviders == false`. Display name
+    /// (e.g. "OpenAI") is the associated value so apps can compose the
+    /// "<provider> requires a one-time purchase" message.
+    case providerLocked(displayName: String)
 
     public var errorDescription: String? {
         switch self {
@@ -95,6 +100,7 @@ public enum CHAIError: LocalizedError {
         case .appleIntelligenceUnavailable: return "Apple Intelligence requires iOS 26 or later"
         case .modelLoadFailed(let msg): return msg
         case .unsupportedPlatform: return "On-device AI is not supported on this platform."
+        case .providerLocked(let name): return "\(name) requires a one-time purchase. Open Settings → AI Provider to unlock."
         }
     }
 }

@@ -99,6 +99,28 @@ public final class CHAIManager: ObservableObject {
     /// Defaults to `.all` so existing integrations behave as before.
     @Published public var availableProvidersFilter: CHAIProviderFilter = .all
 
+    /// 2.6.0: provider IDs gated behind a one-time IAP. Empty by default
+    /// (no gating). When non-empty AND `CHIAPGateRegistry.shared` is set
+    /// AND the gate's `hasUnlockedProviders == false`, calls to `send` /
+    /// `stream` / `sendWithVision` for any provider in this set throw
+    /// ``CHAIError/providerLocked(displayName:)`` BEFORE dispatching to
+    /// the underlying provider, and the picker's `CHAISettingsContent`
+    /// renders an unlock banner + locks the matching rows.
+    ///
+    /// Common config (all paid providers, Apple Intelligence stays free):
+    ///
+    /// ```swift
+    /// CHAIManager.shared.gateAllExceptAppleIntelligence()
+    /// // equivalent to:
+    /// CHAIManager.shared.gatedProviderIDs = [
+    ///     CHOpenAIProvider.providerID,
+    ///     CHClaudeProvider.providerID,
+    ///     CHCustomEndpointProvider.providerID,
+    ///     CHLocalLLMProvider.providerID,
+    /// ]
+    /// ```
+    @Published public var gatedProviderIDs: Set<String> = []
+
     private var providers: [String: any CHAIProvider] = [:]
 
     private static let activeModelIDKey = "clawd_ai_active_model_id"
@@ -214,6 +236,7 @@ public final class CHAIManager: ObservableObject {
         guard let provider = activeProvider else {
             throw CHAIError.noProvider
         }
+        try checkProviderUnlocked(provider)
         isProcessing = true
         lastError = nil
         defer { isProcessing = false }
@@ -244,6 +267,7 @@ public final class CHAIManager: ObservableObject {
     /// them (or a single chunk for providers that don't support streaming).
     public func stream(prompt: String, systemPrompt: String? = nil) async throws -> AsyncThrowingStream<String, Error> {
         guard let provider = activeProvider else { throw CHAIError.noProvider }
+        try checkProviderUnlocked(provider)
         return try await provider.stream(prompt: prompt, systemPrompt: systemPrompt)
     }
 
@@ -252,6 +276,7 @@ public final class CHAIManager: ObservableObject {
         guard let provider = activeProvider else {
             throw CHAIError.noProvider
         }
+        try checkProviderUnlocked(provider)
         guard provider.supportsVision else {
             throw CHAIError.visionNotSupported
         }
@@ -298,6 +323,20 @@ public final class CHAIManager: ObservableObject {
     public func validateProvider(_ id: String) async throws -> Bool {
         guard let provider = providers[id] else { return false }
         return try await provider.validate()
+    }
+
+    // MARK: - 2.6.0 IAP gating
+
+    /// Throws ``CHAIError/providerLocked(displayName:)`` when the active
+    /// provider is in `gatedProviderIDs` and the registered ``CHIAPGate``
+    /// reports `hasUnlockedProviders == false`. Returns silently in every
+    /// other case (including: gate not registered, provider not gated,
+    /// already unlocked).
+    public func checkProviderUnlocked(_ provider: any CHAIProvider) throws {
+        guard gatedProviderIDs.contains(provider.id) else { return }
+        guard let gate = CHIAPGateRegistry.shared else { return }
+        if gate.hasUnlockedProviders { return }
+        throw CHAIError.providerLocked(displayName: provider.displayName)
     }
 }
 

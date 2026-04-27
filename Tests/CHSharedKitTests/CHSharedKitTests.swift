@@ -1375,3 +1375,211 @@ struct LocalModelStore258StallTests {
         #expect(s1 == s2)
     }
 }
+
+// MARK: - 2.6.0 — IAP gating
+
+/// In-test mock conforming to ``CHIAPGate``. Default state: locked + price
+/// not yet loaded. Tests flip flags to drive scenarios.
+///
+/// Not @MainActor — the protocol's requirements are nonisolated (so consumer
+/// apps can use either Combine `@Published` or `@Observable` without an
+/// isolation lock-in). Tests live on @MainActor; updates from inside an
+/// `await body(mock)` block are MainActor-bound by suite isolation.
+final class MockIAPGate: CHIAPGate, @unchecked Sendable {
+    @Published var hasUnlockedProviders: Bool = false
+    @Published var unlockPriceLabel: String? = nil
+
+    var startPurchaseCalls: Int = 0
+    var restoreCalls: Int = 0
+    var purchaseShouldThrow: Error?
+    var restoreShouldThrow: Error?
+
+    func startPurchase() async throws {
+        startPurchaseCalls += 1
+        if let e = purchaseShouldThrow { throw e }
+        hasUnlockedProviders = true
+    }
+    func restorePurchases() async throws {
+        restoreCalls += 1
+        if let e = restoreShouldThrow { throw e }
+        hasUnlockedProviders = true
+    }
+}
+
+private struct TestProvider: CHAIProvider, Sendable {
+    let id: String
+    let displayName: String
+    let supportsVision: Bool = false
+    func sendMessage(prompt: String, systemPrompt: String?) async throws -> String { "" }
+    func validate() async throws -> Bool { true }
+    func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+}
+
+@MainActor
+@Suite("CHIAPGate + gating (2.6.0)", .serialized)
+struct IAPGating260Tests {
+
+    /// Restore CHAIManager + registry around each test.
+    private func withCleanState(_ body: (MockIAPGate) async throws -> Void) async rethrows {
+        let manager = CHAIManager.shared
+        let priorGated = manager.gatedProviderIDs
+        let priorActive = manager.activeProviderID
+        let priorRegistry = CHIAPGateRegistry.shared
+        defer {
+            manager.gatedProviderIDs = priorGated
+            manager.activeProviderID = priorActive
+            CHIAPGateRegistry.shared = priorRegistry
+        }
+        let mock = MockIAPGate()
+        CHIAPGateRegistry.shared = mock
+        try await body(mock)
+    }
+
+    @Test("CHAIError.providerLocked has the expected user-facing message")
+    func providerLockedMessage() {
+        let err = CHAIError.providerLocked(displayName: "OpenAI")
+        let desc = err.errorDescription ?? ""
+        #expect(desc.contains("OpenAI"))
+        #expect(desc.contains("one-time purchase") || desc.contains("Settings"))
+    }
+
+    @Test("isLocked returns false when no gate is registered (gating disabled)")
+    func isLockedFalseWithoutGate() {
+        let manager = CHAIManager.shared
+        let priorGated = manager.gatedProviderIDs
+        let priorRegistry = CHIAPGateRegistry.shared
+        defer {
+            manager.gatedProviderIDs = priorGated
+            CHIAPGateRegistry.shared = priorRegistry
+        }
+        manager.gatedProviderIDs = ["openai"]
+        CHIAPGateRegistry.shared = nil
+        #expect(manager.isLocked(providerID: "openai") == false)
+        #expect(manager.isGatingActive == false)
+    }
+
+    @Test("isLocked returns true for gated provider while user is locked")
+    func isLockedTrueWhenLocked() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai", "claude"]
+            mock.hasUnlockedProviders = false
+            #expect(manager.isLocked(providerID: "openai"))
+            #expect(manager.isLocked(providerID: "claude"))
+            #expect(manager.isLocked(providerID: "apple-intelligence") == false)
+            #expect(manager.isGatingActive)
+        }
+    }
+
+    @Test("isLocked returns false after hasUnlockedProviders flips true")
+    func isLockedFalseAfterUnlock() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            mock.hasUnlockedProviders = true
+            #expect(manager.isLocked(providerID: "openai") == false)
+            #expect(manager.isGatingActive == false)
+        }
+    }
+
+    @Test("checkProviderUnlocked throws .providerLocked when gated and locked")
+    func checkProviderThrows() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            mock.hasUnlockedProviders = false
+            let provider = TestProvider(id: "openai", displayName: "OpenAI")
+            do {
+                try manager.checkProviderUnlocked(provider)
+                Issue.record("Expected providerLocked throw")
+            } catch let CHAIError.providerLocked(name) {
+                #expect(name == "OpenAI")
+            } catch {
+                Issue.record("Wrong error: \(error)")
+            }
+        }
+    }
+
+    @Test("checkProviderUnlocked is silent for non-gated providers")
+    func checkProviderSilentForFreeProviders() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            mock.hasUnlockedProviders = false
+            let provider = TestProvider(id: "apple-intelligence", displayName: "Apple Intelligence")
+            do {
+                try manager.checkProviderUnlocked(provider)
+            } catch {
+                Issue.record("Free provider should not throw: \(error)")
+            }
+        }
+    }
+
+    @Test("checkProviderUnlocked is silent after unlock")
+    func checkProviderSilentAfterUnlock() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            mock.hasUnlockedProviders = true
+            let provider = TestProvider(id: "openai", displayName: "OpenAI")
+            do {
+                try manager.checkProviderUnlocked(provider)
+            } catch {
+                Issue.record("Unlocked check should not throw: \(error)")
+            }
+        }
+    }
+
+    @Test("gateAllExceptAppleIntelligence populates the expected set")
+    func gateAllHelper() {
+        let manager = CHAIManager.shared
+        let prior = manager.gatedProviderIDs
+        defer { manager.gatedProviderIDs = prior }
+
+        manager.gateAllExceptAppleIntelligence()
+        #expect(manager.gatedProviderIDs.contains(CHOpenAIProvider.providerID))
+        #expect(manager.gatedProviderIDs.contains(CHClaudeProvider.providerID))
+        #expect(manager.gatedProviderIDs.contains(CHCustomEndpointProvider.providerID))
+        #expect(manager.gatedProviderIDs.contains("on-device-llm"))
+        #expect(manager.gatedProviderIDs.contains(CHAppleIntelligenceProvider.providerID) == false,
+                "Apple Intelligence must NOT be gated by gateAllExceptAppleIntelligence")
+    }
+
+    @Test("startPurchase success flips hasUnlockedProviders and unlocks providers")
+    func purchaseSuccessUnlocks() async throws {
+        try await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            mock.unlockPriceLabel = "$4.99"
+            #expect(manager.isLocked(providerID: "openai"))
+
+            try await mock.startPurchase()
+
+            #expect(mock.hasUnlockedProviders)
+            #expect(manager.isLocked(providerID: "openai") == false)
+            #expect(manager.isGatingActive == false)
+            #expect(mock.startPurchaseCalls == 1)
+        }
+    }
+
+    @Test("startPurchase failure leaves user locked and bubbles error")
+    func purchaseFailurePropagates() async {
+        await withCleanState { mock in
+            let manager = CHAIManager.shared
+            manager.gatedProviderIDs = ["openai"]
+            struct DummyError: Error {}
+            mock.purchaseShouldThrow = DummyError()
+            do {
+                try await mock.startPurchase()
+                Issue.record("Expected startPurchase to throw")
+            } catch is DummyError {
+                #expect(mock.hasUnlockedProviders == false)
+                #expect(manager.isLocked(providerID: "openai"))
+            } catch {
+                Issue.record("Wrong error: \(error)")
+            }
+        }
+    }
+}

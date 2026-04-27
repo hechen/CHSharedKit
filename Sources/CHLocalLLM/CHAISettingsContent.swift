@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import CHSharedKit
 
 // MARK: - CHAIProviderPickerView
@@ -85,6 +86,19 @@ public struct CHAISettingsContent: View {
 
     @State private var modelStore = LocalModelStore.shared
 
+    // 2.6.0 IAP gating — picker mirrors the registered gate's published state
+    // and routes locked-row taps to the banner instead of the activate path.
+    @State private var unlockState: UnlockState = .none
+    @State private var pulseTrigger: Int = 0
+    @State private var purchaseError: String?
+
+    private enum UnlockState: Equatable {
+        case none                       // no gate registered or empty gatedProviderIDs
+        case locked(priceLabel: String?)
+        case purchasing
+        case unlocked
+    }
+
     public init(appIdentifier: AppIdentifier) {
         self.appIdentifier = appIdentifier
     }
@@ -114,11 +128,52 @@ public struct CHAISettingsContent: View {
             }
         }
 
+        // 2.6.0: IAP unlock banner. Renders only when a gate is registered,
+        // at least one provider is gated, and the user hasn't unlocked.
+        // Tapping a locked provider row pulses this banner via `pulseTrigger`
+        // so the user's eye gets drawn to the unlock path instead of a
+        // mysterious "tap does nothing" failure.
+        if case .locked(let priceLabel) = unlockState {
+            Section {
+                CHAIProviderUnlockBanner(
+                    priceLabel: priceLabel,
+                    lockedProviderNames: lockedProviderDisplayNames,
+                    isPurchasing: false,
+                    pulseTrigger: pulseTrigger,
+                    onPurchase: { Task { await runPurchase() } },
+                    onRestore: { Task { await runRestore() } }
+                )
+                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        } else if case .purchasing = unlockState {
+            Section {
+                CHAIProviderUnlockBanner(
+                    priceLabel: nil,
+                    lockedProviderNames: lockedProviderDisplayNames,
+                    isPurchasing: true,
+                    pulseTrigger: pulseTrigger,
+                    onPurchase: {},
+                    onRestore: {}
+                )
+                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                .listRowBackground(Color.clear)
+            }
+        }
+        if let purchaseError {
+            Section {
+                Label(purchaseError, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+
         Section {
             // On-Device — smart tap: management sheet if installed, picker if not
             onDeviceProviderRow
 
-            // Apple Intelligence
+            // Apple Intelligence — never gated
             providerRow(
                 id: CHAppleIntelligenceProvider.providerID,
                 icon: "apple.intelligence",
@@ -144,7 +199,23 @@ public struct CHAISettingsContent: View {
         } header: {
             Text("AI Provider")
         } footer: {
-            Text("On-Device runs fully offline. No data leaves your device.")
+            VStack(alignment: .leading, spacing: 4) {
+                Text("On-Device runs fully offline. No data leaves your device.")
+                if case .unlocked = unlockState {
+                    // 2.6.0: post-unlock, banner collapses to a tiny Restore
+                    // link here so users with a previous purchase can rescue
+                    // the unlock state on a fresh install.
+                    Button("Restore Purchases") { Task { await runRestore() } }
+                        .font(.caption)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.tint)
+                }
+            }
+        }
+        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
+        .onAppear { refreshUnlockState() }
+        .onReceive(gatePublisher) { _ in
+            refreshUnlockState()
         }
 
         // On-Device detail section (when selected)
@@ -316,7 +387,19 @@ public struct CHAISettingsContent: View {
 
     @ViewBuilder
     private var onDeviceProviderRow: some View {
+        // 2.6.0: same lock treatment as cloud providers when on-device-llm
+        // is in `gatedProviderIDs`.
+        let isLocked = aiManager.isLocked(providerID: CHLocalLLMProvider.providerID)
+        let isActiveLocked = isLocked && selectedProvider == CHLocalLLMProvider.providerID
+
         Button {
+            if isLocked {
+                pulseTrigger += 1
+                #if os(iOS)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                #endif
+                return
+            }
             // Always activate the on-device provider first — tapping the row
             // is foremost a provider selection, matching every other row.
             // Sheet presentation is secondary.
@@ -335,16 +418,30 @@ public struct CHAISettingsContent: View {
         } label: {
             HStack(spacing: 12) {
                 providerIcon("cpu", color: .indigo, available: true)
+                    .opacity(isLocked ? 0.6 : 1.0)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text("On-Device AI")
                             .font(.system(size: 16))
+                            .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
+                        if isLocked {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(.indigo)
+                        }
                         badge("Private", color: .indigo)
                         badge("Offline", color: .orange)
                     }
-                    Text(activeModel.map { $0.displayName } ?? "Runs fully offline · No API key")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    if isActiveLocked {
+                        Text("Locked — purchase required")
+                            .font(.caption)
+                            .foregroundStyle(.indigo)
+                    } else {
+                        Text(activeModel.map { $0.displayName } ?? "Runs fully offline · No API key")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .opacity(isLocked ? 0.6 : 1.0)
+                    }
                 }
                 Spacer()
                 if selectedProvider == CHLocalLLMProvider.providerID {
@@ -451,8 +548,21 @@ public struct CHAISettingsContent: View {
         available: Bool,
         unavailableReason: String? = nil
     ) -> some View {
-        Button {
+        // 2.6.0: gating short-circuit. Locked rows route taps to the unlock
+        // banner (pulse) instead of the activate path. Apple Intelligence is
+        // never in `gatedProviderIDs` so it stays uniformly tappable.
+        let isLocked = aiManager.isLocked(providerID: id)
+        let isActiveLocked = isLocked && selectedProvider == id
+
+        return Button {
             guard available else { return }
+            if isLocked {
+                pulseTrigger += 1
+                #if os(iOS)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                #endif
+                return
+            }
             aiManager.activeProviderID = id
             #if os(iOS)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -460,19 +570,31 @@ public struct CHAISettingsContent: View {
         } label: {
             HStack(spacing: 12) {
                 providerIcon(icon, color: iconColor, available: available)
+                    .opacity(isLocked ? 0.6 : 1.0)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
                         Text(name)
                             .font(.system(size: 16))
                             .foregroundStyle(available ? .primary : .secondary)
+                            .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
+                        if isLocked {
+                            Image(systemName: "lock.fill")
+                                .font(.caption)
+                                .foregroundStyle(.indigo)
+                        }
                         if let badge {
                             self.badge(badge, color: badgeColor)
                         }
                     }
-                    if let reason = unavailableReason, !available {
+                    if isActiveLocked {
+                        Text("Locked — purchase required")
+                            .font(.caption)
+                            .foregroundStyle(.indigo)
+                    } else if let reason = unavailableReason, !available {
                         Text(reason).font(.caption).foregroundStyle(.tertiary)
                     } else if let sub = subtitle {
                         Text(sub).font(.caption).foregroundStyle(.secondary)
+                            .opacity(isLocked ? 0.6 : 1.0)
                     }
                 }
                 Spacer()
@@ -484,6 +606,77 @@ public struct CHAISettingsContent: View {
             }
         }
         .disabled(!available)
+    }
+
+    // MARK: - 2.6.0 IAP gating helpers
+
+    /// Snapshots the registered gate's state and assigns to `unlockState`.
+    /// Called on view-appear and whenever the gate publishes a change.
+    private func refreshUnlockState() {
+        guard !aiManager.gatedProviderIDs.isEmpty,
+              let gate = CHIAPGateRegistry.shared
+        else {
+            unlockState = .none
+            return
+        }
+        unlockState = gate.hasUnlockedProviders
+            ? .unlocked
+            : .locked(priceLabel: gate.unlockPriceLabel)
+    }
+
+    /// Drives `.onReceive`. When no gate is registered, returns an empty
+    /// publisher so the modifier is still legal but never fires.
+    ///
+    /// The two-step (var calls into a generic helper) is required to open
+    /// the `any CHIAPGate` existential — Swift can't directly call a method
+    /// returning `AnyPublisher<Void, Never>` on `gate.objectWillChange` when
+    /// the publisher's associated `Failure` type is hidden behind the
+    /// existential. Passing through `bridgeGatePublisher<G>(_ gate: G)`
+    /// opens the existential for the call.
+    private var gatePublisher: AnyPublisher<Void, Never> {
+        guard let gate = CHIAPGateRegistry.shared else {
+            return Empty<Void, Never>(completeImmediately: false).eraseToAnyPublisher()
+        }
+        return Self.bridgeGatePublisher(gate)
+    }
+
+    private static func bridgeGatePublisher<G: CHIAPGate>(_ gate: G) -> AnyPublisher<Void, Never> {
+        gate.objectWillChange
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
+    private var lockedProviderDisplayNames: [String] {
+        aiManager.gatedProviderIDs
+            .compactMap { id -> String? in
+                aiManager.allProviders.first(where: { $0.id == id })?.name
+            }
+            .sorted()
+    }
+
+    @MainActor
+    private func runPurchase() async {
+        guard let gate = CHIAPGateRegistry.shared else { return }
+        purchaseError = nil
+        unlockState = .purchasing
+        do {
+            try await gate.startPurchase()
+        } catch {
+            purchaseError = "Purchase failed: \(error.localizedDescription)"
+        }
+        refreshUnlockState()
+    }
+
+    @MainActor
+    private func runRestore() async {
+        guard let gate = CHIAPGateRegistry.shared else { return }
+        purchaseError = nil
+        do {
+            try await gate.restorePurchases()
+        } catch {
+            purchaseError = "Restore failed: \(error.localizedDescription)"
+        }
+        refreshUnlockState()
     }
 
     @ViewBuilder
