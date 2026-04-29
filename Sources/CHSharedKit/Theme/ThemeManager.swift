@@ -241,7 +241,14 @@ final class TabBarAppearanceCoordinator {
         let proxy = UITabBar.appearance()
         proxy.standardAppearance = appearance
         proxy.scrollEdgeAppearance = appearance
-        proxy.compactAppearance = appearance
+        // 2.7.3: `compactAppearance` was removed from the iOS 26 SDK in
+        // favour of unified appearance via `standardAppearance`. Setting
+        // it via the Swift symbol no longer compiles when building
+        // against iPhoneOS26.sdk; bridge through KVC so older runtimes
+        // still receive the value while iOS 26 silently no-ops.
+        if proxy.responds(to: NSSelectorFromString("setCompactAppearance:")) {
+            proxy.setValue(appearance, forKey: "compactAppearance")
+        }
 
         // Live tab bars need an explicit refresh; appearance proxies only
         // affect future instances. Refresh once now and once on the next
@@ -267,7 +274,10 @@ final class TabBarAppearanceCoordinator {
         if let tabBar = view as? UITabBar {
             tabBar.standardAppearance = appearance
             tabBar.scrollEdgeAppearance = appearance
-            tabBar.compactAppearance = appearance
+            // See note above re: iOS 26 SDK removing this symbol.
+            if tabBar.responds(to: NSSelectorFromString("setCompactAppearance:")) {
+                tabBar.setValue(appearance, forKey: "compactAppearance")
+            }
         }
         for subview in view.subviews {
             refresh(view: subview, with: appearance)
