@@ -151,7 +151,7 @@ private struct ThemedModifier: ViewModifier {
 
     private func syncTabBar(_ resolved: ResolvedTheme) {
         #if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
-        applyTabBarAppearance(UIColor(resolved.accent))
+        TabBarAppearanceCoordinator.shared.apply(UIColor(resolved.accent))
         #endif
     }
 }
@@ -167,52 +167,111 @@ public extension View {
 
 // MARK: - Tab bar appearance
 
-/// Configures `UITabBarAppearance` so only the selected tab uses the accent
-/// color. Without this, `.tint()` at the root makes ALL tab items render in
-/// the accent color, losing the selected/unselected distinction.
+/// Coordinator that owns the `UITabBarAppearance` and re-applies it whenever
+/// iOS would otherwise reset to defaults. Without re-application:
 ///
-/// Sets `standardAppearance` AND `scrollEdgeAppearance` (the iOS 15 scroll-
-/// edge variant that otherwise falls back to defaults and causes the bug to
-/// reappear when the user scrolls).  Also refreshes any tab bars already
-/// on screen so a runtime theme change is immediately visible.
+/// - Returning from a pushed `NavigationLink` can leave the live tab bar in a
+///   transition state where `iconColor` resolves through `tintColor`
+///   inheritance — every item renders in the accent color.
+/// - iPad split-view / iPhone landscape pulls `compactAppearance`, which
+///   wasn't set in 2.7.1, so the tab bar fell back to the system default
+///   appearance and the same all-tinted symptom appeared.
+/// - Scene re-activation (multi-window, app switcher) drops the proxy state
+///   on some iOS 17/18 builds.
+///
+/// Strategy: cache the latest accent, set all three appearance variants
+/// (`standardAppearance`, `scrollEdgeAppearance`, `compactAppearance`) on the
+/// proxy AND on every live tab bar, and re-apply on scene activation,
+/// foreground, and window-key changes.
 #if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
-private func applyTabBarAppearance(_ selected: UIColor) {
-    let unselected = UIColor.secondaryLabel
+@MainActor
+final class TabBarAppearanceCoordinator {
+    static let shared = TabBarAppearanceCoordinator()
 
-    let appearance = UITabBarAppearance()
-    appearance.configureWithDefaultBackground()
+    private var lastSelected: UIColor = .tintColor
+    private var didRegisterObservers = false
 
-    for layout in [appearance.stackedLayoutAppearance,
-                   appearance.inlineLayoutAppearance,
-                   appearance.compactInlineLayoutAppearance] {
-        layout.normal.iconColor = unselected
-        layout.normal.titleTextAttributes = [.foregroundColor: unselected]
-        layout.selected.iconColor = selected
-        layout.selected.titleTextAttributes = [.foregroundColor: selected]
+    private init() {}
+
+    /// Apply the appearance with the given selected (accent) color and arm
+    /// the notification-driven re-applications.
+    func apply(_ selected: UIColor) {
+        lastSelected = selected
+        registerObserversIfNeeded()
+        configure(selected: selected)
     }
 
-    UITabBar.appearance().standardAppearance = appearance
-    UITabBar.appearance().scrollEdgeAppearance = appearance
-
-    // Push updated appearance to tab bars already on screen (appearance proxies
-    // only affect future instances; live instances need an explicit refresh).
-    for scene in UIApplication.shared.connectedScenes {
-        guard let windowScene = scene as? UIWindowScene else { continue }
-        for window in windowScene.windows {
-            refreshTabBarsInView(window)
+    private func registerObserversIfNeeded() {
+        guard !didRegisterObservers else { return }
+        didRegisterObservers = true
+        let nc = NotificationCenter.default
+        let names: [Notification.Name] = [
+            UIScene.didActivateNotification,
+            UIApplication.willEnterForegroundNotification,
+            UIWindow.didBecomeKeyNotification,
+        ]
+        for name in names {
+            nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.reapplyLast() }
+            }
         }
     }
-}
 
-private func refreshTabBarsInView(_ view: UIView) {
-    if let tabBar = view as? UITabBar {
-        tabBar.standardAppearance = UITabBar.appearance().standardAppearance
-        if let scrollEdge = UITabBar.appearance().scrollEdgeAppearance {
-            tabBar.scrollEdgeAppearance = scrollEdge
+    private func reapplyLast() {
+        configure(selected: lastSelected)
+    }
+
+    private func configure(selected: UIColor) {
+        // Solid systemGray — semi-transparent .secondaryLabel can resolve
+        // to tintColor during navigation transitions on iOS 17+.
+        let unselected = UIColor.systemGray
+
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+
+        for layout in [appearance.stackedLayoutAppearance,
+                       appearance.inlineLayoutAppearance,
+                       appearance.compactInlineLayoutAppearance] {
+            layout.normal.iconColor = unselected
+            layout.normal.titleTextAttributes = [.foregroundColor: unselected]
+            layout.selected.iconColor = selected
+            layout.selected.titleTextAttributes = [.foregroundColor: selected]
+        }
+
+        let proxy = UITabBar.appearance()
+        proxy.standardAppearance = appearance
+        proxy.scrollEdgeAppearance = appearance
+        proxy.compactAppearance = appearance
+
+        // Live tab bars need an explicit refresh; appearance proxies only
+        // affect future instances. Refresh once now and once on the next
+        // run loop tick to catch tab bars whose layout straddles a
+        // transition (the "back from pushed view" case).
+        refreshLiveTabBars(with: appearance)
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.refreshLiveTabBars(with: appearance)
         }
     }
-    for subview in view.subviews {
-        refreshTabBarsInView(subview)
+
+    private func refreshLiveTabBars(with appearance: UITabBarAppearance) {
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows {
+                refresh(view: window, with: appearance)
+            }
+        }
+    }
+
+    private func refresh(view: UIView, with appearance: UITabBarAppearance) {
+        if let tabBar = view as? UITabBar {
+            tabBar.standardAppearance = appearance
+            tabBar.scrollEdgeAppearance = appearance
+            tabBar.compactAppearance = appearance
+        }
+        for subview in view.subviews {
+            refresh(view: subview, with: appearance)
+        }
     }
 }
 #endif
