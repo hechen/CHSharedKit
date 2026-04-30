@@ -415,44 +415,28 @@ extension CHStorageSection {
     /// .active` at the app level so backups run on first foreground without
     /// background-task scheduling. `frequency == .manual` and
     /// auto-backup-disabled both short-circuit.
-    @MainActor
+    ///
+    /// 2.8.1: delegates to `CHAutoBackupCoordinator.shared` so concurrent
+    /// triggers (scene-activate + foreground notification + view-task)
+    /// serialize behind one in-flight check, and the throttle reads the
+    /// iCloud directory's most-recent file mtime as ground truth instead
+    /// of per-device `UserDefaults`. Multi-device + multi-trigger races
+    /// no longer produce duplicate same-day backups. Existing call sites
+    /// in consuming apps don't need to change — just bump CHSharedKit.
     public static func runScheduledBackupIfDue(
         appName: String,
         fileExtension: String = "backup",
         iCloudContainerID: String? = nil,
         fallbackFolderName: String? = nil,
-        encoder: () async throws -> Data
+        encoder: @Sendable () async throws -> Data
     ) async {
-        guard CHBackupStorage.autoBackupEnabled(appName: appName) else { return }
-        let raw = UserDefaults.standard.string(forKey: CHBackupFrequency.storageKey(appName: appName))
-            ?? CHBackupFrequency.weekly.rawValue
-        let frequency = CHBackupFrequency(rawValue: raw) ?? .weekly
-        guard let window = frequency.dueAfter else { return }
-        if let last = CHBackupStorage.lastAutoBackupDate(appName: appName) {
-            guard Date().timeIntervalSince(last) >= window else { return }
-        }
-        do {
-            let data = try await encoder()
-            _ = try writeCoordinated(
-                appName: appName,
-                fileExtension: fileExtension,
-                iCloudContainerId: iCloudContainerID,
-                fallbackFolderName: fallbackFolderName ?? "\(appName) Backups",
-                data: data
-            )
-            CHBackupStorage.setLastAutoBackupDate(Date(), appName: appName)
-            CHBackupStorage.pruneOldBackups(
-                fileExtension: fileExtension,
-                iCloudContainerId: iCloudContainerID,
-                fallbackFolderName: fallbackFolderName ?? "\(appName) Backups",
-                maxBackups: CHBackupStorage.maxAutoBackups(appName: appName)
-            )
-        } catch {
-            // Auto-backup failures are silent — surfacing them on every
-            // foreground would be more annoying than helpful. The user will
-            // see "Last Backup: 8 days ago" in the UI if writes are
-            // persistently failing.
-        }
+        await CHAutoBackupCoordinator.shared.runIfNeeded(
+            appName: appName,
+            fileExtension: fileExtension,
+            iCloudContainerID: iCloudContainerID,
+            fallbackFolderName: fallbackFolderName ?? "\(appName) Backups",
+            encoder: encoder
+        )
     }
 
     /// One-shot pass: lift any backup files in the local-fallback directory
@@ -502,7 +486,11 @@ extension CHStorageSection {
     /// iCloud-enabled devices. Filename pattern matches the kit's reader
     /// (`<AppName>_Backup_<yyyy-MM-dd_HHmmss>.<ext>`) so existing
     /// `CHBackupStorage.list(...)` calls continue to surface the file.
-    static func writeCoordinated(
+    ///
+    /// `nonisolated` so the 2.8.1 `CHAutoBackupCoordinator` actor can
+    /// call it off the main actor without a hop. The work is pure I/O
+    /// (NSFileCoordinator + Data.write) and touches no main-actor state.
+    nonisolated static func writeCoordinated(
         appName: String,
         fileExtension: String,
         iCloudContainerId: String?,
