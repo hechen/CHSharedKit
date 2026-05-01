@@ -22,7 +22,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_openai_model") ?? "gpt-4o" }
+        get { UserDefaults.standard.string(forKey: "clawd_openai_model") ?? "gpt-5.4-mini" }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_openai_model") }
     }
     
@@ -77,7 +77,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
 
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",
+            "model": "gpt-5.4-mini",
             "messages": [["role": "user", "content": "Say OK"]],
             "max_tokens": 5
         ]
@@ -209,12 +209,36 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         }
     }
     
+    /// 2026 lineup. Refresh order: newest tier on top, mini in the middle as
+    /// the recommended sweet-spot, smallest at the bottom. Retired pre-5.x
+    /// IDs are migrated forward by `CHAIModelMigration.migrateRetiredModels`
+    /// so existing users land on `gpt-5.4-mini` (the new default) instead of
+    /// hitting "model not found" errors on first request.
     public static let availableModels: [AIModel] = [
-        AIModel(id: "gpt-4o", name: "GPT-4o (recommended)"),
-        AIModel(id: "gpt-4o-mini", name: "GPT-4o Mini (cheaper)"),
-        AIModel(id: "gpt-4.1", name: "GPT-4.1"),
-        AIModel(id: "gpt-4.1-mini", name: "GPT-4.1 Mini"),
-        AIModel(id: "gpt-4.1-nano", name: "GPT-4.1 Nano (fastest)"),
-        AIModel(id: "o4-mini", name: "o4-mini (reasoning)"),
+        AIModel(id: "gpt-5.5-pro",  name: "GPT-5.5 Pro (reasoning)"),
+        AIModel(id: "gpt-5.5",      name: "GPT-5.5 (flagship)"),
+        AIModel(id: "gpt-5.4",      name: "GPT-5.4"),
+        AIModel(id: "gpt-5.4-mini", name: "GPT-5.4 Mini (recommended)"),
+        AIModel(id: "gpt-5.4-nano", name: "GPT-5.4 Nano (fastest)"),
+        AIModel(id: "gpt-5.3",      name: "GPT-5.3"),
+        AIModel(id: "gpt-5",        name: "GPT-5"),
     ]
+
+    /// Identifiers that were in the picker prior to 2.8.2 and are no longer
+    /// served by the OpenAI API. Used by `CHAIModelMigration` to detect
+    /// stored-default values that need rewriting on first launch of 2.8.2.
+    public static let retiredModelIDs: Set<String> = [
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4.1-nano",
+        "o4-mini",
+        "gpt-5-instant",
+        "gpt-5-thinking"
+    ]
+
+    /// Replacement target for any retired identifier. Mirrors the new
+    /// default at the top of this file.
+    public static let migrationFallbackModelID: String = "gpt-5.4-mini"
 }

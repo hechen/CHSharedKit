@@ -41,7 +41,18 @@ public final class CHAIUsageTracker: ObservableObject {
     }
     
     public static let pricing: [String: ModelPricing] = [
-        // OpenAI
+        // OpenAI — current 2026 lineup
+        "gpt-5.5-pro":  ModelPricing(inputPerMillion: 10.00, outputPerMillion: 40.00, imageInputPerMillion: 10.00),
+        "gpt-5.5":      ModelPricing(inputPerMillion: 3.00,  outputPerMillion: 12.00, imageInputPerMillion: 3.00),
+        "gpt-5.4":      ModelPricing(inputPerMillion: 2.00,  outputPerMillion: 8.00,  imageInputPerMillion: 2.00),
+        "gpt-5.4-mini": ModelPricing(inputPerMillion: 0.40,  outputPerMillion: 1.60,  imageInputPerMillion: 0.40),
+        "gpt-5.4-nano": ModelPricing(inputPerMillion: 0.10,  outputPerMillion: 0.40,  imageInputPerMillion: 0.10),
+        "gpt-5.3":      ModelPricing(inputPerMillion: 1.50,  outputPerMillion: 6.00,  imageInputPerMillion: 1.50),
+        "gpt-5":        ModelPricing(inputPerMillion: 2.00,  outputPerMillion: 8.00,  imageInputPerMillion: 2.00),
+        // OpenAI — retired identifiers kept so historical request-log
+        // entries still cost-out correctly in the Usage view. The picker
+        // no longer offers them; `CHAIModelMigration` rewrites stored
+        // defaults forward on first launch of 2.8.2.
         "gpt-4o":       ModelPricing(inputPerMillion: 2.50, outputPerMillion: 10.00, imageInputPerMillion: 2.50),
         "gpt-4o-mini":  ModelPricing(inputPerMillion: 0.15, outputPerMillion: 0.60, imageInputPerMillion: 0.15),
         "gpt-4-turbo":  ModelPricing(inputPerMillion: 10.00, outputPerMillion: 30.00, imageInputPerMillion: 10.00),
