@@ -117,11 +117,32 @@ public final class LocalModelStore {
 
     // Cached shared UserDefaults suite
     @ObservationIgnored private var _sharedDefaults: UserDefaults?
+    /// 2.9.2: process-global flag so the suite-fallback warning only
+    /// logs once per launch, not on every read.
+    @ObservationIgnored private static var didLogSuiteFallback = false
     private var sharedDefaults: UserDefaults {
         if let cached = _sharedDefaults { return cached }
-        let suite = UserDefaults(suiteName: appGroupID) ?? .standard
-        _sharedDefaults = suite
-        return suite
+        // 2.9.2: explicitly distinguish "suite resolved" from
+        // "fallback to .standard". The fallback is the silent
+        // failure that produces "models aren't shared across apps"
+        // — apps without the App Group entitlement land here and
+        // see an isolated picker state.
+        if let suite = UserDefaults(suiteName: appGroupID) {
+            _sharedDefaults = suite
+            return suite
+        }
+        if !Self.didLogSuiteFallback {
+            Self.didLogSuiteFallback = true
+            print("""
+                [CHSharedKit] ⚠ App Group suite "\(appGroupID)" is not accessible. \
+                Falling back to UserDefaults.standard. Active model selection and \
+                custom models will not sync to other CHSharedKit apps until the \
+                consuming app declares com.apple.security.application-groups → \
+                \(appGroupID) in its .entitlements file and is rebuilt.
+                """)
+        }
+        _sharedDefaults = .standard
+        return .standard
     }
 
     // Active download task (HubApi.snapshot wrapped in Task) — non-nil while a
@@ -663,6 +684,15 @@ public final class LocalModelStore {
         /// Each installed model's id, on-disk location, and total snapshot
         /// size in bytes.
         public let installedModels: [ModelEntry]
+        /// 2.9.2: did the App Group entitlement actually resolve to a
+        /// container at launch? `false` here means the consuming app
+        /// is missing `com.apple.security.application-groups` with
+        /// `group.app.chen.sharedllm` — its `activeModelID` /
+        /// `customModels` won't sync across the suite.
+        public let appGroupAccessible: Bool
+        /// 2.9.2: human-readable warning string when entitlement check
+        /// fails. `nil` when everything is fine.
+        public let entitlementWarning: String?
 
         public struct ModelEntry: Sendable {
             public let id: String
@@ -691,7 +721,10 @@ public final class LocalModelStore {
             let legacyNote = installedModels.contains(where: \.isLegacyLocation)
                 ? " — \(installedModels.filter(\.isLegacyLocation).count) in legacy location"
                 : ""
-            return "CHSharedKit: \(count) model\(count == 1 ? "" : "s") installed\(names_), total \(String(format: "%.2f", totalGB)) GB. Path: \(canonicalDirectory.path)\(legacyNote)"
+            let entitlementNote = appGroupAccessible
+                ? ""
+                : " ⚠ App Group entitlement missing — model selection won't sync across apps"
+            return "CHSharedKit: \(count) model\(count == 1 ? "" : "s") installed\(names_), total \(String(format: "%.2f", totalGB)) GB. Path: \(canonicalDirectory.path)\(legacyNote)\(entitlementNote)"
         }
     }
 
@@ -731,12 +764,37 @@ public final class LocalModelStore {
                 isLegacyLocation: isLegacy
             ))
         }
+        // 2.9.2: probe the App Group entitlement. If this comes back
+        // nil, the consuming app is missing
+        // `com.apple.security.application-groups` with
+        // `group.app.chen.sharedllm` — `activeModelID` and
+        // `customModels` will silently fall back to the local
+        // `UserDefaults.standard` suite, so each app sees a different
+        // "active model" picker state. That's the most common cause
+        // of "models aren't shared between my apps" reports.
+        let configuredGroupID = CHLocalModelStore.shared.appGroupID
+        let groupAccessible = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: configuredGroupID
+        ) != nil
+        let entitlementWarning: String? = groupAccessible ? nil : """
+            App Group "\(configuredGroupID)" is not accessible from this app. \
+            Add com.apple.security.application-groups → \(configuredGroupID) \
+            to the app's .entitlements file and rebuild. Until that's fixed, \
+            this app falls back to UserDefaults.standard for model metadata, \
+            so the active-model selection won't sync with other CHSharedKit apps.
+            """
+
         let report = StorageReport(
             canonicalDirectory: canonical,
             legacyDirectories: legacy,
-            installedModels: entries
+            installedModels: entries,
+            appGroupAccessible: groupAccessible,
+            entitlementWarning: entitlementWarning
         )
         print("[CHSharedKit] " + report.summary)
+        if let warning = entitlementWarning {
+            print("[CHSharedKit] " + warning)
+        }
         return report
     }
 
