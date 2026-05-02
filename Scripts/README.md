@@ -29,6 +29,36 @@ source root.)
 
 Exits 0 on success, 1 with a list of offenders on failure.
 
+## `validate-settings-rows.swift`
+
+Build-phase guard that flags Settings views in app source that bypass
+`CHSettingsRow`. Three rules:
+
+1. `HStack { … }` blocks under `*/Settings/*` containing both
+   `Image(systemName:)` and `Text(…)` — settings-row-shaped HStacks
+   that should be the kit primitive.
+2. `Label("…", systemImage: …)` inside a `Section { … }` block —
+   uses Apple's `Label` (no badge) instead of `CHSettingsRow`'s
+   squircle-badge convention.
+3. `NavigationLink` / `Button` with bare `Text` labels (no icon) in
+   a Settings section — every Settings row in the kit has an icon.
+
+Wire into Xcode under **Build Phases → "+" → New Run Script Phase**:
+
+```
+"${BUILT_PRODUCTS_DIR}/../../SourcePackages/checkouts/CHSharedKit/Scripts/validate-settings-rows.swift" \
+  "${SRCROOT}" \
+  --fail
+```
+
+Default mode is `--warn` (prints findings, exits 0). Pass `--fail`
+once the app's existing flagged sites have been fixed; from then on
+new regressions break the build.
+
+Files containing `// CHSETTINGS_ROW_LINT_OFF` are skipped — escape
+hatch for genuine non-row uses inside Settings directories (custom
+cards, hero blocks, etc).
+
 ## `check-consumer-versions.sh`
 
 Local script that reports CHSharedKit version drift across all known
