@@ -1,7 +1,19 @@
 import Foundation
 import Security
 
-// MARK: - CHAITokenStore (2.4.8)
+// MARK: - CHAITokenStore (2.4.8, refit 2.9.0)
+//
+// ## 2.9.0 update
+//
+// Reads and writes now route through `CHSyncedKeychain`, which sets
+// `kSecAttrSynchronizable: kCFBooleanTrue` on every write. Pre-2.9.0
+// values were written WITHOUT the sync flag, so they lived in the
+// local-only keychain partition — that's the structural cause of the
+// BYOK sync regression Chen reported (key entered on iPhone, never
+// reached iPad). Migration is layered: synced slot first, fall back
+// to the legacy non-synced slot, fall back to the pre-2.4.8
+// per-provider service. Anything we find via fallback is hoisted
+// into the synced slot so the next read short-circuits.
 //
 // ## Why this exists
 //
@@ -157,6 +169,50 @@ public enum CHAITokenStore {
 
     private static func readRaw(service: String, account: String) -> String? {
         if let backing = _testOverride { return backing.read(service: service, account: account) }
+
+        // 2.9.0: synced slot first (this is the post-2.9.0 storage tier).
+        if let synced = CHSyncedKeychain.string(forKey: account, service: service) {
+            return synced
+        }
+
+        // 2.4.8 legacy: same service/account but in the non-synced
+        // partition. Read it, hoist into the synced slot, return.
+        if let local = readLegacyNonSynced(service: service, account: account) {
+            CHSyncedKeychain.setString(local, forKey: account, service: service)
+            return local
+        }
+        return nil
+    }
+
+    private static func saveRaw(value: String, service: String, account: String) {
+        if let backing = _testOverride {
+            backing.write(value: value, service: service, account: account)
+            return
+        }
+        // Always write to the synced slot. Don't bother removing the
+        // legacy non-synced slot — leaving it in place gives us a
+        // rollback path if 2.9.0 needs to be backed out.
+        CHSyncedKeychain.setString(value, forKey: account, service: service)
+    }
+
+    private static func deleteRaw(service: String, account: String) {
+        if let backing = _testOverride {
+            backing.delete(service: service, account: account)
+            return
+        }
+        CHSyncedKeychain.remove(forKey: account, service: service)
+        // Also wipe the legacy non-synced slot so a subsequent read
+        // doesn't resurrect a stale value.
+        deleteLegacyNonSynced(service: service, account: account)
+    }
+
+    // MARK: - Legacy non-synced shims
+    //
+    // These talk to the keychain WITHOUT the sync flag, which is the
+    // partition that pre-2.9.0 writes landed in. Used only for read
+    // migration and delete cleanup.
+
+    private static func readLegacyNonSynced(service: String, account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -170,28 +226,7 @@ public enum CHAITokenStore {
         return String(data: data, encoding: .utf8)
     }
 
-    private static func saveRaw(value: String, service: String, account: String) {
-        if let backing = _testOverride {
-            backing.write(value: value, service: service, account: account)
-            return
-        }
-        guard let data = value.data(using: .utf8) else { return }
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-        ]
-        SecItemDelete(query as CFDictionary)
-        var addQuery = query
-        addQuery[kSecValueData as String] = data
-        SecItemAdd(addQuery as CFDictionary, nil)
-    }
-
-    private static func deleteRaw(service: String, account: String) {
-        if let backing = _testOverride {
-            backing.delete(service: service, account: account)
-            return
-        }
+    private static func deleteLegacyNonSynced(service: String, account: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

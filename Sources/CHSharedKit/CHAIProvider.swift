@@ -106,42 +106,31 @@ public enum CHAIError: LocalizedError {
 }
 
 // MARK: - Keychain Helper
+//
+// 2.9.0: this is now a thin facade over `CHSyncedKeychain`. Direct
+// callers continue to work unchanged but their reads/writes now
+// follow the user across devices via `kSecAttrSynchronizable: true`.
+// Marked deprecated to encourage migration to `CHSyncedKeychain`
+// directly — the indirection here is kept only for backwards
+// compatibility with any straggler call sites.
 
-/// Keychain helper for securely storing API keys
+/// Keychain helper for securely storing API keys.
+///
+/// - Important: New code should call `CHSyncedKeychain` directly. This
+///   helper is preserved to keep pre-2.9.0 callsites compiling.
+@available(*, deprecated, message: "Use CHSyncedKeychain directly. CHAIKeychain is preserved for back-compat and routes through CHSyncedKeychain so existing call sites get the sync flag automatically.")
 public enum CHAIKeychain {
+    private static let account = "api_key"
+
     public static func save(key: String, service: String) {
-        let data = key.data(using: .utf8)!
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api_key",
-        ]
-        SecItemDelete(query as CFDictionary)
-        var addQuery = query
-        addQuery[kSecValueData as String] = data
-        SecItemAdd(addQuery as CFDictionary, nil)
+        CHSyncedKeychain.setString(key, forKey: account, service: service)
     }
-    
+
     public static func load(service: String) -> String? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api_key",
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var result: AnyObject?
-        let status = SecItemCopyMatching(query as CFDictionary, &result)
-        guard status == errSecSuccess, let data = result as? Data else { return nil }
-        return String(data: data, encoding: .utf8)
+        CHSyncedKeychain.string(forKey: account, service: service)
     }
-    
+
     public static func delete(service: String) {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: "api_key",
-        ]
-        SecItemDelete(query as CFDictionary)
+        CHSyncedKeychain.remove(forKey: account, service: service)
     }
 }
