@@ -31,19 +31,39 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         set { UserDefaults.standard.set(newValue, forKey: "clawd_openai_base_url") }
     }
     
+    // MARK: - Request bodies
+    //
+    // 2.9.3 P0 — every chat/completions body uses `max_completion_tokens`,
+    // never `max_tokens`. OpenAI's GPT-5 family (and the o-series
+    // reasoning models) reject `max_tokens` outright with:
+    //
+    //     {"error":{"message":"Unsupported parameter: 'max_tokens' is
+    //      not supported with this model. Use 'max_completion_tokens'
+    //      instead.","type":"invalid_request_error",
+    //      "param":"max_tokens","code":"unsupported_parameter"}}
+    //
+    // Older models (gpt-4o, gpt-4.1, etc.) accept both parameters, so
+    // using the new one universally is safe and avoids the fragile
+    // "switch param shape on model version" branch — new models added
+    // by OpenAI in the future will keep working without a kit bump.
+    //
+    // We also do NOT send `temperature`. Reasoning-class models reject
+    // it; the kit has never set it, and we keep that property because
+    // omitting it lets every model use its own default.
+
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
-        
+
         var messages: [[String: Any]] = []
         if let system = systemPrompt, !system.isEmpty {
             messages.append(["role": "system", "content": system])
         }
         messages.append(["role": "user", "content": prompt])
-        
+
         let body: [String: Any] = [
             "model": Self.model,
             "messages": messages,
-            "max_tokens": 4000
+            "max_completion_tokens": 4000
         ]
         
         let data = try await makeRequest(apiKey: apiKey, endpoint: "chat/completions", body: body)
@@ -66,7 +86,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
                     ]
                 ]
             ],
-            "max_tokens": 4000
+            "max_completion_tokens": 4000
         ]
         
         let data = try await makeRequest(apiKey: apiKey, endpoint: "chat/completions", body: body)
@@ -79,7 +99,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         let body: [String: Any] = [
             "model": "gpt-5.4-mini",
             "messages": [["role": "user", "content": "Say OK"]],
-            "max_tokens": 5
+            "max_completion_tokens": 5
         ]
 
         let _ = try await makeRequest(apiKey: apiKey, endpoint: "chat/completions", body: body)
@@ -101,7 +121,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         let body: [String: Any] = [
             "model": Self.model,
             "messages": messages,
-            "max_tokens": 4000,
+            "max_completion_tokens": 4000,
             "stream": true
         ]
 
