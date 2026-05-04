@@ -599,14 +599,50 @@ public struct CHAISettingsContent: View {
     private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?) {
         switch id {
         case CHOpenAIProvider.providerID:
-            return ("brain", .mint, "GPT-4o, GPT-4o mini")
+            // 2.9.4: subtitle pulled DYNAMICALLY from `availableModels`
+            // instead of hardcoded "GPT-4o, GPT-4o mini" text. The
+            // hardcoded version rotted every time the OpenAI lineup
+            // refreshed (most recently 2.8.2's GPT-5 family bump
+            // retired the strings shown here for ≈3 months in every
+            // consuming app's picker). Now: kit ships one source of
+            // truth (`CHOpenAIProvider.availableModels`) and the
+            // picker subtitle re-derives on every render.
+            return ("brain", .mint, providerSubtitle(
+                models: CHOpenAIProvider.availableModels.map { ($0.id, $0.name) },
+                currentID: CHOpenAIProvider.model
+            ))
         case CHClaudeProvider.providerID:
-            return ("sparkles", .orange, "Sonnet, Haiku")
+            return ("sparkles", .orange, providerSubtitle(
+                models: CHClaudeProvider.availableModels.map { ($0.id, $0.name) },
+                currentID: CHClaudeProvider.model
+            ))
         case CHCustomEndpointProvider.providerID:
+            // Custom endpoint stays as a non-model description because
+            // the model list is user-configured at runtime — there's
+            // no kit-side `availableModels` to derive from.
             return ("server.rack", .gray, "Ollama, LM Studio, vLLM")
         default:
             return ("network", .blue, nil)
         }
+    }
+
+    /// 2.9.4: shared subtitle helper. If the user has a current
+    /// selection, surface "<Model name> (current)" — most personal
+    /// and most useful at a glance. Otherwise fall back to the
+    /// provider's recommended (default) model so the row still
+    /// communicates "what you'd get if you tap me" without listing
+    /// stale rotten model names. Tuple-based signature because each
+    /// provider exposes its own nested `AIModel` type — we don't
+    /// want to invent a kit-level shared type just for this.
+    private func providerSubtitle(models: [(id: String, name: String)], currentID: String?) -> String {
+        if let id = currentID,
+           let match = models.first(where: { $0.id == id }) {
+            return "\(match.name) (current)"
+        }
+        if let recommended = models.first(where: { $0.name.contains("recommended") }) ?? models.first {
+            return recommended.name
+        }
+        return "\(models.count) models"
     }
 
     @ViewBuilder
