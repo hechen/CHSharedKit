@@ -597,16 +597,46 @@ public struct CHAISettingsContent: View {
     }
 
     private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?) {
+        // 2.9.5: subtitles for OpenAI / Claude rows are computed from
+        // each provider's `availableModels`. Hardcoded names ("GPT-4o,
+        // GPT-4o mini" / "Sonnet, Haiku") rotted every time the
+        // upstream lineup changed; the dynamic version stays accurate
+        // forever as long as `availableModels` is.
+        //
+        // Strategy:
+        //   * If the user has selected a model that's still in the
+        //     lineup → show its `displayName`.
+        //   * Otherwise → "Recommended: <recommendedModel.displayName>".
+        //
+        // Custom Endpoint stays string-literal because it advertises
+        // example servers, not models. Apple Intelligence + On-Device
+        // are handled inline in `body` and don't reach this function.
         switch id {
         case CHOpenAIProvider.providerID:
-            return ("brain", .mint, "GPT-4o, GPT-4o mini")
+            return ("brain", .mint, modelSubtitle(
+                current: CHOpenAIProvider.currentModel?.displayName,
+                recommendedFallback: CHOpenAIProvider.recommendedModel.displayName
+            ))
         case CHClaudeProvider.providerID:
-            return ("sparkles", .orange, "Sonnet, Haiku")
+            return ("sparkles", .orange, modelSubtitle(
+                current: CHClaudeProvider.currentModel?.displayName,
+                recommendedFallback: CHClaudeProvider.recommendedModel.displayName
+            ))
         case CHCustomEndpointProvider.providerID:
             return ("server.rack", .gray, "Ollama, LM Studio, vLLM")
         default:
             return ("network", .blue, nil)
         }
+    }
+
+    /// 2.9.5: shared subtitle composer for cloud-provider rows. When
+    /// the user has a stored model selection that's still in the
+    /// canonical lineup, surfaces it directly; otherwise falls back
+    /// to "Recommended: <model>" so the row is informative even on
+    /// first-time setup.
+    private func modelSubtitle(current: String?, recommendedFallback: String) -> String {
+        if let current { return current }
+        return "Recommended: \(recommendedFallback)"
     }
 
     @ViewBuilder

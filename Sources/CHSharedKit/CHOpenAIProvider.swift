@@ -218,17 +218,42 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     }
     
     // MARK: - Available Models
-    
+
     public struct AIModel: Identifiable, Sendable {
         public let id: String
         public let name: String
-        
-        public init(id: String, name: String) {
+        /// 2.9.5: marks the recommended row for picker subtitle fallback
+        /// when no user selection is on file. Exactly one row per
+        /// provider should be flagged true.
+        public let isRecommended: Bool
+
+        public init(id: String, name: String, isRecommended: Bool = false) {
             self.id = id
             self.name = name
+            self.isRecommended = isRecommended
         }
+
+        /// 2.9.5: alias for `name`. Kept as a separate property so a
+        /// future refactor can localize / shorten without touching
+        /// every call site.
+        public var displayName: String { name }
     }
-    
+
+    /// 2.9.5: the user's currently-selected model resolved against the
+    /// canonical lineup. Returns nil when the stored ID is not in
+    /// `availableModels` (e.g. a retired ID that hasn't been migrated
+    /// yet, or a hand-edited UserDefaults entry).
+    public static var currentModel: AIModel? {
+        let id = model
+        return availableModels.first(where: { $0.id == id })
+    }
+
+    /// 2.9.5: the recommended default model for typical BYOK app
+    /// workloads.
+    public static var recommendedModel: AIModel {
+        availableModels.first(where: \.isRecommended) ?? availableModels[0]
+    }
+
     /// 2026 lineup. Refresh order: newest tier on top, mini in the middle as
     /// the recommended sweet-spot, smallest at the bottom. Retired pre-5.x
     /// IDs are migrated forward by `CHAIModelMigration.migrateRetiredModels`
@@ -238,7 +263,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         AIModel(id: "gpt-5.5-pro",  name: "GPT-5.5 Pro (reasoning)"),
         AIModel(id: "gpt-5.5",      name: "GPT-5.5 (flagship)"),
         AIModel(id: "gpt-5.4",      name: "GPT-5.4"),
-        AIModel(id: "gpt-5.4-mini", name: "GPT-5.4 Mini (recommended)"),
+        AIModel(id: "gpt-5.4-mini", name: "GPT-5.4 Mini (recommended)", isRecommended: true),
         AIModel(id: "gpt-5.4-nano", name: "GPT-5.4 Nano (fastest)"),
         AIModel(id: "gpt-5.3",      name: "GPT-5.3"),
         AIModel(id: "gpt-5",        name: "GPT-5"),

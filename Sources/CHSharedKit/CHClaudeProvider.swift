@@ -20,8 +20,25 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_claude_model") ?? "claude-sonnet-4-20250514" }
+        get { UserDefaults.standard.string(forKey: "clawd_claude_model") ?? "claude-sonnet-4-6" }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_claude_model") }
+    }
+
+    /// 2.9.5: the user's currently-selected model resolved against the
+    /// canonical lineup. Returns nil when the stored ID is not in
+    /// `availableModels` (e.g. a retired ID that hasn't been migrated
+    /// yet, or a hand-edited UserDefaults entry). Picker rows use this
+    /// to display the active model name in their subtitle.
+    public static var currentModel: AIModel? {
+        let id = model
+        return availableModels.first(where: { $0.id == id })
+    }
+
+    /// 2.9.5: the recommended default model for typical BYOK app
+    /// workloads. Falls back to the first entry in `availableModels`
+    /// if no row is flagged `isRecommended`.
+    public static var recommendedModel: AIModel {
+        availableModels.first(where: \.isRecommended) ?? availableModels[0]
     }
     
     public static var baseURL: String {
@@ -202,20 +219,59 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     }
     
     // MARK: - Available Models
-    
+
     public struct AIModel: Identifiable, Sendable {
         public let id: String
         public let name: String
-        
-        public init(id: String, name: String) {
+        /// 2.9.5: marks the recommended row for picker subtitle fallback
+        /// when no user selection is on file. Exactly one row per
+        /// provider should be flagged true.
+        public let isRecommended: Bool
+
+        public init(id: String, name: String, isRecommended: Bool = false) {
             self.id = id
             self.name = name
+            self.isRecommended = isRecommended
         }
+
+        /// 2.9.5: alias for `name`. Kept as a separate property so a
+        /// future refactor can localize / shorten without touching
+        /// every call site.
+        public var displayName: String { name }
     }
-    
+
+    /// 2.9.5: April 2026 Anthropic lineup. Per the deprecation notice,
+    /// `claude-sonnet-3-7` and `claude-haiku-3-5` are retired (see
+    /// `retiredModelIDs`); their stored selections are migrated forward
+    /// by `CHAIModelMigration.migrateRetiredModels(appName:)` on first
+    /// launch under 2.9.5. Earlier 3.x rows retained for users who
+    /// explicitly want them and whose Anthropic account still has
+    /// access.
     public static let availableModels: [AIModel] = [
-        AIModel(id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4 (recommended)"),
-        AIModel(id: "claude-opus-4-20250514", name: "Claude Opus 4 (smartest)"),
-        AIModel(id: "claude-haiku-3-5-20241022", name: "Claude Haiku 3.5 (fastest)"),
+        AIModel(id: "claude-opus-4-7",   name: "Claude Opus 4.7 (frontier · agentic coding)"),
+        AIModel(id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6 (recommended)", isRecommended: true),
+        AIModel(id: "claude-haiku-4-5",  name: "Claude Haiku 4.5 (fastest, cheapest)"),
+        AIModel(id: "claude-opus-4-20250514",   name: "Claude Opus 4"),
+        AIModel(id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4"),
+        AIModel(id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet"),
+        AIModel(id: "claude-3-opus-20240229",     name: "Claude 3 Opus"),
+        AIModel(id: "claude-3-sonnet-20240229",   name: "Claude 3 Sonnet"),
+        AIModel(id: "claude-3-haiku-20240307",    name: "Claude 3 Haiku"),
     ]
+
+    /// 2.9.5: identifiers explicitly retired by Anthropic in the
+    /// April 2026 deprecation cycle. `CHAIModelMigration` rewrites
+    /// stored selections in this set forward to
+    /// `migrationFallbackModelID` on first launch under 2.9.5.
+    public static let retiredModelIDs: Set<String> = [
+        "claude-sonnet-3-7",
+        "claude-haiku-3-5",
+        // The dated alias of haiku-3-5 that earlier kit versions wrote
+        // into UserDefaults — older builds used this exact string.
+        "claude-haiku-3-5-20241022",
+    ]
+
+    /// 2.9.5: replacement target for any retired Claude identifier.
+    /// Mirrors `recommendedModel.id`.
+    public static let migrationFallbackModelID: String = "claude-sonnet-4-6"
 }
