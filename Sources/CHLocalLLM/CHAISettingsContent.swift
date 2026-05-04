@@ -148,8 +148,28 @@ public struct CHAISettingsContent: View {
     @State private var customURL = CHCustomEndpointProvider.baseURL
     @State private var customModel = CHCustomEndpointProvider.model
     @State private var customKey = ""
-    @State private var openaiModel = CHOpenAIProvider.model
-    @State private var claudeModel = CHClaudeProvider.model
+
+    // 2.9.6: model selections are bound directly to UserDefaults via
+    // `@AppStorage` so any write — from the in-picker dropdown OR
+    // from another surface — fires a body re-render. Pre-2.9.6 used
+    // `@State` initialized once from `CHOpenAIProvider.model`, with a
+    // separate `.onChange` write-back to UserDefaults. That arrangement
+    // had a single-pass race: the user picks a new model, @State
+    // updates, body re-evaluates immediately, and `cloudProviderMeta`
+    // calls `CHOpenAIProvider.currentModel` which reads UserDefaults
+    // BEFORE `.onChange` has run its writeback. Result: the
+    // OpenAI/Claude rows showed the OLD model until some other state
+    // change kicked another body invalidation. `@AppStorage` collapses
+    // that path — the dropdown's `$openaiModel` binding writes directly
+    // to UserDefaults, the `@AppStorage` property publishes the
+    // change, the body sees the new value on the same render pass.
+    //
+    // The keys here MUST match the static `model` getter in each
+    // provider type. If those keys ever change, update both sides
+    // together.
+    @AppStorage("clawd_openai_model") private var openaiModel: String = "gpt-5.4-mini"
+    @AppStorage("clawd_claude_model") private var claudeModel: String = "claude-sonnet-4-6"
+
     @State private var isValidating = false
     @State private var validationResult: String?
     @State private var showingAPIKey = false
@@ -331,12 +351,16 @@ public struct CHAISettingsContent: View {
                 keyField("sk-...", key: $openaiKey)
                     .onChange(of: openaiKey) { _, val in CHOpenAIProvider.apiKey = val }
 
+                // 2.9.6: $openaiModel is `@AppStorage`-bound so the
+                // picker writes directly to UserDefaults. No
+                // `.onChange { CHOpenAIProvider.model = val }`
+                // writeback — that was the source of the same-pass
+                // staleness in the OpenAI row.
                 Picker("Model", selection: $openaiModel) {
                     ForEach(CHOpenAIProvider.availableModels) { model in
                         Text(model.name).tag(model.id)
                     }
                 }
-                .onChange(of: openaiModel) { _, val in CHOpenAIProvider.model = val }
             } header: {
                 Text("OpenAI")
             } footer: {
@@ -359,12 +383,13 @@ public struct CHAISettingsContent: View {
                 keyField("sk-ant-...", key: $claudeKey)
                     .onChange(of: claudeKey) { _, val in CHClaudeProvider.apiKey = val }
 
+                // 2.9.6: same fix as the OpenAI Picker — $claudeModel
+                // writes directly via `@AppStorage`.
                 Picker("Model", selection: $claudeModel) {
                     ForEach(CHClaudeProvider.availableModels) { model in
                         Text(model.name).tag(model.id)
                     }
                 }
-                .onChange(of: claudeModel) { _, val in CHClaudeProvider.model = val }
             } header: {
                 Text("Anthropic Claude")
             } footer: {
@@ -597,11 +622,16 @@ public struct CHAISettingsContent: View {
     }
 
     private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?) {
-        // 2.9.5: subtitles for OpenAI / Claude rows are computed from
-        // each provider's `availableModels`. Hardcoded names ("GPT-4o,
-        // GPT-4o mini" / "Sonnet, Haiku") rotted every time the
-        // upstream lineup changed; the dynamic version stays accurate
-        // forever as long as `availableModels` is.
+        // 2.9.5 introduced dynamic subtitles; 2.9.6 fixes the
+        // observation path. The lookup MUST go through the
+        // `@AppStorage` properties (`openaiModel` / `claudeModel`),
+        // NOT through the providers' static `currentModel` accessors.
+        // The static accessors call into UserDefaults directly with
+        // no SwiftUI observation, so a body pass that runs BEFORE
+        // a writeback has propagated will read a stale value. The
+        // `@AppStorage` properties publish writes synchronously
+        // within the same render pass, which is the behavior the
+        // row depends on to update without a remount.
         //
         // Strategy:
         //   * If the user has selected a model that's still in the
@@ -613,13 +643,15 @@ public struct CHAISettingsContent: View {
         // are handled inline in `body` and don't reach this function.
         switch id {
         case CHOpenAIProvider.providerID:
+            let match = CHOpenAIProvider.availableModels.first(where: { $0.id == openaiModel })
             return ("brain", .mint, modelSubtitle(
-                current: CHOpenAIProvider.currentModel?.displayName,
+                current: match?.displayName,
                 recommendedFallback: CHOpenAIProvider.recommendedModel.displayName
             ))
         case CHClaudeProvider.providerID:
+            let match = CHClaudeProvider.availableModels.first(where: { $0.id == claudeModel })
             return ("sparkles", .orange, modelSubtitle(
-                current: CHClaudeProvider.currentModel?.displayName,
+                current: match?.displayName,
                 recommendedFallback: CHClaudeProvider.recommendedModel.displayName
             ))
         case CHCustomEndpointProvider.providerID:
