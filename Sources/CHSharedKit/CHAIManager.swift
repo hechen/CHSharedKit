@@ -210,10 +210,19 @@ public final class CHAIManager: ObservableObject {
     public func registerProvider(_ provider: any CHAIProvider) {
         providers[provider.id] = provider
     }
-    
+
     /// Currently active provider
     public var activeProvider: (any CHAIProvider)? {
         providers[activeProviderID]
+    }
+
+    /// 2.10.0: lookup by ID for the per-feature resolver. Returns `nil`
+    /// when the requested provider isn't registered (e.g. the user's
+    /// stored override points at On-Device LLM but the app didn't
+    /// register that provider). Callers fall back to the active
+    /// provider in that case.
+    public func provider(id: String) -> (any CHAIProvider)? {
+        providers[id]
     }
     
     /// List of available providers with their IDs and names, filtered
@@ -412,6 +421,12 @@ public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
     public var id: String { Self.providerID }
     public var displayName: String { "Apple Intelligence" }
     public var supportsVision: Bool { false } // Vision support TBD
+    /// 2.10.0: text-only on iOS 26 (FoundationModels has no vision
+    /// or function-calling APIs as of this writing). Streaming via
+    /// the manager's default fallback only.
+    public var capabilities: Set<CHAICapability> {
+        [.textInput]
+    }
     
     public init() {}
     

@@ -299,6 +299,13 @@ extension CHLocalLLMProvider: CHAIProvider {
     /// bug — see CHAIManager's 2.4.5 notes.
     public var displayName: String { "On-Device AI" }
     public var supportsVision: Bool { false }
+    /// 2.10.0: most local MLX models in the catalog are text-only.
+    /// VLM models exist (`CHLocalVLMProvider` is the dedicated path)
+    /// so this provider claims text-only — features that need vision
+    /// pick OpenAI/Claude or Custom Endpoint instead.
+    public var capabilities: Set<CHAICapability> {
+        [.textInput, .streaming]
+    }
 
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
         let t0 = Date()

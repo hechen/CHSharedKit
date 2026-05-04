@@ -351,6 +351,134 @@ let myAppData = try JSONDecoder().decode(MyAppData.self, from: backup.payload)
 
 ---
 
+## Per-feature provider override (2.10.0)
+
+Each AI-powered surface in an app (AI Stylist, Outfit Suggestions,
+Smart Categorization, etc.) can now use a different provider than
+the global "Active Provider." Run lightweight text features on
+free Apple Intelligence; pin vision features to a paid OpenAI key;
+route a specific feature to a Custom Endpoint for privacy.
+
+### 1. Register features at app launch
+
+```swift
+import CHSharedKit
+
+@main struct ClosetApp: App {
+    init() {
+        Task { @MainActor in
+            CHAIFeatureRegistry.register([
+                CHAIFeature(
+                    id: "closet.ai_stylist",
+                    displayName: "AI Stylist",
+                    symbol: "sparkles",
+                    tint: .blue,
+                    requiredCapabilities: [.textInput],
+                    footnote: "Personalized outfit recommendations from your wardrobe."
+                ),
+                CHAIFeature(
+                    id: "closet.item_description",
+                    displayName: "Item Description",
+                    symbol: "photo",
+                    tint: .purple,
+                    requiredCapabilities: [.textInput, .visionInput],
+                    footnote: "Auto-tags items from photos."
+                ),
+                // …
+            ], appName: "Closet")
+        }
+    }
+    var body: some Scene { … }
+}
+```
+
+### 2. Route AI requests through the featureID
+
+```swift
+// Pre-2.10.0 — all features hit the global active provider:
+let response = try await CHAIManager.shared.send(prompt: "Suggest an outfit")
+
+// 2.10.0+ — feature-aware dispatch:
+let response = try await CHAIManager.shared.send(
+    prompt: "Suggest an outfit",
+    featureID: "closet.ai_stylist"
+)
+```
+
+`stream(prompt:featureID:)` and `sendWithVision(prompt:imageData:featureID:)`
+have the same shape. When no override is set the resolver falls
+back to the global active provider — existing behavior is preserved
+for un-tagged calls.
+
+### 3. Embed the settings UI
+
+```swift
+NavigationStack {
+    CHAIFeaturesSettingsContent(appName: "Closet")
+}
+```
+
+Renders one row per registered feature with a tappable detail page
+that exposes: enabled toggle, provider override picker (filtered
+by capability + isCloudOnly), model override picker, reset-to-
+default button. Apps that need to inject extra sections (e.g.
+Closet's "Show Suggested Questions" toggle) pass a
+`displaySection:` closure.
+
+### 4. Migrate legacy per-feature toggles (one-shot)
+
+If your app already had its own enabled-toggle keys (e.g.
+`"closet_ai_stylist_enabled"`), wire a one-shot migration in your
+App init:
+
+```swift
+init() {
+    CHAIModelMigration.migrateLegacyFeatureToggles(
+        legacyKeyMap: [
+            "closet_ai_stylist_enabled":       "closet.ai_stylist",
+            "closet_item_description_enabled": "closet.item_description",
+        ],
+        appName: "Closet"
+    )
+}
+```
+
+The helper is idempotent — flagged by
+`<appname>_feature_toggles_migrated_v_2_10_0` in
+`UserDefaults.standard`. Subsequent launches are no-ops.
+
+### Capability matrix
+
+| Provider              | Text | Vision | Func calling | Streaming |
+|-----------------------|:----:|:------:|:------------:|:---------:|
+| OpenAI                | ✓    | ✓      | ✓            | ✓         |
+| Claude (Anthropic)    | ✓    | ✓      | ✓            | ✓         |
+| Custom Endpoint       | ✓    | ✓      | —            | —         |
+| On-Device LLM (MLX)   | ✓    | —      | —            | ✓         |
+| Apple Intelligence    | ✓    | —      | —            | —         |
+
+A feature registered with `requiredCapabilities: [.visionInput]`
+filters Apple Intelligence + On-Device LLM out of its picker
+automatically. A feature registered with `isCloudOnly: true`
+additionally filters out both on-device options regardless of
+capability.
+
+### Storage keys
+
+The kit owns three UserDefaults key shapes — apps must not write
+to these directly:
+
+```
+ch_ai_feature_provider_<featureID>
+    → providerID String, "" or missing means "use active"
+ch_ai_feature_model_<featureID>_<providerID>
+    → modelID String, missing means "use provider's global model"
+ch_ai_feature_enabled_<featureID>
+    → Bool, default true
+```
+
+---
+
 ## License
 
 Private — for use in Chen's personal projects only.

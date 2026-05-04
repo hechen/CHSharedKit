@@ -8,12 +8,22 @@ import Security
 public protocol CHAIProvider: Sendable {
     /// Unique identifier for this provider
     var id: String { get }
-    
+
     /// Display name for UI
     var displayName: String { get }
-    
+
     /// Whether this provider supports vision/image inputs
     var supportsVision: Bool { get }
+
+    /// 2.10.0: capabilities the provider supports. Drives the
+    /// per-feature picker filter — features registered with
+    /// `requiredCapabilities` only see providers whose `capabilities`
+    /// is a superset. Default implementation derives `[.textInput]`
+    /// + adds `.visionInput` when `supportsVision` is true so existing
+    /// concrete providers without an explicit override still classify
+    /// correctly. Override on each concrete type for accuracy
+    /// (function-calling, streaming).
+    var capabilities: Set<CHAICapability> { get }
     
     /// Send a text message and get a response
     func sendMessage(prompt: String, systemPrompt: String?) async throws -> String
@@ -37,6 +47,15 @@ public protocol CHAIProvider: Sendable {
 public extension CHAIProvider {
     func sendVisionMessage(prompt: String, imageData: Data) async throws -> String {
         throw CHAIError.visionNotSupported
+    }
+
+    /// Default capability derivation — pure-text by default, plus
+    /// vision when `supportsVision` is true. Concrete providers
+    /// override for finer granularity (function calling, streaming).
+    var capabilities: Set<CHAICapability> {
+        var caps: Set<CHAICapability> = [.textInput]
+        if supportsVision { caps.insert(.visionInput) }
+        return caps
     }
 
     /// Default streaming fallback: call `sendMessage` and yield the full

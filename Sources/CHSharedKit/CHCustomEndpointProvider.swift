@@ -10,6 +10,14 @@ public struct CHCustomEndpointProvider: CHAIProvider, Sendable {
     public var id: String { Self.providerID }
     public var displayName: String { "Custom Endpoint" }
     public var supportsVision: Bool { true }
+    /// 2.10.0: assume the user-configured endpoint supports text +
+    /// vision. Streaming + function-calling vary by backend (vLLM,
+    /// Ollama, LM Studio); we don't claim them so features requiring
+    /// those filter Custom Endpoint out of the picker rather than
+    /// promising a capability we can't verify.
+    public var capabilities: Set<CHAICapability> {
+        [.textInput, .visionInput]
+    }
 
     public init() {}
 

@@ -9,6 +9,10 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     public var id: String { Self.providerID }
     public var displayName: String { "OpenAI" }
     public var supportsVision: Bool { true }
+    /// 2.10.0: full capability set for per-feature picker filtering.
+    public var capabilities: Set<CHAICapability> {
+        [.textInput, .visionInput, .functionCalling, .streaming]
+    }
 
     public init() {}
 

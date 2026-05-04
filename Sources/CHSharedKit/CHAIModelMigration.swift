@@ -167,6 +167,53 @@ public enum CHAIModelMigration {
     private static func migrationFlagKey(appName: String, providerKey: String) -> String {
         "\(appName.lowercased())_\(providerKey)_model_migrated_v_2_9_5"
     }
+
+    // MARK: - Legacy feature-toggle migration (2.10.0)
+    //
+    // Apps that pre-date the per-feature override surface stored
+    // their own enabled/disabled toggles under per-app keys
+    // ("closet_ai_stylist_enabled", "eatwisely_food_parser_enabled",
+    // etc.). 2.10.0 unifies those under
+    // `ch_ai_feature_enabled_<featureID>`. This helper walks a
+    // caller-supplied map of legacy → new keys and copies values
+    // forward exactly once per app, then never again.
+
+    /// Idempotently copies legacy feature-toggle values into the
+    /// canonical `ch_ai_feature_enabled_<featureID>` keys.
+    ///
+    /// - Parameters:
+    ///   - legacyKeyMap: dict mapping the app's legacy UserDefaults
+    ///     key (e.g. `"closet_ai_stylist_enabled"`) to the new
+    ///     featureID (e.g. `"closet.ai_stylist"`).
+    ///   - appName: stable app name; used in the idempotency flag so
+    ///     each app pays the migration once even when CHSharedKit
+    ///     is shared across the fleet.
+    /// - Returns: `true` if the migration ran on this call (first
+    ///   launch under 2.10.0); `false` on every subsequent call.
+    @discardableResult
+    public static func migrateLegacyFeatureToggles(
+        legacyKeyMap: [String: String],
+        appName: String
+    ) -> Bool {
+        let defaults = UserDefaults.standard
+        let flagKey = "\(appName.lowercased())_feature_toggles_migrated_v_2_10_0"
+        guard !defaults.bool(forKey: flagKey) else { return false }
+        defaults.set(true, forKey: flagKey)
+
+        for (legacyKey, featureID) in legacyKeyMap {
+            // Only copy when the legacy key was explicitly set (the
+            // user toggled the feature off). Unset = "default true",
+            // which the resolver already provides via
+            // `register(defaults:)`. Don't write `true` defaults
+            // explicitly because that defeats the test for "user
+            // hasn't touched this".
+            guard defaults.object(forKey: legacyKey) != nil else { continue }
+            let value = defaults.bool(forKey: legacyKey)
+            let newKey = CHAIFeatureProviderResolver.enabledKey(featureID: featureID)
+            defaults.set(value, forKey: newKey)
+        }
+        return true
+    }
 }
 
 // MARK: - Toast helper
