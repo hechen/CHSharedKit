@@ -3,6 +3,8 @@ import CHSharedKit
 import Hub
 import MLXLMCommon
 import MLXLLM
+import MLXHuggingFace
+import Tokenizers
 
 // MARK: - Notifications
 
@@ -229,11 +231,9 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
 
         do {
             print("[CHLocalLLM] performLoad calling LLMModelFactory.shared.loadContainer (this is the cold-start step, ~3-8 s on Apple Silicon)")
-            let configuration = ModelConfiguration(directory: url)
             let container = try await LLMModelFactory.shared.loadContainer(
-                hub: CHLocalMLXStorage.hubApi(),
-                configuration: configuration,
-                progressHandler: { _ in }
+                from: url,
+                using: #huggingFaceTokenizerLoader()
             )
             let elapsed = Date().timeIntervalSince(t0)
             print("[CHLocalLLM] performLoad SUCCESS id=\(info.id) elapsed=\(String(format: "%.2f", elapsed))s")

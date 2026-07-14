@@ -4,6 +4,8 @@ import CHSharedKit
 import Hub
 import MLXLMCommon
 import MLXVLM
+import MLXHuggingFace
+import Tokenizers
 
 // MARK: - Vision provider
 
@@ -142,11 +144,9 @@ public final class CHLocalVLMProvider: @unchecked Sendable {
         }
 
         do {
-            let configuration = ModelConfiguration(directory: url)
             let container = try await VLMModelFactory.shared.loadContainer(
-                hub: CHLocalMLXStorage.hubApi(),
-                configuration: configuration,
-                progressHandler: { _ in }
+                from: url,
+                using: #huggingFaceTokenizerLoader()
             )
             await MainActor.run {
                 NotificationCenter.default.post(
