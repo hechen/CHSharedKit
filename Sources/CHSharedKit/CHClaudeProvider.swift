@@ -24,7 +24,7 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_claude_model") ?? "claude-sonnet-4-6" }
+        get { UserDefaults.standard.string(forKey: "clawd_claude_model") ?? "claude-sonnet-5" }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_claude_model") }
     }
 
@@ -101,7 +101,7 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
 
         let body: [String: Any] = [
-            "model": "claude-sonnet-4-20250514",
+            "model": "claude-sonnet-5",
             "max_tokens": 10,
             "messages": [["role": "user", "content": "Say OK"]]
         ]
@@ -244,7 +244,8 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
         public var displayName: String { name }
     }
 
-    /// 2.9.5: April 2026 Anthropic lineup. Per the deprecation notice,
+    /// July 2026 Anthropic lineup. Current models are listed first, followed
+    /// by still-served legacy models. Per the earlier deprecation notice,
     /// `claude-sonnet-3-7` and `claude-haiku-3-5` are retired (see
     /// `retiredModelIDs`); their stored selections are migrated forward
     /// by `CHAIModelMigration.migrateRetiredModels(appName:)` on first
@@ -252,15 +253,13 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     /// explicitly want them and whose Anthropic account still has
     /// access.
     public static let availableModels: [AIModel] = [
-        AIModel(id: "claude-opus-4-7",   name: "Claude Opus 4.7 (frontier · agentic coding)"),
-        AIModel(id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6 (recommended)", isRecommended: true),
-        AIModel(id: "claude-haiku-4-5",  name: "Claude Haiku 4.5 (fastest, cheapest)"),
-        AIModel(id: "claude-opus-4-20250514",   name: "Claude Opus 4"),
-        AIModel(id: "claude-sonnet-4-20250514", name: "Claude Sonnet 4"),
-        AIModel(id: "claude-3-5-sonnet-20241022", name: "Claude 3.5 Sonnet"),
-        AIModel(id: "claude-3-opus-20240229",     name: "Claude 3 Opus"),
-        AIModel(id: "claude-3-sonnet-20240229",   name: "Claude 3 Sonnet"),
-        AIModel(id: "claude-3-haiku-20240307",    name: "Claude 3 Haiku"),
+        AIModel(id: "claude-fable-5",   name: "Claude Fable 5 (highest capability)"),
+        AIModel(id: "claude-opus-4-8",  name: "Claude Opus 4.8 (agentic coding)"),
+        AIModel(id: "claude-sonnet-5",  name: "Claude Sonnet 5 (recommended)", isRecommended: true),
+        AIModel(id: "claude-haiku-4-5", name: "Claude Haiku 4.5 (fastest, cheapest)"),
+        AIModel(id: "claude-opus-4-7",   name: "Claude Opus 4.7 (legacy)"),
+        AIModel(id: "claude-opus-4-6",   name: "Claude Opus 4.6 (legacy)"),
+        AIModel(id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6 (legacy)"),
     ]
 
     /// 2.9.5: identifiers explicitly retired by Anthropic in the
@@ -277,5 +276,5 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
 
     /// 2.9.5: replacement target for any retired Claude identifier.
     /// Mirrors `recommendedModel.id`.
-    public static let migrationFallbackModelID: String = "claude-sonnet-4-6"
+    public static let migrationFallbackModelID: String = "claude-sonnet-5"
 }

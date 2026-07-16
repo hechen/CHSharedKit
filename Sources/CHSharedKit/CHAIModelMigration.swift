@@ -11,7 +11,7 @@ import SwiftUI
 //
 // 2.9.5 — Anthropic's lineup turned over too: `claude-sonnet-3-7` and
 // `claude-haiku-3-5` are deprecated; new default for Claude BYOK is
-// `claude-sonnet-4-6`. The migration helper now handles BOTH providers
+// `claude-sonnet-4-6`. The migration helper handles BOTH providers
 // in one pass with a per-provider idempotency flag, so a user who
 // already migrated under 2.8.2 doesn't re-trigger the OpenAI path on
 // 2.9.5 launch but DOES get the Claude path checked.

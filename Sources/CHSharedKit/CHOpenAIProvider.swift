@@ -26,7 +26,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_openai_model") ?? "gpt-5.4-mini" }
+        get { UserDefaults.standard.string(forKey: "clawd_openai_model") ?? "gpt-5.6-terra" }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_openai_model") }
     }
     
@@ -101,7 +101,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
 
         let body: [String: Any] = [
-            "model": "gpt-5.4-mini",
+            "model": "gpt-5.6-terra",
             "messages": [["role": "user", "content": "Say OK"]],
             "max_completion_tokens": 5
         ]
@@ -258,19 +258,19 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         availableModels.first(where: \.isRecommended) ?? availableModels[0]
     }
 
-    /// 2026 lineup. Refresh order: newest tier on top, mini in the middle as
-    /// the recommended sweet-spot, smallest at the bottom. Retired pre-5.x
+    /// July 2026 lineup. Terra is the recommended balance of intelligence and
+    /// cost; Sol provides frontier capability and Luna handles efficient,
+    /// high-volume workloads. Retired pre-5.x
     /// IDs are migrated forward by `CHAIModelMigration.migrateRetiredModels`
-    /// so existing users land on `gpt-5.4-mini` (the new default) instead of
+    /// so existing users land on a supported fallback instead of
     /// hitting "model not found" errors on first request.
     public static let availableModels: [AIModel] = [
-        AIModel(id: "gpt-5.5-pro",  name: "GPT-5.5 Pro (reasoning)"),
-        AIModel(id: "gpt-5.5",      name: "GPT-5.5 (flagship)"),
-        AIModel(id: "gpt-5.4",      name: "GPT-5.4"),
-        AIModel(id: "gpt-5.4-mini", name: "GPT-5.4 Mini (recommended)", isRecommended: true),
-        AIModel(id: "gpt-5.4-nano", name: "GPT-5.4 Nano (fastest)"),
-        AIModel(id: "gpt-5.3",      name: "GPT-5.3"),
-        AIModel(id: "gpt-5",        name: "GPT-5"),
+        AIModel(id: "gpt-5.6-sol",   name: "GPT-5.6 Sol (frontier)"),
+        AIModel(id: "gpt-5.6-terra", name: "GPT-5.6 Terra (recommended)", isRecommended: true),
+        AIModel(id: "gpt-5.6-luna",  name: "GPT-5.6 Luna (fastest, lowest cost)"),
+        AIModel(id: "gpt-5.5",       name: "GPT-5.5"),
+        AIModel(id: "gpt-5.4",       name: "GPT-5.4"),
+        AIModel(id: "gpt-5.4-mini",  name: "GPT-5.4 Mini"),
     ]
 
     /// Identifiers that were in the picker prior to 2.8.2 and are no longer
@@ -289,5 +289,5 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
 
     /// Replacement target for any retired identifier. Mirrors the new
     /// default at the top of this file.
-    public static let migrationFallbackModelID: String = "gpt-5.4-mini"
+    public static let migrationFallbackModelID: String = "gpt-5.6-terra"
 }

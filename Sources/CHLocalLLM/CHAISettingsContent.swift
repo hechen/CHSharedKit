@@ -167,8 +167,8 @@ public struct CHAISettingsContent: View {
     // The keys here MUST match the static `model` getter in each
     // provider type. If those keys ever change, update both sides
     // together.
-    @AppStorage("clawd_openai_model") private var openaiModel: String = "gpt-5.4-mini"
-    @AppStorage("clawd_claude_model") private var claudeModel: String = "claude-sonnet-4-6"
+    @AppStorage("clawd_openai_model") private var openaiModel: String = "gpt-5.6-terra"
+    @AppStorage("clawd_claude_model") private var claudeModel: String = "claude-sonnet-5"
 
     @State private var isValidating = false
     @State private var validationResult: String?
@@ -896,4 +896,3 @@ public struct CHAISettingsContent: View {
         }
     }
 }
-

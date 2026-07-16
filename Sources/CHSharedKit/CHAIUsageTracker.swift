@@ -41,12 +41,15 @@ public final class CHAIUsageTracker: ObservableObject {
     }
     
     public static let pricing: [String: ModelPricing] = [
-        // OpenAI — current 2026 lineup
-        "gpt-5.5-pro":  ModelPricing(inputPerMillion: 10.00, outputPerMillion: 40.00, imageInputPerMillion: 10.00),
-        "gpt-5.5":      ModelPricing(inputPerMillion: 3.00,  outputPerMillion: 12.00, imageInputPerMillion: 3.00),
-        "gpt-5.4":      ModelPricing(inputPerMillion: 2.00,  outputPerMillion: 8.00,  imageInputPerMillion: 2.00),
-        "gpt-5.4-mini": ModelPricing(inputPerMillion: 0.40,  outputPerMillion: 1.60,  imageInputPerMillion: 0.40),
-        "gpt-5.4-nano": ModelPricing(inputPerMillion: 0.10,  outputPerMillion: 0.40,  imageInputPerMillion: 0.10),
+        // OpenAI — standard processing, July 2026
+        "gpt-5.6-sol":   ModelPricing(inputPerMillion: 5.00, outputPerMillion: 30.00, imageInputPerMillion: 5.00),
+        "gpt-5.6-terra": ModelPricing(inputPerMillion: 2.50, outputPerMillion: 15.00, imageInputPerMillion: 2.50),
+        "gpt-5.6-luna":  ModelPricing(inputPerMillion: 1.00, outputPerMillion: 6.00, imageInputPerMillion: 1.00),
+        "gpt-5.5-pro":  ModelPricing(inputPerMillion: 30.00, outputPerMillion: 180.00, imageInputPerMillion: 30.00),
+        "gpt-5.5":      ModelPricing(inputPerMillion: 5.00,  outputPerMillion: 30.00, imageInputPerMillion: 5.00),
+        "gpt-5.4":      ModelPricing(inputPerMillion: 2.50,  outputPerMillion: 15.00, imageInputPerMillion: 2.50),
+        "gpt-5.4-mini": ModelPricing(inputPerMillion: 0.75,  outputPerMillion: 4.50,  imageInputPerMillion: 0.75),
+        "gpt-5.4-nano": ModelPricing(inputPerMillion: 0.20,  outputPerMillion: 1.25,  imageInputPerMillion: 0.20),
         "gpt-5.3":      ModelPricing(inputPerMillion: 1.50,  outputPerMillion: 6.00,  imageInputPerMillion: 1.50),
         "gpt-5":        ModelPricing(inputPerMillion: 2.00,  outputPerMillion: 8.00,  imageInputPerMillion: 2.00),
         // OpenAI — retired identifiers kept so historical request-log
@@ -59,7 +62,15 @@ public final class CHAIUsageTracker: ObservableObject {
         "gpt-4.1":      ModelPricing(inputPerMillion: 2.00, outputPerMillion: 8.00, imageInputPerMillion: 2.00),
         "gpt-4.1-mini": ModelPricing(inputPerMillion: 0.40, outputPerMillion: 1.60, imageInputPerMillion: 0.40),
         "gpt-4.1-nano": ModelPricing(inputPerMillion: 0.10, outputPerMillion: 0.40, imageInputPerMillion: 0.10),
-        // Claude
+        // Claude — standard first-party API pricing, July 2026.
+        // Sonnet 5 uses introductory pricing through August 31, 2026.
+        "claude-fable-5":  ModelPricing(inputPerMillion: 10.00, outputPerMillion: 50.00, imageInputPerMillion: 10.00),
+        "claude-opus-4-8": ModelPricing(inputPerMillion: 5.00, outputPerMillion: 25.00, imageInputPerMillion: 5.00),
+        "claude-sonnet-5": ModelPricing(inputPerMillion: 2.00, outputPerMillion: 10.00, imageInputPerMillion: 2.00),
+        "claude-haiku-4-5": ModelPricing(inputPerMillion: 1.00, outputPerMillion: 5.00, imageInputPerMillion: 1.00),
+        "claude-opus-4-7": ModelPricing(inputPerMillion: 5.00, outputPerMillion: 25.00, imageInputPerMillion: 5.00),
+        "claude-opus-4-6": ModelPricing(inputPerMillion: 5.00, outputPerMillion: 25.00, imageInputPerMillion: 5.00),
+        "claude-sonnet-4-6": ModelPricing(inputPerMillion: 3.00, outputPerMillion: 15.00, imageInputPerMillion: 3.00),
         "claude-sonnet-4-20250514": ModelPricing(inputPerMillion: 3.00, outputPerMillion: 15.00, imageInputPerMillion: 3.00),
         "claude-opus-4-20250514":   ModelPricing(inputPerMillion: 15.00, outputPerMillion: 75.00, imageInputPerMillion: 15.00),
         "claude-haiku-3-5-20241022": ModelPricing(inputPerMillion: 0.80, outputPerMillion: 4.00, imageInputPerMillion: 0.80),
