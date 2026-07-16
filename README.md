@@ -158,6 +158,10 @@ import CHSharedKit
 
 // At app startup — registers Apple Intelligence, OpenAI, Claude, and custom endpoint
 CHAIManager.shared.registerBuiltInProviders()
+
+// Optional: refresh model names, defaults, retirements, and pricing now.
+// CHAISettingsView also does this automatically when opened.
+Task { await CHAICloudModelCatalog.shared.refreshIfNeeded() }
 ```
 
 ### Sending requests
@@ -189,10 +193,22 @@ CHAIUsageView()
 
 | Provider | Default Model | Vision | Notes |
 |---|---|---|---|
-| `CHOpenAIProvider` | `gpt-4o` | Yes | Also: gpt-4o-mini, GPT-4.1, o4-mini |
-| `CHClaudeProvider` | `claude-sonnet-4-20250514` | Yes | Also: Opus 4, Haiku 3.5 |
+| `CHOpenAIProvider` | Catalog-defined | Yes | Remotely refreshed, bundled fallback |
+| `CHClaudeProvider` | Catalog-defined | Yes | Remotely refreshed, bundled fallback |
 | `CHAppleIntelligenceProvider` | System default | — | iOS 26+, free, on-device |
 | `CHCustomEndpointProvider` | `llava` | — | Ollama, vLLM, LMStudio; OpenAI-compatible |
+
+### Updating the cloud model catalog
+
+Edit `Sources/CHSharedKit/Resources/cloud-model-catalog.json` on `main`.
+Clients load their last validated cached copy immediately, refresh the raw
+GitHub file with normal HTTP caching, and fall back to the package resource
+offline. Increase the lexicographically sortable `revision` for every change.
+
+The schema validates unique provider/model IDs, recommendation and migration
+targets, and nonnegative prices before replacing the active catalog. Add a
+retired ID and its fallback in the manifest to move users away from a removed
+API model without publishing a new package or app build.
 
 ### BYOK — storing API keys
 

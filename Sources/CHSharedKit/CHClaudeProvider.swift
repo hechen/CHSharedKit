@@ -24,7 +24,16 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_claude_model") ?? "claude-sonnet-5" }
+        get {
+            let defaults = UserDefaults.standard
+            guard let stored = defaults.string(forKey: "clawd_claude_model") else {
+                return migrationFallbackModelID
+            }
+            guard retiredModelIDs.contains(stored) else { return stored }
+            let fallback = migrationFallbackModelID
+            defaults.set(fallback, forKey: "clawd_claude_model")
+            return fallback
+        }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_claude_model") }
     }
 
@@ -101,7 +110,7 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
 
         let body: [String: Any] = [
-            "model": "claude-sonnet-5",
+            "model": Self.recommendedModel.id,
             "max_tokens": 10,
             "messages": [["role": "user", "content": "Say OK"]]
         ]
@@ -252,29 +261,26 @@ public struct CHClaudeProvider: CHAIProvider, Sendable {
     /// launch under 2.9.5. Earlier 3.x rows retained for users who
     /// explicitly want them and whose Anthropic account still has
     /// access.
-    public static let availableModels: [AIModel] = [
-        AIModel(id: "claude-fable-5",   name: "Claude Fable 5 (highest capability)"),
-        AIModel(id: "claude-opus-4-8",  name: "Claude Opus 4.8 (agentic coding)"),
-        AIModel(id: "claude-sonnet-5",  name: "Claude Sonnet 5 (recommended)", isRecommended: true),
-        AIModel(id: "claude-haiku-4-5", name: "Claude Haiku 4.5 (fastest, cheapest)"),
-        AIModel(id: "claude-opus-4-7",   name: "Claude Opus 4.7 (legacy)"),
-        AIModel(id: "claude-opus-4-6",   name: "Claude Opus 4.6 (legacy)"),
-        AIModel(id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6 (legacy)"),
-    ]
+    public static var availableModels: [AIModel] {
+        guard let provider = CHAICloudModelCatalog.snapshot.provider(id: providerID) else { return [] }
+        return provider.models.map {
+            AIModel(id: $0.id, name: $0.name, isRecommended: $0.id == provider.recommendedModelID)
+        }
+    }
 
     /// 2.9.5: identifiers explicitly retired by Anthropic in the
     /// April 2026 deprecation cycle. `CHAIModelMigration` rewrites
     /// stored selections in this set forward to
     /// `migrationFallbackModelID` on first launch under 2.9.5.
-    public static let retiredModelIDs: Set<String> = [
-        "claude-sonnet-3-7",
-        "claude-haiku-3-5",
-        // The dated alias of haiku-3-5 that earlier kit versions wrote
-        // into UserDefaults — older builds used this exact string.
-        "claude-haiku-3-5-20241022",
-    ]
+    public static var retiredModelIDs: Set<String> {
+        Set(CHAICloudModelCatalog.snapshot.provider(id: providerID)?.retiredModelIDs ?? [])
+    }
 
     /// 2.9.5: replacement target for any retired Claude identifier.
     /// Mirrors `recommendedModel.id`.
-    public static let migrationFallbackModelID: String = "claude-sonnet-5"
+    public static var migrationFallbackModelID: String {
+        CHAICloudModelCatalog.snapshot.provider(id: providerID)?.migrationFallbackModelID
+            ?? availableModels.first?.id
+            ?? "claude-sonnet-5"
+    }
 }

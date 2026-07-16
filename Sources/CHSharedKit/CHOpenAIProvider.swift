@@ -26,7 +26,16 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     }
     
     public static var model: String {
-        get { UserDefaults.standard.string(forKey: "clawd_openai_model") ?? "gpt-5.6-terra" }
+        get {
+            let defaults = UserDefaults.standard
+            guard let stored = defaults.string(forKey: "clawd_openai_model") else {
+                return migrationFallbackModelID
+            }
+            guard retiredModelIDs.contains(stored) else { return stored }
+            let fallback = migrationFallbackModelID
+            defaults.set(fallback, forKey: "clawd_openai_model")
+            return fallback
+        }
         set { UserDefaults.standard.set(newValue, forKey: "clawd_openai_model") }
     }
     
@@ -101,7 +110,7 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         guard let apiKey = Self.apiKey, !apiKey.isEmpty else { throw CHAIError.noAPIKey }
 
         let body: [String: Any] = [
-            "model": "gpt-5.6-terra",
+            "model": Self.recommendedModel.id,
             "messages": [["role": "user", "content": "Say OK"]],
             "max_completion_tokens": 5
         ]
@@ -264,30 +273,25 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
     /// IDs are migrated forward by `CHAIModelMigration.migrateRetiredModels`
     /// so existing users land on a supported fallback instead of
     /// hitting "model not found" errors on first request.
-    public static let availableModels: [AIModel] = [
-        AIModel(id: "gpt-5.6-sol",   name: "GPT-5.6 Sol (frontier)"),
-        AIModel(id: "gpt-5.6-terra", name: "GPT-5.6 Terra (recommended)", isRecommended: true),
-        AIModel(id: "gpt-5.6-luna",  name: "GPT-5.6 Luna (fastest, lowest cost)"),
-        AIModel(id: "gpt-5.5",       name: "GPT-5.5"),
-        AIModel(id: "gpt-5.4",       name: "GPT-5.4"),
-        AIModel(id: "gpt-5.4-mini",  name: "GPT-5.4 Mini"),
-    ]
+    public static var availableModels: [AIModel] {
+        guard let provider = CHAICloudModelCatalog.snapshot.provider(id: providerID) else { return [] }
+        return provider.models.map {
+            AIModel(id: $0.id, name: $0.name, isRecommended: $0.id == provider.recommendedModelID)
+        }
+    }
 
     /// Identifiers that were in the picker prior to 2.8.2 and are no longer
     /// served by the OpenAI API. Used by `CHAIModelMigration` to detect
     /// stored-default values that need rewriting on first launch of 2.8.2.
-    public static let retiredModelIDs: Set<String> = [
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gpt-4.1",
-        "gpt-4.1-mini",
-        "gpt-4.1-nano",
-        "o4-mini",
-        "gpt-5-instant",
-        "gpt-5-thinking"
-    ]
+    public static var retiredModelIDs: Set<String> {
+        Set(CHAICloudModelCatalog.snapshot.provider(id: providerID)?.retiredModelIDs ?? [])
+    }
 
     /// Replacement target for any retired identifier. Mirrors the new
     /// default at the top of this file.
-    public static let migrationFallbackModelID: String = "gpt-5.6-terra"
+    public static var migrationFallbackModelID: String {
+        CHAICloudModelCatalog.snapshot.provider(id: providerID)?.migrationFallbackModelID
+            ?? availableModels.first?.id
+            ?? "gpt-5.6-terra"
+    }
 }

@@ -51,17 +51,14 @@ public enum CHAIModelMigration {
     /// migrations that fired this call. Returns `nil` when nothing
     /// needed migrating.
     ///
-    /// Idempotent at provider granularity — each provider has its own
-    /// `<appName>_<provider>_model_migrated_v_2_9_5` flag in
-    /// `UserDefaults.standard`. Safe to invoke from multiple launch
-    /// hooks; only the first call per provider does work.
+    /// Idempotent by value: after a retired ID is replaced, the stored value
+    /// is no longer retired. This intentionally avoids a permanent one-time
+    /// flag so future retirements delivered by the remote catalog also work.
     @discardableResult
     public static func migrateRetiredModels(appName: String) -> Notice? {
         var migrated: [(provider: String, prev: String, newID: String, newName: String)] = []
 
         if let m = migrate(
-            appName: appName,
-            providerKey: "openai",
             modelDefaultsKey: "clawd_openai_model",
             retiredSet: CHOpenAIProvider.retiredModelIDs,
             fallbackID: CHOpenAIProvider.migrationFallbackModelID,
@@ -73,8 +70,6 @@ public enum CHAIModelMigration {
         }
 
         if let m = migrate(
-            appName: appName,
-            providerKey: "claude",
             modelDefaultsKey: "clawd_claude_model",
             retiredSet: CHClaudeProvider.retiredModelIDs,
             fallbackID: CHClaudeProvider.migrationFallbackModelID,
@@ -121,16 +116,11 @@ public enum CHAIModelMigration {
     /// previews and tests.
     public static func wouldMigrate(appName: String) -> Bool {
         let defaults = UserDefaults.standard
-        let openAIFlag = migrationFlagKey(appName: appName, providerKey: "openai")
-        let claudeFlag = migrationFlagKey(appName: appName, providerKey: "claude")
-
-        if !defaults.bool(forKey: openAIFlag),
-           let stored = defaults.string(forKey: "clawd_openai_model"),
+        if let stored = defaults.string(forKey: "clawd_openai_model"),
            CHOpenAIProvider.retiredModelIDs.contains(stored) {
             return true
         }
-        if !defaults.bool(forKey: claudeFlag),
-           let stored = defaults.string(forKey: "clawd_claude_model"),
+        if let stored = defaults.string(forKey: "clawd_claude_model"),
            CHClaudeProvider.retiredModelIDs.contains(stored) {
             return true
         }
@@ -140,32 +130,20 @@ public enum CHAIModelMigration {
     // MARK: - Internals
 
     private static func migrate(
-        appName: String,
-        providerKey: String,
         modelDefaultsKey: String,
         retiredSet: Set<String>,
         fallbackID: String,
         displayLookup: (String) -> String
     ) -> (prev: String, newID: String, newName: String)? {
         let defaults = UserDefaults.standard
-        let flagKey = migrationFlagKey(appName: appName, providerKey: providerKey)
-        guard !defaults.bool(forKey: flagKey) else { return nil }
-        defaults.set(true, forKey: flagKey)
-
         guard let stored = defaults.string(forKey: modelDefaultsKey),
               !stored.isEmpty else {
-            // No selection on file — nothing to migrate. Flag is set
-            // above so subsequent launches skip the lookup.
             return nil
         }
         guard retiredSet.contains(stored) else { return nil }
 
         defaults.set(fallbackID, forKey: modelDefaultsKey)
         return (prev: stored, newID: fallbackID, newName: displayLookup(fallbackID))
-    }
-
-    private static func migrationFlagKey(appName: String, providerKey: String) -> String {
-        "\(appName.lowercased())_\(providerKey)_model_migrated_v_2_9_5"
     }
 
     // MARK: - Legacy feature-toggle migration (2.10.0)

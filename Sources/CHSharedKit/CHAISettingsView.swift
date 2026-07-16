@@ -6,6 +6,7 @@ import SwiftUI
 /// Embed this in your app's settings screen
 public struct CHAISettingsView: View {
     @StateObject private var aiManager = CHAIManager.shared
+    @StateObject private var modelCatalog = CHAICloudModelCatalog.shared
     @State private var openaiKey = ""
     @State private var claudeKey = ""
     @State private var customURL = CHCustomEndpointProvider.baseURL
@@ -30,6 +31,7 @@ public struct CHAISettingsView: View {
     private var selectedProvider: String { aiManager.activeProviderID }
 
     public var body: some View {
+        let _ = modelCatalog.revision
         List {
             // Summary row — always shows the currently-active provider so
             // the user sees at a glance what the app will use before
@@ -263,6 +265,7 @@ public struct CHAISettingsView: View {
             claudeKey = CHClaudeProvider.apiKey ?? ""
             customKey = CHCustomEndpointProvider.apiKey ?? ""
         }
+        .task { await modelCatalog.refreshIfNeeded() }
     }
     
     @ViewBuilder

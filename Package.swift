@@ -46,7 +46,10 @@ let package = Package(
         )
     ],
     targets: [
-        .target(name: "CHSharedKit"),
+        .target(
+            name: "CHSharedKit",
+            resources: [.process("Resources")]
+        ),
         .target(
             name: "CHLocalLLM",
             dependencies: [

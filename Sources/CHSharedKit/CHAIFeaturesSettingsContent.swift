@@ -33,6 +33,7 @@ import SwiftUI
 public struct CHAIFeaturesSettingsContent: View {
     private let appName: String
     private let displaySection: () -> AnyView
+    @StateObject private var modelCatalog = CHAICloudModelCatalog.shared
 
     public init(
         appName: String,
@@ -43,6 +44,7 @@ public struct CHAIFeaturesSettingsContent: View {
     }
 
     public var body: some View {
+        let _ = modelCatalog.revision
         Form {
             Section {
                 let features = CHAIFeatureRegistry.features(for: appName)
@@ -85,6 +87,7 @@ public struct CHAIFeaturesSettingsContent: View {
                 Text("Used by features without an override.")
             }
         }
+        .task { await modelCatalog.refreshIfNeeded() }
     }
 }
 

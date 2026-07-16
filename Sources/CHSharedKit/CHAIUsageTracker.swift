@@ -40,7 +40,7 @@ public final class CHAIUsageTracker: ObservableObject {
         }
     }
     
-    public static let pricing: [String: ModelPricing] = [
+    private static let bundledPricing: [String: ModelPricing] = [
         // OpenAI — standard processing, July 2026
         "gpt-5.6-sol":   ModelPricing(inputPerMillion: 5.00, outputPerMillion: 30.00, imageInputPerMillion: 5.00),
         "gpt-5.6-terra": ModelPricing(inputPerMillion: 2.50, outputPerMillion: 15.00, imageInputPerMillion: 2.50),
@@ -77,6 +77,22 @@ public final class CHAIUsageTracker: ObservableObject {
         // Apple Intelligence is free
         "apple-intelligence": ModelPricing(inputPerMillion: 0, outputPerMillion: 0, imageInputPerMillion: 0),
     ]
+
+    /// Current pricing from the validated catalog, merged over bundled
+    /// historical prices so old usage records can always be costed.
+    public static var pricing: [String: ModelPricing] {
+        var result = bundledPricing
+        for provider in CHAICloudModelCatalog.snapshot.providers {
+            for model in provider.models {
+                result[model.id] = ModelPricing(
+                    inputPerMillion: model.inputPerMillion,
+                    outputPerMillion: model.outputPerMillion,
+                    imageInputPerMillion: model.imageInputPerMillion
+                )
+            }
+        }
+        return result
+    }
     
     // MARK: - Log a Request
     
