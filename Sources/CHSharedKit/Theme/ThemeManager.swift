@@ -27,23 +27,62 @@ public final class ThemeManager: ObservableObject {
     /// user's theme preference travels with them.
     nonisolated public static let kvsKey = "chs.theme.id"
 
+    /// Optional Info.plist key whose string value names the per-device
+    /// UserDefaults boolean that gates theme iCloud sync. Apps that omit this
+    /// entry retain the historical always-synced behavior.
+    nonisolated public static let cloudSyncGateInfoKey = "CHThemeCloudSyncEnabledDefaultsKey"
+
     /// Process-wide singleton. Apps may construct their own instance for
     /// tests, but production code should always use `.shared`.
     public static let shared = ThemeManager()
 
     @Published public private(set) var currentTheme: Theme
 
-    private let cloud = NSUbiquitousKeyValueStore.default
+    private let cloud: any ThemeKeyValueStore
+    private let localDefaults: UserDefaults
+    private let isCloudSyncEnabled: () -> Bool
 
     public init() {
-        // Prefer iCloud over UserDefaults so a fresh device picks up the
-        // user's existing choice immediately.
-        let raw = NSUbiquitousKeyValueStore.default.string(forKey: Self.kvsKey)
-            ?? UserDefaults.standard.string(forKey: Self.kvsKey)
+        let defaults = UserDefaults.standard
+        let gateKey = Bundle.main.object(forInfoDictionaryKey: Self.cloudSyncGateInfoKey) as? String
+        self.cloud = NSUbiquitousKeyValueStore.default
+        self.localDefaults = defaults
+        self.isCloudSyncEnabled = {
+            guard let gateKey, !gateKey.isEmpty else { return true }
+            return defaults.bool(forKey: gateKey)
+        }
+
+        // A gated app must stay local until its per-device setting is enabled.
+        // Ungated apps retain the historical cloud-first behavior.
+        let raw = isCloudSyncEnabled()
+            ? (cloud.string(forKey: Self.kvsKey) ?? defaults.string(forKey: Self.kvsKey))
+            : defaults.string(forKey: Self.kvsKey)
         self.currentTheme = ThemePalette.theme(for: raw)
 
-        cloud.synchronize()
+        if isCloudSyncEnabled() { cloud.synchronize() }
 
+        registerCloudObserver()
+    }
+
+    init(
+        cloud: any ThemeKeyValueStore,
+        localDefaults: UserDefaults,
+        isCloudSyncEnabled: @escaping () -> Bool
+    ) {
+        self.cloud = cloud
+        self.localDefaults = localDefaults
+        self.isCloudSyncEnabled = isCloudSyncEnabled
+
+        let raw = isCloudSyncEnabled()
+            ? (cloud.string(forKey: Self.kvsKey) ?? localDefaults.string(forKey: Self.kvsKey))
+            : localDefaults.string(forKey: Self.kvsKey)
+        self.currentTheme = ThemePalette.theme(for: raw)
+
+        if isCloudSyncEnabled() { cloud.synchronize() }
+        registerCloudObserver()
+    }
+
+    private func registerCloudObserver() {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(externalKVSChange(_:)),
@@ -84,10 +123,20 @@ public final class ThemeManager: ObservableObject {
         updateAlternateIcon(for: currentTheme)
     }
 
+    /// Refresh after an app enables its per-device settings-sync toggle.
+    /// Cloud wins on enable; while disabled, ThemeManager never reads or writes
+    /// the ubiquitous store.
+    public func cloudSyncDidEnable() {
+        guard isCloudSyncEnabled() else { return }
+        cloud.synchronize()
+        applyCloudThemeIfAvailable(animated: true)
+    }
+
     private func persist(_ id: String) {
+        localDefaults.set(id, forKey: Self.kvsKey)
+        guard isCloudSyncEnabled() else { return }
         cloud.set(id, forKey: Self.kvsKey)
         cloud.synchronize()
-        UserDefaults.standard.set(id, forKey: Self.kvsKey)
     }
 
     @objc nonisolated private func externalKVSChange(_ note: Notification) {
@@ -95,15 +144,22 @@ public final class ThemeManager: ObservableObject {
               let keys = userInfo[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String],
               keys.contains(Self.kvsKey) else { return }
         Task { @MainActor in
-            let raw = self.cloud.string(forKey: Self.kvsKey)
-            let next = ThemePalette.theme(for: raw)
-            if next.id != self.currentTheme.id {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    self.currentTheme = next
-                }
-                self.updateAlternateIcon(for: next)
-            }
+            guard self.isCloudSyncEnabled() else { return }
+            self.applyCloudThemeIfAvailable(animated: true)
         }
+    }
+
+    private func applyCloudThemeIfAvailable(animated: Bool) {
+        guard let raw = cloud.string(forKey: Self.kvsKey) else { return }
+        let next = ThemePalette.theme(for: raw)
+        guard next.id != currentTheme.id else { return }
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) { currentTheme = next }
+        } else {
+            currentTheme = next
+        }
+        localDefaults.set(next.id, forKey: Self.kvsKey)
+        updateAlternateIcon(for: next)
     }
 
     /// Resolve the current theme against a color scheme.
@@ -132,6 +188,14 @@ public final class ThemeManager: ObservableObject {
         #endif
     }
 }
+
+protocol ThemeKeyValueStore: AnyObject {
+    func string(forKey defaultName: String) -> String?
+    func set(_ value: Any?, forKey defaultName: String)
+    @discardableResult func synchronize() -> Bool
+}
+
+extension NSUbiquitousKeyValueStore: ThemeKeyValueStore {}
 
 // MARK: - View modifier
 
