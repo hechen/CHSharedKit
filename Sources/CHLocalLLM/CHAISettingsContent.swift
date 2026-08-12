@@ -519,7 +519,7 @@ public struct CHAISettingsContent: View {
                     // 2.7.0: same lock-alignment polish as cloud rows.
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("On-Device AI")
-                            .font(.system(size: 16))
+                            .font(.body)
                             .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
                         if isLocked {
                             Image(systemName: "lock.fill")
@@ -709,11 +709,11 @@ public struct CHAISettingsContent: View {
                 VStack(alignment: .leading, spacing: 2) {
                     // 2.7.0: align lock icon with text baseline (was floating
                     // mid-row before) and use a consistent imageScale across
-                    // every row's lock — `.subheadline` matches the 16 pt
-                    // name font visually.
+                    // every row's lock — `.subheadline` aligns visually with
+                    // the semantic body font on both iOS and macOS.
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text(name)
-                            .font(.system(size: 16))
+                            .font(.body)
                             .foregroundStyle(available ? .primary : .secondary)
                             .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
                         if isLocked {
