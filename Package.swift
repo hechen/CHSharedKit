@@ -61,7 +61,8 @@ let package = Package(
                 .product(name: "Hub", package: "swift-transformers"),
                 .product(name: "Tokenizers", package: "swift-transformers"),
                 .product(name: "MarkdownUI", package: "swift-markdown-ui")
-            ]
+            ],
+            resources: [.process("Resources")]
         ),
         .testTarget(name: "CHSharedKitTests", dependencies: ["CHSharedKit", "CHLocalLLM"]),
         // Manual smoke test for verifying real on-device inference.

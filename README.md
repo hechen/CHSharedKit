@@ -495,6 +495,23 @@ ch_ai_feature_enabled_<featureID>
 
 ---
 
+## Privacy manifests
+
+Both library products bundle a target-owned `PrivacyInfo.xcprivacy` file:
+
+- `CHSharedKit` declares app-private preferences (`CA92.1`), backup-file
+  metadata and user-visible timestamps (`C617.1`, `DDA9.1`), and the
+  prompt/image data its cloud AI providers can send to the configured provider.
+- `CHLocalLLM` declares app-private and App Group preferences (`CA92.1`,
+  `1C8F.1`). Its model inference remains on device, so the target declares no
+  collected data.
+
+Apps remain responsible for declaring any additional semantic data types they
+place into an AI prompt (for example health, purchase, or financial data), the
+purposes for which they use the response, and the retention practices of a
+custom endpoint. A consuming app must also provide the required disclosure and
+permission before sending personal data to a third-party AI provider.
+
 ## License
 
 Private — for use in Chen's personal projects only.
