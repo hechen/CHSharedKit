@@ -4,6 +4,13 @@ import Testing
 
 @Suite("Remote cloud model catalog")
 struct CHAICloudModelCatalogTests {
+    @Test("Default catalog endpoint is public HTTPS")
+    @MainActor
+    func defaultRemoteURL() {
+        #expect(CHAICloudModelCatalog.defaultRemoteURL.absoluteString ==
+            "https://hechen.github.io/apps/closet/cloud-model-catalog.json")
+    }
+
     @Test("Bundled manifest is valid and drives both providers")
     func bundledManifest() throws {
         let manifest = try CHAICloudModelCatalog.snapshot.validated()

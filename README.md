@@ -206,10 +206,11 @@ CHAIUsageView()
 
 ### Updating the cloud model catalog
 
-Edit `Sources/CHSharedKit/Resources/cloud-model-catalog.json` on `main`.
-Clients load their last validated cached copy immediately, refresh the raw
-GitHub file with normal HTTP caching, and fall back to the package resource
-offline. Increase the lexicographically sortable `revision` for every change.
+Edit `Sources/CHSharedKit/Resources/cloud-model-catalog.json`, publish the same
+file at `https://hechen.github.io/apps/closet/cloud-model-catalog.json`, and
+increase the lexicographically sortable `revision` for every change. Clients
+load their last validated cached copy immediately, refresh the public file with
+normal HTTP caching, and fall back to the package resource offline.
 
 The schema validates unique provider/model IDs, recommendation and migration
 targets, and nonnegative prices before replacing the active catalog. Add a
