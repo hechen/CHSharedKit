@@ -41,10 +41,10 @@ public final class CHAIUsageTracker: ObservableObject {
     }
     
     private static let bundledPricing: [String: ModelPricing] = [
-        // OpenAI — standard processing, July 2026
+        // OpenAI — standard processing, August 2026
         "gpt-5.6-sol":   ModelPricing(inputPerMillion: 5.00, outputPerMillion: 30.00, imageInputPerMillion: 5.00),
-        "gpt-5.6-terra": ModelPricing(inputPerMillion: 2.50, outputPerMillion: 15.00, imageInputPerMillion: 2.50),
-        "gpt-5.6-luna":  ModelPricing(inputPerMillion: 1.00, outputPerMillion: 6.00, imageInputPerMillion: 1.00),
+        "gpt-5.6-terra": ModelPricing(inputPerMillion: 2.00, outputPerMillion: 12.00, imageInputPerMillion: 2.00),
+        "gpt-5.6-luna":  ModelPricing(inputPerMillion: 0.20, outputPerMillion: 1.20, imageInputPerMillion: 0.20),
         "gpt-5.5-pro":  ModelPricing(inputPerMillion: 30.00, outputPerMillion: 180.00, imageInputPerMillion: 30.00),
         "gpt-5.5":      ModelPricing(inputPerMillion: 5.00,  outputPerMillion: 30.00, imageInputPerMillion: 5.00),
         "gpt-5.4":      ModelPricing(inputPerMillion: 2.50,  outputPerMillion: 15.00, imageInputPerMillion: 2.50),
@@ -62,9 +62,10 @@ public final class CHAIUsageTracker: ObservableObject {
         "gpt-4.1":      ModelPricing(inputPerMillion: 2.00, outputPerMillion: 8.00, imageInputPerMillion: 2.00),
         "gpt-4.1-mini": ModelPricing(inputPerMillion: 0.40, outputPerMillion: 1.60, imageInputPerMillion: 0.40),
         "gpt-4.1-nano": ModelPricing(inputPerMillion: 0.10, outputPerMillion: 0.40, imageInputPerMillion: 0.10),
-        // Claude — standard first-party API pricing, July 2026.
+        // Claude — standard first-party API pricing, August 2026.
         // Sonnet 5 uses introductory pricing through August 31, 2026.
         "claude-fable-5":  ModelPricing(inputPerMillion: 10.00, outputPerMillion: 50.00, imageInputPerMillion: 10.00),
+        "claude-opus-5": ModelPricing(inputPerMillion: 5.00, outputPerMillion: 25.00, imageInputPerMillion: 5.00),
         "claude-opus-4-8": ModelPricing(inputPerMillion: 5.00, outputPerMillion: 25.00, imageInputPerMillion: 5.00),
         "claude-sonnet-5": ModelPricing(inputPerMillion: 2.00, outputPerMillion: 10.00, imageInputPerMillion: 2.00),
         "claude-haiku-4-5": ModelPricing(inputPerMillion: 1.00, outputPerMillion: 5.00, imageInputPerMillion: 1.00),

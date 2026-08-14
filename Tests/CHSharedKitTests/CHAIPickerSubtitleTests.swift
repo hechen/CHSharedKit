@@ -114,7 +114,8 @@ struct CHAIPickerSubtitleTests {
         #expect(recommended.count == 1, "Exactly one row should be flagged isRecommended; found \(recommended.count)")
         #expect(recommended.first?.id == "claude-sonnet-5")
         #expect(Set(CHClaudeProvider.availableModels.map(\.id)).isSuperset(of: [
-            "claude-fable-5", "claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5"
+            "claude-fable-5", "claude-opus-5", "claude-opus-4-8",
+            "claude-sonnet-5", "claude-haiku-4-5"
         ]))
     }
 
@@ -122,9 +123,10 @@ struct CHAIPickerSubtitleTests {
     @MainActor
     func currentModelPricing() {
         #expect(CHAIUsageTracker.pricing["gpt-5.6-sol"]?.inputPerMillion == 5)
-        #expect(CHAIUsageTracker.pricing["gpt-5.6-terra"]?.outputPerMillion == 15)
-        #expect(CHAIUsageTracker.pricing["gpt-5.6-luna"]?.outputPerMillion == 6)
+        #expect(CHAIUsageTracker.pricing["gpt-5.6-terra"]?.outputPerMillion == 12)
+        #expect(CHAIUsageTracker.pricing["gpt-5.6-luna"]?.outputPerMillion == 1.2)
         #expect(CHAIUsageTracker.pricing["claude-fable-5"]?.outputPerMillion == 50)
+        #expect(CHAIUsageTracker.pricing["claude-opus-5"]?.inputPerMillion == 5)
         #expect(CHAIUsageTracker.pricing["claude-opus-4-8"]?.inputPerMillion == 5)
         #expect(CHAIUsageTracker.pricing["claude-sonnet-5"]?.outputPerMillion == 10)
         #expect(CHAIUsageTracker.pricing["claude-haiku-4-5"]?.outputPerMillion == 5)

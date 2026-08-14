@@ -162,24 +162,32 @@ struct TokenRow: View {
 // MARK: - Pricing Reference
 
 public struct CHAIPricingView: View {
+    @StateObject private var modelCatalog = CHAICloudModelCatalog.shared
+
     public init() {}
 
     public var body: some View {
+        let _ = modelCatalog.revision
+
         List {
             Section("OpenAI") {
-                PricingRow(model: "gpt-5.6-sol", input: 5.00, output: 30.00)
-                PricingRow(model: "gpt-5.6-terra", input: 2.50, output: 15.00)
-                PricingRow(model: "gpt-5.6-luna", input: 1.00, output: 6.00)
-                PricingRow(model: "gpt-5.5", input: 5.00, output: 30.00)
-                PricingRow(model: "gpt-5.4", input: 2.50, output: 15.00)
-                PricingRow(model: "gpt-5.4-mini", input: 0.75, output: 4.50)
+                ForEach(models(for: CHOpenAIProvider.providerID)) { model in
+                    PricingRow(
+                        model: model.id,
+                        input: model.inputPerMillion,
+                        output: model.outputPerMillion
+                    )
+                }
             }
 
             Section("Anthropic Claude") {
-                PricingRow(model: "claude-fable-5", input: 10.00, output: 50.00)
-                PricingRow(model: "claude-opus-4.8", input: 5.00, output: 25.00)
-                PricingRow(model: "claude-sonnet-5", input: 2.00, output: 10.00)
-                PricingRow(model: "claude-haiku-4.5", input: 1.00, output: 5.00)
+                ForEach(models(for: CHClaudeProvider.providerID)) { model in
+                    PricingRow(
+                        model: model.id,
+                        input: model.inputPerMillion,
+                        output: model.outputPerMillion
+                    )
+                }
             }
 
             Section("Apple Intelligence") {
@@ -200,9 +208,14 @@ public struct CHAIPricingView: View {
             }
         }
         .navigationTitle("Pricing")
+        .task { await modelCatalog.refreshIfNeeded() }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+    }
+
+    private func models(for providerID: String) -> [CHAICloudModelCatalogManifest.Model] {
+        CHAICloudModelCatalog.snapshot.provider(id: providerID)?.models ?? []
     }
 }
 

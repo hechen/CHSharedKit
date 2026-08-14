@@ -8,10 +8,12 @@ struct CHAICloudModelCatalogTests {
     func bundledManifest() throws {
         let manifest = try CHAICloudModelCatalog.snapshot.validated()
         #expect(manifest.schemaVersion == 1)
+        #expect(manifest.revision == "2026-08-14.1")
         #expect(manifest.provider(id: CHOpenAIProvider.providerID) != nil)
         #expect(manifest.provider(id: CHClaudeProvider.providerID) != nil)
         #expect(CHOpenAIProvider.availableModels.map(\.id).contains("gpt-5.6-terra"))
         #expect(CHClaudeProvider.availableModels.map(\.id).contains("claude-sonnet-5"))
+        #expect(CHClaudeProvider.availableModels.map(\.id).contains("claude-opus-5"))
     }
 
     @Test("Recommended and migration fallback IDs resolve")
