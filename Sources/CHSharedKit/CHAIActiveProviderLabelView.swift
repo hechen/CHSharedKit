@@ -115,7 +115,7 @@ public struct CHAIActiveProviderLabelView: View {
     /// is a literal byte-for-byte UI no-op.
     @MainActor
     public static func label(for manager: CHAIManager) -> String {
-        let id = manager.activeProviderID
+        let id = manager.effectiveActiveProviderID
         if id == onDeviceProviderID {
             if let name = manager.activeModelDisplayName, !name.isEmpty {
                 return "On-Device AI · \(name)"

@@ -157,7 +157,29 @@ struct CHAIFeatureResolverOverrideTests {
         defer { CHAIFeatureProviderResolver.setProviderOverride(nil, for: featureID) }
 
         let resolved = CHAIFeatureProviderResolver.providerID(for: featureID)
-        #expect(resolved == CHAIManager.shared.activeProviderID)
+        #expect(resolved == (CHAIManager.shared.effectiveActiveProviderID ?? CHAIManager.shared.activeProviderID))
+    }
+
+    @Test("Override pointing at a disabled provider falls back locally")
+    func overrideForDisabledProviderFallsBack() {
+        let manager = CHAIManager.shared
+        let featureID = "test.disabled-override"
+        let previousActive = manager.activeProviderID
+        let previousDisabled = manager.disabledProviderIDs
+        defer {
+            CHAIFeatureProviderResolver.setProviderOverride(nil, for: featureID)
+            manager.activeProviderID = previousActive
+            manager.disabledProviderIDs = previousDisabled
+        }
+
+        manager.activeProviderID = CHOpenAIProvider.providerID
+        manager.disabledProviderIDs = [CHCustomEndpointProvider.providerID]
+        CHAIFeatureProviderResolver.setProviderOverride(
+            CHCustomEndpointProvider.providerID,
+            for: featureID
+        )
+
+        #expect(CHAIFeatureProviderResolver.providerID(for: featureID) == CHOpenAIProvider.providerID)
     }
 
     @Test("Model override roundtrips through UserDefaults")

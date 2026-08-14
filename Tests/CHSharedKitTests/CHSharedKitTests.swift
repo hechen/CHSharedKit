@@ -38,12 +38,13 @@ struct CHAIProviderFilterTests {
 // MARK: - CHAIManager filter wiring
 
 @MainActor
-@Suite("CHAIManager.availableProvidersFilter")
+@Suite("CHAIManager.availableProvidersFilter", .serialized)
 struct CHAIManagerFilterTests {
 
     @Test("Default filter is .all — every built-in provider is visible")
     func defaultFilterShowsAll() {
         let manager = CHAIManager.shared
+        manager.disabledProviderIDs = []
         manager.availableProvidersFilter = .all
         let ids = manager.availableProviders.map(\.id)
         #expect(ids.contains("apple-intelligence"))
@@ -55,6 +56,7 @@ struct CHAIManagerFilterTests {
     @Test("onDeviceOnly hides cloud providers")
     func onDeviceOnlyHidesCloud() {
         let manager = CHAIManager.shared
+        manager.disabledProviderIDs = []
         manager.availableProvidersFilter = .onDeviceOnly
         let ids = manager.availableProviders.map(\.id)
         #expect(ids.contains("apple-intelligence"))
@@ -68,11 +70,48 @@ struct CHAIManagerFilterTests {
     @Test("allProviders ignores the filter")
     func allProvidersIgnoresFilter() {
         let manager = CHAIManager.shared
+        manager.disabledProviderIDs = []
         manager.availableProvidersFilter = .onDeviceOnly
         let ids = manager.allProviders.map(\.id)
         #expect(ids.contains("openai"))
         #expect(ids.contains("claude"))
         manager.availableProvidersFilter = .all
+    }
+
+    @Test("Disabled provider is hidden and cannot resolve")
+    func disabledProviderIsUnavailable() {
+        let manager = CHAIManager.shared
+        let previousDisabled = manager.disabledProviderIDs
+        defer { manager.disabledProviderIDs = previousDisabled }
+
+        manager.availableProvidersFilter = .all
+        manager.disabledProviderIDs = [CHCustomEndpointProvider.providerID]
+
+        #expect(!manager.availableProviders.map(\.id).contains(CHCustomEndpointProvider.providerID))
+        #expect(manager.provider(id: CHCustomEndpointProvider.providerID) == nil)
+        #expect(manager.allProviders.map(\.id).contains(CHCustomEndpointProvider.providerID))
+    }
+
+    @Test("Disabled synced selection uses a local fallback without changing persistence")
+    func disabledActiveProviderUsesEffectiveFallback() {
+        let manager = CHAIManager.shared
+        let previousActive = manager.activeProviderID
+        let previousDisabled = manager.disabledProviderIDs
+        let previousFilter = manager.availableProvidersFilter
+        defer {
+            manager.activeProviderID = previousActive
+            manager.disabledProviderIDs = previousDisabled
+            manager.availableProvidersFilter = previousFilter
+        }
+
+        manager.availableProvidersFilter = .all
+        manager.activeProviderID = CHCustomEndpointProvider.providerID
+        manager.disabledProviderIDs = [CHCustomEndpointProvider.providerID]
+
+        #expect(manager.activeProviderID == CHCustomEndpointProvider.providerID)
+        #expect(manager.effectiveActiveProviderID != CHCustomEndpointProvider.providerID)
+        #expect(manager.activeProvider?.id == manager.effectiveActiveProviderID)
+        #expect(manager.activeProvider != nil)
     }
 }
 

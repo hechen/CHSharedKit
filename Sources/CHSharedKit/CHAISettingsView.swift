@@ -28,7 +28,9 @@ public struct CHAISettingsView: View {
     /// row. Computed access keeps the checkmark, the expanded
     /// per-provider section, and the summary row all in sync with any
     /// write — local or external.
-    private var selectedProvider: String { aiManager.activeProviderID }
+    private var selectedProvider: String {
+        aiManager.effectiveActiveProviderID ?? aiManager.activeProviderID
+    }
 
     public var body: some View {
         let _ = modelCatalog.revision

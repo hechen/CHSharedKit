@@ -200,7 +200,9 @@ public struct CHAISettingsContent: View {
     /// row stay in sync with any write. Replaces a prior `@State` mirror
     /// that captured `CHAIManager.shared.activeProviderID` once at view
     /// init and drifted stale on re-push.
-    private var selectedProvider: String { aiManager.activeProviderID }
+    private var selectedProvider: String {
+        aiManager.effectiveActiveProviderID ?? aiManager.activeProviderID
+    }
 
     // Active installed model — checks allModels so custom models are found too
     private var activeModel: LocalModelInfo? {
@@ -213,7 +215,7 @@ public struct CHAISettingsContent: View {
         // the user sees at a glance what the app will use before
         // scrolling through the picker below.
         Section {
-            LabeledContent("Active Provider") {
+            LabeledContent("Current Provider") {
                 Text(CHAIActiveProviderLabel.text(for: aiManager))
                     .foregroundStyle(.secondary)
             }
@@ -277,21 +279,26 @@ public struct CHAISettingsContent: View {
                 unavailableReason: "Requires iOS 26+"
             )
 
-            // Cloud providers (excluding Apple + On-Device which are listed above)
+        } header: {
+            Text("On This Device")
+        } footer: {
+            Text("Apple Intelligence and downloaded models keep requests on this device.")
+        }
+
+        Section {
+            // Cloud providers. On macOS, Custom Endpoint moves to Advanced.
+            // A host can hide it on other platforms via disabledProviderIDs.
             ForEach(
-                aiManager.availableProviders.filter {
-                    $0.id != CHAppleIntelligenceProvider.providerID &&
-                    $0.id != CHLocalLLMProvider.providerID
-                },
+                aiManager.availableProviders.filter { appearsInCloudAPIs($0.id) },
                 id: \.id
             ) { provider in
                 cloudProviderRow(id: provider.id, name: provider.name)
             }
         } header: {
-            Text("AI Provider")
+            Text("Cloud APIs")
         } footer: {
             VStack(alignment: .leading, spacing: 4) {
-                Text("On-Device runs fully offline. No data leaves your device.")
+                Text("Connect with an API key from OpenAI or Anthropic. ChatGPT and Claude subscriptions do not include API usage.")
                 if case .unlocked = unlockState {
                     // 2.6.0: post-unlock, banner collapses to a tiny Restore
                     // link here so users with a previous purchase can rescue
@@ -308,6 +315,23 @@ public struct CHAISettingsContent: View {
         .onReceive(gatePublisher) { _ in
             refreshUnlockState()
         }
+
+        #if os(macOS)
+        if aiManager.availableProviders.contains(where: {
+            $0.id == CHCustomEndpointProvider.providerID
+        }) {
+            Section {
+                cloudProviderRow(
+                    id: CHCustomEndpointProvider.providerID,
+                    name: "Custom Endpoint"
+                )
+            } header: {
+                Text("Advanced")
+            } footer: {
+                Text("Connect an OpenAI-compatible service that you operate or trust.")
+            }
+        }
+        #endif
 
         // On-Device detail section (when selected)
         if selectedProvider == CHLocalLLMProvider.providerID {
@@ -638,27 +662,47 @@ public struct CHAISettingsContent: View {
         //     lineup → show its `displayName`.
         //   * Otherwise → "Recommended: <recommendedModel.displayName>".
         //
-        // Custom Endpoint stays string-literal because it advertises
-        // example servers, not models. Apple Intelligence + On-Device
-        // are handled inline in `body` and don't reach this function.
+        // Custom Endpoint surfaces its configured model. Apple Intelligence
+        // and On-Device are handled inline in `body` and don't reach here.
         switch id {
         case CHOpenAIProvider.providerID:
             let match = CHOpenAIProvider.availableModels.first(where: { $0.id == openaiModel })
-            return ("brain", .mint, modelSubtitle(
-                current: match?.displayName,
-                recommendedFallback: CHOpenAIProvider.recommendedModel.displayName
+            return ("brain", .mint, connectionSubtitle(
+                model: modelSubtitle(
+                    current: match?.displayName,
+                    recommendedFallback: CHOpenAIProvider.recommendedModel.displayName
+                ),
+                hasAPIKey: !openaiKey.isEmpty
             ))
         case CHClaudeProvider.providerID:
             let match = CHClaudeProvider.availableModels.first(where: { $0.id == claudeModel })
-            return ("sparkles", .orange, modelSubtitle(
-                current: match?.displayName,
-                recommendedFallback: CHClaudeProvider.recommendedModel.displayName
+            return ("sparkles", .orange, connectionSubtitle(
+                model: modelSubtitle(
+                    current: match?.displayName,
+                    recommendedFallback: CHClaudeProvider.recommendedModel.displayName
+                ),
+                hasAPIKey: !claudeKey.isEmpty
             ))
         case CHCustomEndpointProvider.providerID:
-            return ("server.rack", .gray, "Ollama, LM Studio, vLLM")
+            let model = customModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            return ("server.rack", .gray, model.isEmpty ? "OpenAI-compatible API" : "\(model) · OpenAI-compatible API")
         default:
             return ("network", .blue, nil)
         }
+    }
+
+    private func appearsInCloudAPIs(_ id: String) -> Bool {
+        guard id != CHAppleIntelligenceProvider.providerID,
+              id != CHLocalLLMProvider.providerID else { return false }
+        #if os(macOS)
+        return id != CHCustomEndpointProvider.providerID
+        #else
+        return true
+        #endif
+    }
+
+    private func connectionSubtitle(model: String, hasAPIKey: Bool) -> String {
+        "\(model) · \(hasAPIKey ? "API key saved" : "Add API key")"
     }
 
     /// 2.9.5: shared subtitle composer for cloud-provider rows. When
@@ -671,7 +715,6 @@ public struct CHAISettingsContent: View {
         return "Recommended: \(recommendedFallback)"
     }
 
-    @ViewBuilder
     private func providerRow(
         id: String,
         icon: String,
@@ -796,6 +839,7 @@ public struct CHAISettingsContent: View {
         // "On-Device AI" missing from the subtitle for exactly this reason.
         aiManager.gatedProviderIDs
             .subtracting(CHAIManager.alwaysFreeProviderIDs)
+            .subtracting(aiManager.disabledProviderIDs)
             .map { aiManager.displayName(forProviderID: $0) }
             .sorted()
     }

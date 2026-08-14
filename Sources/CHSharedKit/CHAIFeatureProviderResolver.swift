@@ -28,7 +28,7 @@ public enum CHAIFeatureProviderResolver {
 
     /// Returns the provider ID that should handle `featureID`. When
     /// the override is empty, missing, or points at an unregistered
-    /// provider, returns `CHAIManager.shared.activeProviderID`.
+    /// provider, returns the manager's effective provider for this device.
     public static func providerID(for featureID: String) -> String {
         let key = providerOverrideKey(featureID: featureID)
         if let override = UserDefaults.standard.string(forKey: key),
@@ -36,7 +36,8 @@ public enum CHAIFeatureProviderResolver {
            CHAIManager.shared.provider(id: override) != nil {
             return override
         }
-        return CHAIManager.shared.activeProviderID
+        let manager = CHAIManager.shared
+        return manager.effectiveActiveProviderID ?? manager.activeProviderID
     }
 
     /// Returns the model override for `featureID` against its current

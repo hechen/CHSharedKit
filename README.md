@@ -162,6 +162,12 @@ CHAIManager.shared.registerBuiltInProviders()
 // Optional: refresh model names, defaults, retirements, and pricing now.
 // CHAISettingsView also does this automatically when opened.
 Task { await CHAICloudModelCatalog.shared.refreshIfNeeded() }
+
+// Optional: disable a provider on this device without overwriting a
+// cross-device active-provider preference.
+CHAIManager.shared.disabledProviderIDs = [
+    CHCustomEndpointProvider.providerID
+]
 ```
 
 ### Sending requests

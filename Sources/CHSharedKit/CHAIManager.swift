@@ -99,6 +99,17 @@ public final class CHAIManager: ObservableObject {
     /// Defaults to `.all` so existing integrations behave as before.
     @Published public var availableProvidersFilter: CHAIProviderFilter = .all
 
+    /// Provider IDs that the host app does not support on the current device.
+    /// Disabled providers are excluded from settings and per-feature pickers,
+    /// cannot be resolved for dispatch, and are replaced by a safe effective
+    /// provider when their ID arrives through synced preferences.
+    ///
+    /// The persisted ``activeProviderID`` is intentionally left untouched.
+    /// This matters for cross-platform apps: an iPhone can disable a provider
+    /// that remains valid on the user's Mac without syncing an unwanted
+    /// replacement back to macOS.
+    @Published public var disabledProviderIDs: Set<String> = []
+
     /// 2.7.0: domain-context injector. When set, the manager calls
     /// `buildContext()` before every `send`/`stream`/`sendWithVision` and
     /// prepends the result (plus the anti-disclaimer instruction) to the
@@ -211,9 +222,41 @@ public final class CHAIManager: ObservableObject {
         providers[provider.id] = provider
     }
 
-    /// Currently active provider
+    /// Provider ID used for requests on this device. This normally matches
+    /// ``activeProviderID``. When the stored provider is disabled locally,
+    /// the manager selects an enabled fallback without changing persistence.
+    public var effectiveActiveProviderID: String? {
+        guard disabledProviderIDs.contains(activeProviderID) else {
+            return providers[activeProviderID] == nil ? nil : activeProviderID
+        }
+
+        if isAppleIntelligenceAvailable,
+           isAvailableFallback(CHAppleIntelligenceProvider.providerID) {
+            return CHAppleIntelligenceProvider.providerID
+        }
+
+        for id in [CHOpenAIProvider.providerID, CHClaudeProvider.providerID] {
+            if isAvailableFallback(id) {
+                return id
+            }
+        }
+
+        return providers.values
+            .filter { isProviderEnabled($0.id) && availableProvidersFilter.contains($0.category) }
+            .map(\.id)
+            .sorted()
+            .first
+    }
+
+    private func isAvailableFallback(_ id: String) -> Bool {
+        guard isProviderEnabled(id), let provider = providers[id] else { return false }
+        return availableProvidersFilter.contains(provider.category)
+    }
+
+    /// Currently active provider for this device.
     public var activeProvider: (any CHAIProvider)? {
-        providers[activeProviderID]
+        guard let id = effectiveActiveProviderID else { return nil }
+        return providers[id]
     }
 
     /// 2.10.0: lookup by ID for the per-feature resolver. Returns `nil`
@@ -222,7 +265,13 @@ public final class CHAIManager: ObservableObject {
     /// register that provider). Callers fall back to the active
     /// provider in that case.
     public func provider(id: String) -> (any CHAIProvider)? {
-        providers[id]
+        guard isProviderEnabled(id) else { return nil }
+        return providers[id]
+    }
+
+    /// Whether a provider can be shown or used on this device.
+    public func isProviderEnabled(_ id: String) -> Bool {
+        !disabledProviderIDs.contains(id)
     }
     
     /// List of available providers with their IDs and names, filtered
@@ -230,7 +279,10 @@ public final class CHAIManager: ObservableObject {
     /// property — it already honors on-device-only / cloud-only etc.
     public var availableProviders: [(id: String, name: String)] {
         providers.values
-            .filter { availableProvidersFilter.contains($0.category) }
+            .filter {
+                isProviderEnabled($0.id)
+                    && availableProvidersFilter.contains($0.category)
+            }
             .map { (id: $0.id, name: $0.displayName) }
             .sorted { $0.name < $1.name }
     }
@@ -368,7 +420,7 @@ public final class CHAIManager: ObservableObject {
     
     /// Validate a specific provider's configuration
     public func validateProvider(_ id: String) async throws -> Bool {
-        guard let provider = providers[id] else { return false }
+        guard let provider = provider(id: id) else { return false }
         return try await provider.validate()
     }
 
