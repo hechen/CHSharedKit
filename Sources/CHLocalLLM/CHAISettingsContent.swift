@@ -236,7 +236,10 @@ public struct CHAISettingsContent: View {
                     onPurchase: { Task { await runPurchase() } },
                     onRestore: { Task { await runRestore() } }
                 )
-                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                // Keep the banner stroke inside the List section's own
+                // rounded mask. A zero horizontal inset puts both shapes on
+                // the same edge, so SwiftUI clips the banner's four arcs.
+                .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
                 .listRowBackground(Color.clear)
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -250,7 +253,7 @@ public struct CHAISettingsContent: View {
                     onPurchase: {},
                     onRestore: {}
                 )
-                .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
                 .listRowBackground(Color.clear)
             }
         }
