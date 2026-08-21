@@ -309,6 +309,23 @@ public enum LocalModelCatalog {
         URL(string: "https://huggingface.co/\(repoID)")!
     }
 
+    /// Catalog descriptions are shared by the iOS and macOS pickers. Keep
+    /// the model facts common, then append iPhone generation guidance only
+    /// where it is meaningful. The macOS picker already evaluates the actual
+    /// Mac's RAM and shows a compatibility badge, so an iPhone requirement is
+    /// both redundant and incorrect there.
+    private static func modelDescription(
+        _ base: String,
+        minimumiPhone: String? = nil
+    ) -> String {
+        #if os(iOS)
+        if let minimumiPhone {
+            return "\(base) · iPhone \(minimumiPhone)+"
+        }
+        #endif
+        return base
+    }
+
     // MARK: Qwen 2.5 family (Apache 2.0)
 
     public static let qwen2_5_0_5B = LocalModelInfo(
@@ -329,7 +346,10 @@ public enum LocalModelCatalog {
     public static let qwen2_5_1_5B = LocalModelInfo(
         id: "qwen2.5-1.5b-q4km",
         displayName: "Qwen 2.5 1.5B",
-        description: "Alibaba Qwen 2.5 1.5B Instruct · MLX 4-bit · ~860 MB · iPhone 12+",
+        description: modelDescription(
+            "Alibaba Qwen 2.5 1.5B Instruct · MLX 4-bit · ~860 MB",
+            minimumiPhone: "12"
+        ),
         sizeBytes: 860_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Qwen2.5-1.5B-Instruct-4bit"),
@@ -344,7 +364,10 @@ public enum LocalModelCatalog {
     public static let qwen2_5_3B = LocalModelInfo(
         id: "qwen2.5-3b-q4km",
         displayName: "Qwen 2.5 3B",
-        description: "Alibaba Qwen 2.5 3B Instruct · MLX 4-bit · ~1.7 GB · iPhone 12+",
+        description: modelDescription(
+            "Alibaba Qwen 2.5 3B Instruct · MLX 4-bit · ~1.7 GB",
+            minimumiPhone: "12"
+        ),
         sizeBytes: 1_700_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Qwen2.5-3B-Instruct-4bit"),
@@ -361,7 +384,10 @@ public enum LocalModelCatalog {
     public static let llama3_2_1B = LocalModelInfo(
         id: "llama3.2-1b-q4km",
         displayName: "Llama 3.2 1B",
-        description: "Meta Llama 3.2 1B Instruct · MLX 4-bit · ~700 MB · iPhone 12+",
+        description: modelDescription(
+            "Meta Llama 3.2 1B Instruct · MLX 4-bit · ~700 MB",
+            minimumiPhone: "12"
+        ),
         sizeBytes: 700_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Llama-3.2-1B-Instruct-4bit"),
@@ -377,7 +403,10 @@ public enum LocalModelCatalog {
     public static let llama3_2_3B = LocalModelInfo(
         id: "llama3.2-3b-q4km",
         displayName: "Llama 3.2 3B",
-        description: "Meta Llama 3.2 3B Instruct · MLX 4-bit · ~1.8 GB · iPhone 14+",
+        description: modelDescription(
+            "Meta Llama 3.2 3B Instruct · MLX 4-bit · ~1.8 GB",
+            minimumiPhone: "14"
+        ),
         sizeBytes: 1_800_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Llama-3.2-3B-Instruct-4bit"),
@@ -395,7 +424,10 @@ public enum LocalModelCatalog {
     public static let phi3Mini4k = LocalModelInfo(
         id: "phi3-mini-4k-q4",
         displayName: "Phi-3 Mini",
-        description: "Microsoft Phi-3 Mini 4k Instruct · MLX 4-bit · ~2.3 GB · iPhone 14+",
+        description: modelDescription(
+            "Microsoft Phi-3 Mini 4k Instruct · MLX 4-bit · ~2.3 GB",
+            minimumiPhone: "14"
+        ),
         sizeBytes: 2_300_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Phi-3-mini-4k-instruct-4bit"),
@@ -410,7 +442,10 @@ public enum LocalModelCatalog {
     public static let phi3_5Mini = LocalModelInfo(
         id: "phi3.5-mini-q4km",
         displayName: "Phi-3.5 Mini",
-        description: "Microsoft Phi-3.5 Mini Instruct · MLX 4-bit · ~2.2 GB · iPhone 14+",
+        description: modelDescription(
+            "Microsoft Phi-3.5 Mini Instruct · MLX 4-bit · ~2.2 GB",
+            minimumiPhone: "14"
+        ),
         sizeBytes: 2_200_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Phi-3.5-mini-instruct-4bit"),
@@ -427,7 +462,10 @@ public enum LocalModelCatalog {
     public static let gemma2_2B = LocalModelInfo(
         id: "gemma2-2b-q4km",
         displayName: "Gemma 2 2B",
-        description: "Google Gemma 2 2B Instruct · MLX 4-bit · ~1.5 GB · iPhone 13+",
+        description: modelDescription(
+            "Google Gemma 2 2B Instruct · MLX 4-bit · ~1.5 GB",
+            minimumiPhone: "13"
+        ),
         sizeBytes: 1_500_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/gemma-2-2b-it-4bit"),
@@ -444,7 +482,10 @@ public enum LocalModelCatalog {
     public static let smolLM2_1_7B = LocalModelInfo(
         id: "smollm2-1.7b-q4km",
         displayName: "SmolLM2 1.7B",
-        description: "HuggingFace SmolLM2 1.7B Instruct · MLX 4-bit · ~1.0 GB · iPhone 12+",
+        description: modelDescription(
+            "HuggingFace SmolLM2 1.7B Instruct · MLX 4-bit · ~1.0 GB",
+            minimumiPhone: "12"
+        ),
         sizeBytes: 1_000_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/SmolLM2-1.7B-Instruct-4bit"),
@@ -461,7 +502,10 @@ public enum LocalModelCatalog {
     public static let deepSeekR1_1_5B = LocalModelInfo(
         id: "deepseek-r1-1.5b-q4km",
         displayName: "DeepSeek-R1 1.5B",
-        description: "DeepSeek-R1 Distill Qwen 1.5B · MLX 4-bit · ~1.0 GB · iPhone 12+",
+        description: modelDescription(
+            "DeepSeek-R1 Distill Qwen 1.5B · MLX 4-bit · ~1.0 GB",
+            minimumiPhone: "12"
+        ),
         sizeBytes: 1_000_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit"),
@@ -479,7 +523,10 @@ public enum LocalModelCatalog {
     public static let qwen2VL_2B = LocalModelInfo(
         id: "qwen2-vl-2b-q4",
         displayName: "Qwen2-VL 2B (Vision)",
-        description: "Alibaba Qwen2-VL 2B Instruct · MLX 4-bit · ~1.5 GB · iPhone 14+",
+        description: modelDescription(
+            "Alibaba Qwen2-VL 2B Instruct · MLX 4-bit · ~1.5 GB",
+            minimumiPhone: "14"
+        ),
         sizeBytes: 1_500_000_000,
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Qwen2-VL-2B-Instruct-4bit"),

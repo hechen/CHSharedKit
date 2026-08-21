@@ -236,10 +236,10 @@ public struct CHAISettingsContent: View {
                     onPurchase: { Task { await runPurchase() } },
                     onRestore: { Task { await runRestore() } }
                 )
-                // Keep the banner stroke inside the List section's own
-                // rounded mask. A zero horizontal inset puts both shapes on
-                // the same edge, so SwiftUI clips the banner's four arcs.
-                .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
+                // Keep the banner comfortably inside the List section's own
+                // rounded mask. A token inset still lets the two corner arcs
+                // intersect on iOS; 12 pt separates the card from that mask.
+                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                 .listRowBackground(Color.clear)
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
@@ -253,7 +253,7 @@ public struct CHAISettingsContent: View {
                     onPurchase: {},
                     onRestore: {}
                 )
-                .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
+                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                 .listRowBackground(Color.clear)
             }
         }
@@ -277,9 +277,11 @@ public struct CHAISettingsContent: View {
                 name: "Apple Intelligence",
                 badge: "Free",
                 badgeColor: .green,
-                subtitle: aiManager.isAppleIntelligenceAvailable ? "On-device · iOS 26+" : nil,
+                subtitle: aiManager.isAppleIntelligenceAvailable
+                    ? CHAppleIntelligenceProvider.availabilitySubtitle
+                    : nil,
                 available: aiManager.isAppleIntelligenceAvailable,
-                unavailableReason: "Requires iOS 26+"
+                unavailableReason: CHAppleIntelligenceProvider.unavailableReason
             )
 
         } header: {

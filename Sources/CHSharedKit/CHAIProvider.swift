@@ -116,7 +116,7 @@ public enum CHAIError: LocalizedError {
         case .rateLimited: return "Rate limited. Please try again in a moment."
         case .invalidKey: return "Invalid API key. Please check your key in Settings."
         case .visionNotSupported: return "This provider does not support vision/image inputs"
-        case .appleIntelligenceUnavailable: return "Apple Intelligence requires iOS 26 or later"
+        case .appleIntelligenceUnavailable: return CHAppleIntelligenceProvider.unavailableErrorDescription
         case .modelLoadFailed(let msg): return msg
         case .unsupportedPlatform: return "On-device AI is not supported on this platform."
         case .providerLocked(let name): return "\(name) requires a one-time purchase. Open Settings → AI Provider to unlock."

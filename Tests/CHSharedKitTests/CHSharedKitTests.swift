@@ -35,6 +35,38 @@ struct CHAIProviderFilterTests {
     }
 }
 
+// MARK: - Platform-specific provider requirements
+
+@Suite("Apple Intelligence platform copy")
+struct AppleIntelligencePlatformCopyTests {
+
+    @Test("Requirement labels name the current operating system")
+    func requirementLabelsUseCurrentOS() {
+        #if os(macOS)
+        #expect(CHAppleIntelligenceProvider.minimumOSRequirement == "macOS 26+")
+        #expect(CHAppleIntelligenceProvider.availabilitySubtitle == "On-device · macOS 26+")
+        #expect(CHAppleIntelligenceProvider.unavailableReason == "Requires macOS 26+")
+        #expect(CHAIError.appleIntelligenceUnavailable.errorDescription == "Apple Intelligence requires macOS 26 or later")
+        #elseif os(visionOS)
+        #expect(CHAppleIntelligenceProvider.minimumOSRequirement == "visionOS 26+")
+        #else
+        #expect(CHAppleIntelligenceProvider.minimumOSRequirement == "iOS 26+")
+        #expect(CHAppleIntelligenceProvider.availabilitySubtitle == "On-device · iOS 26+")
+        #expect(CHAppleIntelligenceProvider.unavailableReason == "Requires iOS 26+")
+        #expect(CHAIError.appleIntelligenceUnavailable.errorDescription == "Apple Intelligence requires iOS 26 or later")
+        #endif
+    }
+
+    @Test("macOS model descriptions do not contain iPhone requirements")
+    func localModelDescriptionsUseCurrentPlatform() {
+        #if os(macOS)
+        #expect(LocalModelCatalog.all.allSatisfy { !$0.description.contains("iPhone") })
+        #else
+        #expect(LocalModelCatalog.qwen2_5_3B.description.contains("iPhone 12+"))
+        #endif
+    }
+}
+
 // MARK: - CHAIManager filter wiring
 
 @MainActor

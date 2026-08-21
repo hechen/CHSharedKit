@@ -56,7 +56,7 @@ public struct CHAISettingsView: View {
                         badge: "Free",
                         badgeColor: .green,
                         available: aiManager.isAppleIntelligenceAvailable,
-                        unavailableReason: "Requires iOS 26+"
+                        unavailableReason: CHAppleIntelligenceProvider.unavailableReason
                     )
                 }
 

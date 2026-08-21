@@ -38,6 +38,7 @@ public struct CHAIProviderUnlockBanner: View {
     }
 
     @State private var pulseScale: CGFloat = 1.0
+    @State private var pulseHighlighted = false
     /// 2.7.0: after 1 s without a price, swap "Loading…" button label for
     /// a generic "Unlock" so the button doesn't look frozen on cold launch
     /// (StoreKit's `Product.products(for:)` typically takes 1–3 s on first
@@ -120,23 +121,28 @@ public struct CHAIProviderUnlockBanner: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.indigo.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(Color.indigo.opacity(0.25), lineWidth: 1)
+        .background(Color.indigo.opacity(pulseHighlighted ? 0.16 : 0.08))
+        .clipShape(.rect(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(
+                    Color.indigo.opacity(pulseHighlighted ? 0.5 : 0.25),
+                    lineWidth: pulseHighlighted ? 1.5 : 1
                 )
-        )
+        }
         .scaleEffect(pulseScale)
         .onChange(of: pulseTrigger) { _, _ in
-            // Quick scale-up-then-down attention pulse when the user taps a
-            // locked row. Spring out, spring back.
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
-                pulseScale = 1.04
+            // Keep the attention pulse inside the List row's clipping mask.
+            // Scaling above 1.0 pushed the card beyond that mask and cut off
+            // its rounded corners. A brief inward pulse plus tint flash is
+            // equally visible without changing the card's outer footprint.
+            withAnimation(.easeOut(duration: 0.12)) {
+                pulseScale = 0.985
+                pulseHighlighted = true
             }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.18)) {
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.72).delay(0.12)) {
                 pulseScale = 1.0
+                pulseHighlighted = false
             }
         }
         .task(id: priceLabel) {

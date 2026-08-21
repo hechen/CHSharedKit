@@ -466,14 +466,45 @@ public final class CHAIManager: ObservableObject {
 
 // MARK: - Apple Intelligence Provider
 
-/// Apple Intelligence provider using on-device FoundationModels (iOS 26+)
+/// Apple Intelligence provider using on-device Foundation Models.
 public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
     public static let providerID = "apple-intelligence"
+
+    /// Requirement copy is centralized here so every shared settings surface
+    /// names the OS it is actually running on instead of leaking iOS copy into
+    /// the native macOS app.
+    public static var minimumOSRequirement: String {
+        #if os(macOS)
+        "macOS 26+"
+        #elseif os(visionOS)
+        "visionOS 26+"
+        #else
+        "iOS 26+"
+        #endif
+    }
+
+    public static var availabilitySubtitle: String {
+        "On-device · \(minimumOSRequirement)"
+    }
+
+    public static var unavailableReason: String {
+        "Requires \(minimumOSRequirement)"
+    }
+
+    static var unavailableErrorDescription: String {
+        #if os(macOS)
+        "Apple Intelligence requires macOS 26 or later"
+        #elseif os(visionOS)
+        "Apple Intelligence requires visionOS 26 or later"
+        #else
+        "Apple Intelligence requires iOS 26 or later"
+        #endif
+    }
     
     public var id: String { Self.providerID }
     public var displayName: String { "Apple Intelligence" }
     public var supportsVision: Bool { false } // Vision support TBD
-    /// 2.10.0: text-only on iOS 26 (FoundationModels has no vision
+    /// 2.10.0: text-only on OS 26 (FoundationModels has no vision
     /// or function-calling APIs as of this writing). Streaming via
     /// the manager's default fallback only.
     public var capabilities: Set<CHAICapability> {
