@@ -531,7 +531,7 @@ private struct StubOnDeviceProvider: CHAIProvider, Sendable {
 // MARK: - 2.4.8 — CHAIActiveProviderLabelView resolution
 //
 // Pins the resolver shape consumers (closet-ios SettingsView.swift:357-363,
-// GymLog SettingsView_GL.swift:23, EatWisely AIService.swift:176) hand-rolled
+// LiftCoach SettingsView_GL.swift:23, EatWisely AIService.swift:176) hand-rolled
 // inline. The view is a bare-Text wrapper around `label(for:)` plus an
 // @ObservedObject binding to CHAIManager.shared, so test coverage on the
 // resolver is sufficient — SwiftUI body re-evaluation is the framework's

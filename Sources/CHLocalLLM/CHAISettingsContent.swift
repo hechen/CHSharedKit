@@ -15,7 +15,7 @@ import CHSharedKit
 ///
 /// ```swift
 /// NavigationLink {
-///     CHAIProviderPickerView(appIdentifier: .gymlog)
+///     CHAIProviderPickerView(appIdentifier: .liftcoach)
 /// } label: {
 ///     Label("AI Provider", systemImage: "sparkles")
 /// }

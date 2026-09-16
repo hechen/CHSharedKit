@@ -22,7 +22,7 @@ import Security
 // `app.chen.clawdappkit.custom`). Two problems with that:
 //
 //   1. The service constants are app-process-global. Five apps consume
-//      CHSharedKit (Closet, EatWisely, GymLog, Clawd, GroupOut) and they
+//      CHSharedKit (Closet, EatWisely, LiftCoach, Clawd, GroupOut) and they
 //      all run with the same iCloud team ID, so a single shared
 //      keychain item leaked tokens across apps — entering a key in
 //      Closet would silently make it readable from EatWisely's process.

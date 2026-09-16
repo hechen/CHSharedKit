@@ -7,7 +7,7 @@ import CoreGraphics
 //
 // Cell-uniformity regressions kept shipping across the fleet —
 // EatWisely's BMR/TDEE rows used hand-rolled `HStack { Text; Spacer;
-// Text }`, GymLog's settings used Apple's `Label(_:systemImage:)`
+// Text }`, LiftCoach's settings used Apple's `Label(_:systemImage:)`
 // (no icon badge), Closet mixed both. Chen flagged this three times.
 // Each round of "fix" missed the surfaces nobody pointed at.
 //

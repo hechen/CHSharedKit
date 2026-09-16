@@ -13,7 +13,7 @@ import SwiftUI
 // for two reasons:
 //
 //  1. **Discoverable name in consumer code.** The audit across closet-ios
-//     (`SettingsView.swift:359`), GymLog (`SettingsView_GL.swift:23`)
+//     (`SettingsView.swift:359`), LiftCoach (`SettingsView_GL.swift:23`)
 //     and EatWisely (`AIService.swift:176`) shows every consumer named
 //     their inline computed property `activeAIProviderLabel` or similar.
 //     The 1:1 swap target is a view literally named *...LabelView* —

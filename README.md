@@ -2,7 +2,7 @@
 
 Shared Swift package providing the theme system, AI provider infrastructure, on-device LLM support, logging, and backup utilities used across all of Chen's iOS apps.
 
-**Apps:** Closet · EatWisely · GymLog · SpendWisely · Distill · TrainInsight
+**Apps:** Closet · EatWisely · LiftCoach · SpendWisely · Distill · TrainInsight
 
 ---
 
@@ -270,7 +270,7 @@ import CHLocalLLM
 ```swift
 let store = LocalModelStore.shared
 store.appGroupID = "group.app.chen.sharedllm"
-store.appIdentifier = .gymlog
+store.appIdentifier = .liftcoach
 
 // Download the recommended model
 let model = LocalModelCatalog.defaultModel
