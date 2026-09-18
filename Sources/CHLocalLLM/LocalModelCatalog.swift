@@ -4,7 +4,11 @@ import Foundation
 
 /// Identifies which app is using CHLocalLLM, so models can be ranked per-app.
 public enum AppIdentifier: String, Sendable {
-    case closet, eatwisely, spendwisely, distill, traininsight, gymlog
+    case closet, eatwisely, spendwisely, distill, traininsight, liftcoach
+
+    /// Retains the previous raw value for existing clients and stored settings.
+    @available(*, deprecated, renamed: "liftcoach")
+    case gymlog
 
     public var displayName: String {
         switch self {
@@ -13,7 +17,7 @@ public enum AppIdentifier: String, Sendable {
         case .spendwisely: return "SpendWisely"
         case .distill: return "Distill"
         case .traininsight: return "TrainInsight"
-        case .gymlog: return "GymLog"
+        case .liftcoach, .gymlog: return "LiftCoach"
         }
     }
 }
@@ -207,17 +211,17 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         case (.traininsight, "smollm2-1.7b-q4km"):      return 5
         case (.traininsight, "llama3.2-1b-q4km"):       return 5
         case (.traininsight, "qwen2.5-0.5b-q4km"):      return 3
-        // gymlog
-        case (.gymlog, "phi3.5-mini-q4km"):         return 11
-        case (.gymlog, "qwen2.5-3b-q4km"):          return 10
-        case (.gymlog, "llama3.2-3b-q4km"):         return 9
-        case (.gymlog, "phi3-mini-4k-q4"):          return 8
-        case (.gymlog, "deepseek-r1-1.5b-q4km"):    return 7
-        case (.gymlog, "gemma2-2b-q4km"):           return 7
-        case (.gymlog, "qwen2.5-1.5b-q4km"):        return 6
-        case (.gymlog, "smollm2-1.7b-q4km"):        return 5
-        case (.gymlog, "llama3.2-1b-q4km"):         return 4
-        case (.gymlog, "qwen2.5-0.5b-q4km"):        return 4
+        // liftcoach
+        case (.liftcoach, "phi3.5-mini-q4km"), (.gymlog, "phi3.5-mini-q4km"):               return 11
+        case (.liftcoach, "qwen2.5-3b-q4km"), (.gymlog, "qwen2.5-3b-q4km"):                 return 10
+        case (.liftcoach, "llama3.2-3b-q4km"), (.gymlog, "llama3.2-3b-q4km"):               return 9
+        case (.liftcoach, "phi3-mini-4k-q4"), (.gymlog, "phi3-mini-4k-q4"):                 return 8
+        case (.liftcoach, "deepseek-r1-1.5b-q4km"), (.gymlog, "deepseek-r1-1.5b-q4km"):     return 7
+        case (.liftcoach, "gemma2-2b-q4km"), (.gymlog, "gemma2-2b-q4km"):                   return 7
+        case (.liftcoach, "qwen2.5-1.5b-q4km"), (.gymlog, "qwen2.5-1.5b-q4km"):             return 6
+        case (.liftcoach, "smollm2-1.7b-q4km"), (.gymlog, "smollm2-1.7b-q4km"):             return 5
+        case (.liftcoach, "llama3.2-1b-q4km"), (.gymlog, "llama3.2-1b-q4km"):               return 4
+        case (.liftcoach, "qwen2.5-0.5b-q4km"), (.gymlog, "qwen2.5-0.5b-q4km"):             return 4
         default: return 0
         }
     }
@@ -281,17 +285,17 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         case (.traininsight, "smollm2-1.7b-q4km"):     return "Fast and lightweight for simple workout logging"
         case (.traininsight, "llama3.2-1b-q4km"):      return "Ultra-fast readiness checks, basic quality"
         case (.traininsight, "qwen2.5-0.5b-q4km"):     return "Too small for quality training advice"
-        // gymlog
-        case (.gymlog, "phi3.5-mini-q4km"):        return "Best for coaching advice, plateau detection, and training summaries"
-        case (.gymlog, "qwen2.5-3b-q4km"):         return "Best for workout suggestions and weekly summaries"
-        case (.gymlog, "llama3.2-3b-q4km"):        return "Great for form tips and training analysis"
-        case (.gymlog, "phi3-mini-4k-q4"):         return "Best reasoning for plateau detection and coaching"
-        case (.gymlog, "deepseek-r1-1.5b-q4km"):   return "Strong reasoning for form analysis and fatigue detection"
-        case (.gymlog, "gemma2-2b-q4km"):          return "Good for workout suggestions and progress tracking"
-        case (.gymlog, "qwen2.5-1.5b-q4km"):       return "Fast workout suggestions, lighter quality"
-        case (.gymlog, "smollm2-1.7b-q4km"):       return "Quick workout logging, lighter coaching quality"
-        case (.gymlog, "llama3.2-1b-q4km"):        return "Fast logging suggestions, limited coaching depth"
-        case (.gymlog, "qwen2.5-0.5b-q4km"):       return "Limited — better options available for coaching"
+        // liftcoach
+        case (.liftcoach, "phi3.5-mini-q4km"), (.gymlog, "phi3.5-mini-q4km"):               return "Best for coaching advice, plateau detection, and training summaries"
+        case (.liftcoach, "qwen2.5-3b-q4km"), (.gymlog, "qwen2.5-3b-q4km"):                 return "Best for workout suggestions and weekly summaries"
+        case (.liftcoach, "llama3.2-3b-q4km"), (.gymlog, "llama3.2-3b-q4km"):               return "Great for form tips and training analysis"
+        case (.liftcoach, "phi3-mini-4k-q4"), (.gymlog, "phi3-mini-4k-q4"):                 return "Best reasoning for plateau detection and coaching"
+        case (.liftcoach, "deepseek-r1-1.5b-q4km"), (.gymlog, "deepseek-r1-1.5b-q4km"):     return "Strong reasoning for form analysis and fatigue detection"
+        case (.liftcoach, "gemma2-2b-q4km"), (.gymlog, "gemma2-2b-q4km"):                   return "Good for workout suggestions and progress tracking"
+        case (.liftcoach, "qwen2.5-1.5b-q4km"), (.gymlog, "qwen2.5-1.5b-q4km"):             return "Fast workout suggestions, lighter quality"
+        case (.liftcoach, "smollm2-1.7b-q4km"), (.gymlog, "smollm2-1.7b-q4km"):             return "Quick workout logging, lighter coaching quality"
+        case (.liftcoach, "llama3.2-1b-q4km"), (.gymlog, "llama3.2-1b-q4km"):               return "Fast logging suggestions, limited coaching depth"
+        case (.liftcoach, "qwen2.5-0.5b-q4km"), (.gymlog, "qwen2.5-0.5b-q4km"):             return "Limited — better options available for coaching"
         default: return description
         }
     }
