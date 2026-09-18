@@ -17,7 +17,10 @@ let package = Package(
     ],
     products: [
         .library(name: "CHSharedKit", targets: ["CHSharedKit"]),
-        .library(name: "CHLocalLLM", targets: ["CHLocalLLM"])
+        .library(name: "CHLocalLLM", targets: ["CHLocalLLM"]),
+        // 2.12.0: retailer order import (Amazon order pages and order CSVs).
+        // Foundation, CryptoKit, and WebKit only; no other package dependency.
+        .library(name: "CHOrderImport", targets: ["CHOrderImport"])
     ],
     dependencies: [
         .package(
@@ -64,7 +67,9 @@ let package = Package(
             ],
             resources: [.process("Resources")]
         ),
+        .target(name: "CHOrderImport"),
         .testTarget(name: "CHSharedKitTests", dependencies: ["CHSharedKit", "CHLocalLLM"]),
+        .testTarget(name: "CHOrderImportTests", dependencies: ["CHOrderImport"]),
         // Manual smoke test for verifying real on-device inference.
         // Run with: `swift run mlx-smoke "your prompt"` — downloads
         // Qwen2.5-3B-Instruct-4bit on first run (~1.7 GB) and prints

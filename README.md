@@ -4,6 +4,8 @@ Shared Swift package providing the theme system, AI provider infrastructure, on-
 
 **Apps:** Closet · EatWisely · GymLog · SpendWisely · Distill · TrainInsight
 
+Products: `CHSharedKit` (theme, AI providers, logging, backup, IAP gating), `CHLocalLLM` (on-device models), and `CHOrderImport` (Amazon order-page and order-CSV import with review drafts; see [docs/ORDER_IMPORT.md](docs/ORDER_IMPORT.md)).
+
 ---
 
 ## Requirements
@@ -49,6 +51,7 @@ targets:
 
 - [Theme System](#theme-system) — 11 pre-designed palettes, iCloud sync, alternate icons
 - [Themed View Modifiers](#themed-view-modifiers) — screen, nav bar, list, tab bar
+- [Settings Sheet Presentation](#settings-sheet-presentation) — shared modal chrome and stable macOS geometry
 - [AI Provider System](#ai-provider-system) — OpenAI, Claude, Apple Intelligence, custom endpoints
 - [On-Device LLM (CHLocalLLM)](#on-device-llm) — GGUF model download and inference via llama.cpp
 - [Logging](#logging) — structured in-memory logger with SwiftUI viewer
@@ -147,6 +150,42 @@ VStack { ... }
 
 ---
 
+## Settings Sheet Presentation
+
+Use `CHSettingsSheet` at a modal boundary to keep settings sheets visually
+consistent across apps. It owns the navigation stack, title, Done action,
+semantic theme surfaces, and a stable 560×600 macOS window. Its content remains
+adaptive on iOS and visionOS.
+
+```swift
+.sheet(isPresented: $showUsage) {
+    CHSettingsSheet("AI Usage") {
+        MyAppUsageView() // Custom content and data remain app-owned.
+    }
+}
+```
+
+Content-only views such as `CHAIProviderPickerView`, `CHAIUsageView`, and
+`CHAIFeaturesSettingsContent` remain suitable for pushed navigation. Do not add
+`CHSettingsSheet` around a view that is already inside a `NavigationStack` or a
+native Settings scene.
+
+For standard modal AI surfaces, use the convenience wrappers:
+
+```swift
+CHAISettingsSheet(appIdentifier: .closet) // CHLocalLLM product
+CHAIFeaturesSettingsSheet(appName: "MyApp")
+CHAIUsageSheet()
+```
+
+If a custom presentation root already owns its navigation and dismissal UI,
+apply `.chSettingsPresentation()` to receive the same semantic surfaces
+without adding another stack or changing its size. Use
+`.chSettingsPresentation(sizing: .standardSheet)` only when that custom modal
+root owns scrolling and should adopt the stable 560×600 macOS geometry.
+
+---
+
 ## AI Provider System
 
 Plug-in AI architecture. All providers conform to `CHAIProvider` and can be swapped at runtime.
@@ -188,11 +227,15 @@ let response = try await CHAIManager.shared.sendWithVision(
 ### Settings & usage UI
 
 ```swift
-// Drop-in settings screen (provider picker, API key fields, test connection)
+// Content-only settings screen for pushed navigation.
 CHAISettingsView()
 
-// Usage dashboard (requests, tokens, estimated cost)
+// Content-only usage dashboard for pushed navigation.
 CHAIUsageView()
+
+// Modal wrappers with shared title, Done action, theme, and macOS geometry.
+CHAIUsageSheet()
+CHSettingsSheet("My App Usage") { MyAppUsageView() }
 ```
 
 ### Built-in providers

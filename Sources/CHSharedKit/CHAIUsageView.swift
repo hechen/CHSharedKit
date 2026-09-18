@@ -3,6 +3,7 @@ import SwiftUI
 /// Shows AI API usage stats: requests, tokens, estimated cost.
 /// Embed this in your app's settings to show usage/cost tracking.
 public struct CHAIUsageView: View {
+    @Environment(\.theme) private var theme
     @StateObject private var tracker = CHAIUsageTracker.shared
     @State private var showResetConfirmation = false
 
@@ -13,9 +14,9 @@ public struct CHAIUsageView: View {
             // Overview cards
             Section("Overview") {
                 HStack {
-                    StatTile(title: "Today", value: "\(tracker.todayRequests)", subtitle: formatCost(tracker.todayCost), color: .blue)
-                    StatTile(title: "This Month", value: formatCost(tracker.thisMonthCost), subtitle: "\(tracker.requestHistory.count) requests", color: .green)
-                    StatTile(title: "All Time", value: formatCost(tracker.totalEstimatedCost), subtitle: "\(tracker.totalRequests) requests", color: .purple)
+                    StatTile(title: "Today", value: "\(tracker.todayRequests)", subtitle: formatCost(tracker.todayCost), color: theme.accent)
+                    StatTile(title: "This Month", value: formatCost(tracker.thisMonthCost), subtitle: "\(tracker.requestHistory.count) requests", color: theme.accentSecondary)
+                    StatTile(title: "All Time", value: formatCost(tracker.totalEstimatedCost), subtitle: "\(tracker.totalRequests) requests", color: theme.textPrimary)
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -23,12 +24,12 @@ public struct CHAIUsageView: View {
 
             // Token breakdown
             Section("Token Usage") {
-                TokenRow(label: "Input Tokens", count: tracker.totalInputTokens, icon: "arrow.up.circle", color: .blue)
-                TokenRow(label: "Output Tokens", count: tracker.totalOutputTokens, icon: "arrow.down.circle", color: .green)
+                TokenRow(label: "Input Tokens", count: tracker.totalInputTokens, icon: "arrow.up.circle", color: theme.accent)
+                TokenRow(label: "Output Tokens", count: tracker.totalOutputTokens, icon: "arrow.down.circle", color: theme.accentSecondary)
                 if tracker.totalImageTokens > 0 {
-                    TokenRow(label: "Image Tokens", count: tracker.totalImageTokens, icon: "photo.circle", color: .orange)
+                    TokenRow(label: "Image Tokens", count: tracker.totalImageTokens, icon: "photo.circle", color: theme.warning)
                 }
-                TokenRow(label: "Total Tokens", count: tracker.totalTokens, icon: "sum", color: .primary)
+                TokenRow(label: "Total Tokens", count: tracker.totalTokens, icon: "sum", color: theme.textPrimary)
             }
 
             // Recent requests
@@ -43,16 +44,16 @@ public struct CHAIUsageView: View {
                                     if log.isVision {
                                         Image(systemName: "camera.fill")
                                             .font(.caption2)
-                                            .foregroundStyle(.orange)
+                                            .foregroundStyle(theme.warning)
                                     }
                                 }
                                 HStack(spacing: 8) {
                                     Text(log.model)
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(theme.textSecondary)
                                     Text("\(log.inputTokens + log.outputTokens) tokens")
                                         .font(.caption)
-                                        .foregroundStyle(.tertiary)
+                                        .foregroundStyle(theme.textTertiary)
                                 }
                             }
 
@@ -61,10 +62,10 @@ public struct CHAIUsageView: View {
                             VStack(alignment: .trailing, spacing: 3) {
                                 Text(formatCost(log.estimatedCost))
                                     .font(.subheadline.monospacedDigit())
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(theme.textSecondary)
                                 Text(log.date.formatted(.dateTime.hour().minute()))
                                     .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(theme.textTertiary)
                             }
                         }
                         .padding(.vertical, 2)
@@ -88,6 +89,9 @@ public struct CHAIUsageView: View {
                 }
             }
         }
+        .tint(theme.accent)
+        .themedListBackground()
+        .themedNavigationBar()
         .navigationTitle("AI Usage")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -107,6 +111,8 @@ public struct CHAIUsageView: View {
 // MARK: - Supporting Views
 
 struct StatTile: View {
+    @Environment(\.theme) private var theme
+
     let title: String
     let value: String
     let subtitle: String
@@ -116,14 +122,14 @@ struct StatTile: View {
         VStack(spacing: 6) {
             Text(title)
                 .font(.caption2.bold())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
                 .textCase(.uppercase)
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
             Text(subtitle)
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(theme.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
@@ -133,6 +139,8 @@ struct StatTile: View {
 }
 
 struct TokenRow: View {
+    @Environment(\.theme) private var theme
+
     let label: String
     let count: Int
     let icon: String
@@ -148,7 +156,7 @@ struct TokenRow: View {
             Spacer()
             Text(formatTokens(count))
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(theme.textSecondary)
         }
     }
 
@@ -162,6 +170,7 @@ struct TokenRow: View {
 // MARK: - Pricing Reference
 
 public struct CHAIPricingView: View {
+    @Environment(\.theme) private var theme
     @StateObject private var modelCatalog = CHAICloudModelCatalog.shared
 
     public init() {}
@@ -197,16 +206,19 @@ public struct CHAIPricingView: View {
                     Spacer()
                     Text("Free")
                         .font(.subheadline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(theme.success)
                 }
             }
 
             Section {
                 Text("Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(theme.textSecondary)
             }
         }
+        .tint(theme.accent)
+        .themedListBackground()
+        .themedNavigationBar()
         .navigationTitle("Pricing")
         .task { await modelCatalog.refreshIfNeeded() }
         #if os(iOS)
@@ -220,6 +232,8 @@ public struct CHAIPricingView: View {
 }
 
 struct PricingRow: View {
+    @Environment(\.theme) private var theme
+
     let model: String
     let input: Double
     let output: Double
@@ -230,11 +244,11 @@ struct PricingRow: View {
                 .font(.subheadline.bold())
             HStack(spacing: 16) {
                 HStack(spacing: 4) {
-                    Text("In:").font(.caption).foregroundStyle(.secondary)
+                    Text("In:").font(.caption).foregroundStyle(theme.textSecondary)
                     Text(String(format: "$%.2f/1M", input)).font(.caption.monospacedDigit())
                 }
                 HStack(spacing: 4) {
-                    Text("Out:").font(.caption).foregroundStyle(.secondary)
+                    Text("Out:").font(.caption).foregroundStyle(theme.textSecondary)
                     Text(String(format: "$%.2f/1M", output)).font(.caption.monospacedDigit())
                 }
             }

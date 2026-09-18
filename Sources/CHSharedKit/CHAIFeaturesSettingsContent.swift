@@ -76,12 +76,11 @@ public struct CHAIFeaturesSettingsContent: View {
                     // CHSharedKit module.
                     CHAIDefaultProviderLink()
                 } label: {
-                    HStack {
-                        Text("Default Provider")
-                        Spacer()
-                        Text(CHAIManager.shared.activeProvider?.displayName ?? "None")
-                            .foregroundStyle(.secondary)
-                    }
+                    CHSettingsRow.value(
+                        icon: "sparkles",
+                        title: "Default Provider",
+                        value: CHAIManager.shared.activeProvider?.displayName ?? "None"
+                    )
                 }
             } footer: {
                 Text("Used by features without an override.")

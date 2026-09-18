@@ -76,12 +76,12 @@ public struct CHAIProviderPickerView: View {
 
 /// Modal-presentation wrapper around ``CHAIProviderPickerView``.
 ///
-/// Owns its own `NavigationStack` + a top-trailing **Done** button that
-/// dismisses the sheet. Use this for `.sheet { ... }` presentation so
-/// consumer apps don't need to hand-roll a NavigationStack wrapping (which
-/// causes a double nav bar when the same view is also pushed from
-/// somewhere else, or when the sheet is presented from inside an existing
-/// nav stack).
+/// Uses CHSharedKit's fleet-wide ``CHSettingsSheet`` shell, which owns the
+/// `NavigationStack`, Done action, theme-aware header/body/footer surfaces,
+/// and standard macOS geometry. Use this for `.sheet { ... }` presentation so
+/// consumer apps don't need to hand-roll modal chrome (which causes visual
+/// drift and can create a double nav bar when the same content is also pushed
+/// somewhere else).
 ///
 /// ```swift
 /// .sheet(isPresented: $showAISettings) {
@@ -103,20 +103,9 @@ public struct CHAISettingsSheet: View {
         self.onDismiss = onDismiss
     }
 
-    @Environment(\.dismiss) private var dismiss
-
     public var body: some View {
-        NavigationStack {
+        CHSettingsSheet("AI Provider", onDismiss: onDismiss) {
             CHAIProviderPickerView(appIdentifier: appIdentifier)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            dismiss()
-                            onDismiss?()
-                        }
-                        .fontWeight(.semibold)
-                    }
-                }
         }
     }
 }
