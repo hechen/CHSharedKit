@@ -66,6 +66,17 @@ import Security
 // hint, so the SecItem traffic is bounded.
 public enum CHAITokenStore {
 
+    /// Where tokens go when a caller does not say.
+    ///
+    /// The kit's own provider picker writes keys, so a per-call parameter
+    /// alone would never reach the screen the user actually types into. A
+    /// host app that offers the choice sets this once at launch and again
+    /// whenever the user changes it, and every call site follows.
+    ///
+    /// Defaults to `true`, which is what every caller had before 2.10.0, so
+    /// an app that never sets it is unaffected.
+    nonisolated(unsafe) public static var defaultSynchronizable = true
+
     /// Keychain service used for every token managed by this store.
     /// All apps that link CHSharedKit share this constant; the per-app
     /// scoping is provided by the account string (which embeds the
@@ -85,8 +96,20 @@ public enum CHAITokenStore {
     /// token has been saved (or when the keychain item is unreadable —
     /// caller should treat both cases the same and prompt the user to
     /// re-enter).
-    public static func token(for providerID: String) -> String? {
+    /// - Parameter synchronizable: `true` (the default, and what every
+    ///   caller got before 2.10.0) keeps the token in iCloud Keychain so it
+    ///   follows the user across devices. `false` keeps it on this device
+    ///   only. An app that lets the user choose must pass the same value to
+    ///   every call for that provider, and use `setSynchronizable` to move
+    ///   an existing token between the two.
+    public static func token(
+        for providerID: String,
+        synchronizable: Bool = CHAITokenStore.defaultSynchronizable
+    ) -> String? {
         let account = account(for: providerID)
+        guard synchronizable else {
+            return readDeviceOnly(service: service, account: account)
+        }
         if let value = readRaw(service: service, account: account) {
             return value
         }
@@ -104,8 +127,20 @@ public enum CHAITokenStore {
     }
 
     /// Save a token for a provider. Pass `nil` to delete.
-    public static func setToken(_ value: String?, for providerID: String) {
+    public static func setToken(
+        _ value: String?,
+        for providerID: String,
+        synchronizable: Bool = CHAITokenStore.defaultSynchronizable
+    ) {
         let account = account(for: providerID)
+        guard synchronizable else {
+            if let value, !value.isEmpty {
+                saveDeviceOnly(value: value, service: service, account: account)
+            } else {
+                deleteDeviceOnly(service: service, account: account)
+            }
+            return
+        }
         if let value, !value.isEmpty {
             saveRaw(value: value, service: service, account: account)
         } else {
@@ -114,8 +149,36 @@ public enum CHAITokenStore {
     }
 
     /// Delete the token for a provider. Equivalent to `setToken(nil, for:)`.
+    /// Removes it from both partitions, so a provider the user disconnects
+    /// leaves nothing behind on this device or in iCloud Keychain.
     public static func deleteToken(for providerID: String) {
-        deleteRaw(service: service, account: account(for: providerID))
+        let account = account(for: providerID)
+        deleteRaw(service: service, account: account)
+        deleteDeviceOnly(service: service, account: account)
+    }
+
+    /// Move an existing token between iCloud Keychain and this device.
+    ///
+    /// A toggle that only changed where *future* writes went would leave the
+    /// old copy in place and quietly keep syncing a key the user asked to
+    /// stop syncing. This reads from the partition the token is in, writes
+    /// it to the other, and removes the original.
+    ///
+    /// - Returns: `true` when a token was moved, `false` when there was
+    ///   nothing stored for that provider.
+    @discardableResult
+    public static func setSynchronizable(_ enabled: Bool, for providerID: String) -> Bool {
+        let account = account(for: providerID)
+        if enabled {
+            guard let value = readDeviceOnly(service: service, account: account) else { return false }
+            saveRaw(value: value, service: service, account: account)
+            deleteDeviceOnly(service: service, account: account)
+            return true
+        }
+        guard let value = readRaw(service: service, account: account) else { return false }
+        saveDeviceOnly(value: value, service: service, account: account)
+        deleteRaw(service: service, account: account)
+        return true
     }
 
     // MARK: - Test seam
@@ -211,6 +274,53 @@ public enum CHAITokenStore {
     // These talk to the keychain WITHOUT the sync flag, which is the
     // partition that pre-2.9.0 writes landed in. Used only for read
     // migration and delete cleanup.
+
+    // MARK: - Device-only tier
+    //
+    // The same service and account, written without the sync attribute, so
+    // the item stays on this device. This is the partition pre-2.9.0 writes
+    // landed in, which is why the read and delete shims below already
+    // existed for migration; 2.10.0 also writes here when an app offers the
+    // user a device-only choice.
+
+    private static func readDeviceOnly(service: String, account: String) -> String? {
+        if let backing = _testOverride {
+            return backing.read(service: deviceOnlyTestService(service), account: account)
+        }
+        return readLegacyNonSynced(service: service, account: account)
+    }
+
+    private static func saveDeviceOnly(value: String, service: String, account: String) {
+        if let backing = _testOverride {
+            backing.write(value: value, service: deviceOnlyTestService(service), account: account)
+            return
+        }
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any,
+        ]
+        SecItemDelete(query as CFDictionary)
+        var addQuery = query
+        addQuery[kSecValueData as String] = Data(value.utf8)
+        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        SecItemAdd(addQuery as CFDictionary, nil)
+    }
+
+    private static func deleteDeviceOnly(service: String, account: String) {
+        if let backing = _testOverride {
+            backing.delete(service: deviceOnlyTestService(service), account: account)
+            return
+        }
+        deleteLegacyNonSynced(service: service, account: account)
+    }
+
+    /// The in-memory test backing is a flat service/account map with no
+    /// notion of keychain partitions, so the two tiers need distinct keys.
+    private static func deviceOnlyTestService(_ service: String) -> String {
+        service + ".device-only"
+    }
 
     private static func readLegacyNonSynced(service: String, account: String) -> String? {
         let query: [String: Any] = [
