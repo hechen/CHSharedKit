@@ -132,6 +132,7 @@ public struct CHAISettingsContent: View {
     public let appIdentifier: AppIdentifier
 
     @StateObject private var aiManager = CHAIManager.shared
+    @ObservedObject private var modelCatalog = CHAICloudModelCatalog.shared
     @State private var openaiKey = ""
     @State private var claudeKey = ""
     @State private var customURL = CHCustomEndpointProvider.baseURL
@@ -200,6 +201,7 @@ public struct CHAISettingsContent: View {
     }
 
     public var body: some View {
+        let _ = modelCatalog.revision
         // Summary row — always shows the currently-active provider so
         // the user sees at a glance what the app will use before
         // scrolling through the picker below.
@@ -305,6 +307,7 @@ public struct CHAISettingsContent: View {
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
+        .task { await modelCatalog.refreshIfNeeded() }
         .onAppear { refreshUnlockState() }
         .onReceive(gatePublisher) { _ in
             refreshUnlockState()

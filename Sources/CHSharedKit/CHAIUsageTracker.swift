@@ -41,8 +41,9 @@ public final class CHAIUsageTracker: ObservableObject {
     }
     
     private static let bundledPricing: [String: ModelPricing] = [
-        // OpenAI — standard processing, August 2026
-        "gpt-5.6-sol":   ModelPricing(inputPerMillion: 5.00, outputPerMillion: 30.00, imageInputPerMillion: 5.00),
+        // OpenAI — standard processing, September 2026
+        "gpt-6-astra":   ModelPricing(inputPerMillion: 10.00, outputPerMillion: 50.00, imageInputPerMillion: 10.00),
+        "gpt-5.6-sol":   ModelPricing(inputPerMillion: 4.00, outputPerMillion: 20.00, imageInputPerMillion: 4.00),
         "gpt-5.6-terra": ModelPricing(inputPerMillion: 2.00, outputPerMillion: 12.00, imageInputPerMillion: 2.00),
         "gpt-5.6-luna":  ModelPricing(inputPerMillion: 0.20, outputPerMillion: 1.20, imageInputPerMillion: 0.20),
         "gpt-5.5-pro":  ModelPricing(inputPerMillion: 30.00, outputPerMillion: 180.00, imageInputPerMillion: 30.00),

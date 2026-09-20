@@ -104,7 +104,7 @@ struct CHAIPickerSubtitleTests {
         #expect(recommended.count == 1, "Exactly one row should be flagged isRecommended; found \(recommended.count)")
         #expect(recommended.first?.id == "gpt-5.6-terra")
         #expect(Set(CHOpenAIProvider.availableModels.map(\.id)).isSuperset(of: [
-            "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"
+            "gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"
         ]))
     }
 
@@ -122,7 +122,10 @@ struct CHAIPickerSubtitleTests {
     @Test("Current model pricing matches official standard rates")
     @MainActor
     func currentModelPricing() {
-        #expect(CHAIUsageTracker.pricing["gpt-5.6-sol"]?.inputPerMillion == 5)
+        #expect(CHAIUsageTracker.pricing["gpt-6-astra"]?.inputPerMillion == 10)
+        #expect(CHAIUsageTracker.pricing["gpt-6-astra"]?.outputPerMillion == 50)
+        #expect(CHAIUsageTracker.pricing["gpt-5.6-sol"]?.inputPerMillion == 4)
+        #expect(CHAIUsageTracker.pricing["gpt-5.6-sol"]?.outputPerMillion == 20)
         #expect(CHAIUsageTracker.pricing["gpt-5.6-terra"]?.outputPerMillion == 12)
         #expect(CHAIUsageTracker.pricing["gpt-5.6-luna"]?.outputPerMillion == 1.2)
         #expect(CHAIUsageTracker.pricing["claude-fable-5"]?.outputPerMillion == 50)

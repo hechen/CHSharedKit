@@ -267,9 +267,9 @@ public struct CHOpenAIProvider: CHAIProvider, Sendable {
         availableModels.first(where: \.isRecommended) ?? availableModels[0]
     }
 
-    /// July 2026 lineup. Terra is the recommended balance of intelligence and
-    /// cost; Sol provides frontier capability and Luna handles efficient,
-    /// high-volume workloads. Retired pre-5.x
+    /// Catalog-defined lineup. Terra is the recommended balance of intelligence
+    /// and cost; Astra provides the highest capability, Sol advanced reasoning,
+    /// and Luna handles efficient, high-volume workloads. Retired pre-5.x
     /// IDs are migrated forward by `CHAIModelMigration.migrateRetiredModels`
     /// so existing users land on a supported fallback instead of
     /// hitting "model not found" errors on first request.

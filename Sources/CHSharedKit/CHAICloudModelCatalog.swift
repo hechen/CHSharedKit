@@ -166,6 +166,12 @@ public final class CHAICloudModelCatalog: ObservableObject {
                 throw URLError(.badServerResponse)
             }
             let manifest = try CHAICloudModelCatalogStorage.decode(data)
+            // A CDN or URL cache may still serve the previous release. Never
+            // replace a newer bundled/cached catalog with that stale response.
+            guard manifest.revision >= CHAICloudModelCatalogStorage.shared.snapshot.revision else {
+                lastRefreshError = nil
+                return
+            }
             try CHAICloudModelCatalogStorage.persist(data)
             CHAICloudModelCatalogStorage.shared.replace(with: manifest)
             revision = manifest.revision
