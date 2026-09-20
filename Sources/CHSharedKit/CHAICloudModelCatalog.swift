@@ -128,7 +128,7 @@ private final class CHAICloudModelCatalogStorage: @unchecked Sendable {
 public final class CHAICloudModelCatalog: ObservableObject {
     public static let shared = CHAICloudModelCatalog()
     public static let defaultRemoteURL = URL(
-        string: "https://hechen.github.io/apps/closet/cloud-model-catalog.json"
+        string: "https://raw.githubusercontent.com/hechen/ai-model-catalog/main/cloud-model-catalog.json"
     )!
 
     @Published public private(set) var revision: String

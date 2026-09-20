@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": "2026-09-20.1",
+  "revision": "2026-09-20.2",
   "providers": [
     {
       "id": "openai",

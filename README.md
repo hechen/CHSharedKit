@@ -249,11 +249,23 @@ CHSettingsSheet("My App Usage") { MyAppUsageView() }
 
 ### Updating the cloud model catalog
 
-Edit `Sources/CHSharedKit/Resources/cloud-model-catalog.json`, publish the same
-file at `https://hechen.github.io/apps/closet/cloud-model-catalog.json`, and
-increase the lexicographically sortable `revision` for every change. Clients
-load their last validated cached copy immediately, refresh the public file with
-normal HTTP caching, and fall back to the package resource offline.
+The authoritative catalog lives in
+[`hechen/ai-model-catalog`](https://github.com/hechen/ai-model-catalog).
+Edit `cloud-model-catalog.json` there, increase the lexicographically sortable
+`revision`, validate it, and push to `main`. Routine catalog updates require
+neither a CHSharedKit release nor an app rebuild.
+
+The default endpoint is
+`https://raw.githubusercontent.com/hechen/ai-model-catalog/main/cloud-model-catalog.json`.
+Clients load their last validated cached copy immediately, refresh the public
+file with normal HTTP caching, and fall back to the package resource offline.
+When preparing an SDK release, copy the canonical JSON into
+`Sources/CHSharedKit/Resources/cloud-model-catalog.json` for the offline fallback.
+
+Shipped apps using `https://hechen.github.io/apps/closet/cloud-model-catalog.json`
+remain supported: the blog's Pages workflow generates that compatibility copy
+from the catalog repository and checks hourly for changes. No app SDK bump is
+required just to migrate hosting. New SDK releases use the direct URL above.
 
 The schema validates unique provider/model IDs, recommendation and migration
 targets, and nonnegative prices before replacing the active catalog. Add a

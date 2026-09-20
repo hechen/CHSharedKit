@@ -8,7 +8,7 @@ struct CHAICloudModelCatalogTests {
     @MainActor
     func defaultRemoteURL() {
         #expect(CHAICloudModelCatalog.defaultRemoteURL.absoluteString ==
-            "https://hechen.github.io/apps/closet/cloud-model-catalog.json")
+            "https://raw.githubusercontent.com/hechen/ai-model-catalog/main/cloud-model-catalog.json")
     }
 
     @Test("Bundled manifest is valid and drives both providers")
