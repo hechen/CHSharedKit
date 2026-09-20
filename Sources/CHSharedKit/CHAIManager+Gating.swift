@@ -39,8 +39,19 @@ public extension CHAIManager {
     ///
     /// Apple Intelligence is never added even if consumers manually mutate
     /// `gatedProviderIDs` afterwards — see ``alwaysFreeProviderIDs``.
+    /// Sentinel used by the all-provider policy, including providers added after launch.
+    static let allProvidersGateID = "*"
+
+    var effectiveGatedProviderIDs: Set<String> {
+        let explicit = gatedProviderIDs.subtracting([Self.allProvidersGateID])
+        return (gatedProviderIDs.contains(Self.allProvidersGateID)
+            ? explicit.union(allProviders.map(\.id)) : explicit)
+            .subtracting(Self.alwaysFreeProviderIDs)
+    }
+
     func gateAllExceptAppleIntelligence() {
         gatedProviderIDs = [
+            Self.allProvidersGateID,
             CHOpenAIProvider.providerID,
             CHClaudeProvider.providerID,
             CHCustomEndpointProvider.providerID,
@@ -68,7 +79,7 @@ public extension CHAIManager {
     func isLocked(providerID: String) -> Bool {
         if Self.alwaysFreeProviderIDs.contains(providerID) { return false }
         guard isGatingActive else { return false }
-        return gatedProviderIDs.contains(providerID)
+        return gatedProviderIDs.contains(Self.allProvidersGateID) || gatedProviderIDs.contains(providerID)
     }
 
     /// 2.6.1: human-readable display name for a provider id, used by the

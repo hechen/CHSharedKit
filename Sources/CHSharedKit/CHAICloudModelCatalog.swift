@@ -18,6 +18,29 @@ public struct CHAICloudModelCatalogManifest: Codable, Sendable, Equatable {
         public let migrationFallbackModelID: String
         public let retiredModelIDs: [String]
         public let models: [Model]
+        /// Optional executable descriptor. Older SDKs ignore these fields.
+        public var displayName: String? = nil
+        public var api: API? = nil
+        public var apiKeyURL: URL? = nil
+        public var privacyPolicyURL: URL? = nil
+    }
+
+    public struct API: Codable, Sendable, Equatable {
+        /// Unknown formats are retained as data but never registered for dispatch.
+        public let format: String
+        public let baseURL: URL
+        public let tokenLimitParameter: String
+
+        public var isSupported: Bool {
+            format == "openai-chat-completions"
+                && ["max_tokens", "max_completion_tokens"].contains(tokenLimitParameter)
+        }
+
+        public static func isSafeURL(_ url: URL) -> Bool {
+            guard let c = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return false }
+            return c.scheme == "https" && !(c.host?.isEmpty ?? true)
+                && c.user == nil && c.password == nil && c.query == nil && c.fragment == nil
+        }
     }
 
     public struct Model: Codable, Sendable, Equatable, Identifiable {
@@ -26,6 +49,7 @@ public struct CHAICloudModelCatalogManifest: Codable, Sendable, Equatable {
         public let inputPerMillion: Double
         public let outputPerMillion: Double
         public let imageInputPerMillion: Double
+        public var capabilities: [String]? = nil
     }
 
     public func provider(id: String) -> Provider? {
@@ -41,6 +65,15 @@ public struct CHAICloudModelCatalogManifest: Codable, Sendable, Equatable {
             throw ValidationError.duplicateProvider
         }
         for provider in providers {
+            guard !provider.id.isEmpty else { throw ValidationError.invalidProvider(provider.id) }
+            if let api = provider.api {
+                guard !["openai", "claude", "custom", "apple-intelligence", "on-device-llm", "on-device-vlm"].contains(provider.id),
+                      provider.id.range(of: "^[a-z][a-z0-9-]*$", options: .regularExpression) != nil,
+                      !(provider.displayName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true),
+                      API.isSafeURL(api.baseURL),
+                      [provider.apiKeyURL, provider.privacyPolicyURL].compactMap({ $0 }).allSatisfy(API.isSafeURL)
+                else { throw ValidationError.invalidProvider(provider.id) }
+            }
             guard !provider.models.isEmpty else { throw ValidationError.emptyProvider(provider.id) }
             let ids = provider.models.map(\.id)
             guard Set(ids).count == ids.count else { throw ValidationError.duplicateModel(provider.id) }
@@ -63,7 +96,7 @@ public struct CHAICloudModelCatalogManifest: Codable, Sendable, Equatable {
 
     public enum ValidationError: Error, Equatable {
         case unsupportedSchema(Int), emptyRevision, duplicateProvider
-        case emptyProvider(String), duplicateModel(String), invalidModel(String)
+        case invalidProvider(String), emptyProvider(String), duplicateModel(String), invalidModel(String)
         case missingRecommendedModel(String), missingMigrationFallback(String)
     }
 }
@@ -174,6 +207,7 @@ public final class CHAICloudModelCatalog: ObservableObject {
             }
             try CHAICloudModelCatalogStorage.persist(data)
             CHAICloudModelCatalogStorage.shared.replace(with: manifest)
+            CHAIManager.shared.synchronizeCatalogProviders(manifest)
             revision = manifest.revision
             lastRefreshError = nil
         } catch {

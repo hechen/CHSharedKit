@@ -428,6 +428,11 @@ public struct CHAISettingsContent: View {
         }
 
         // Custom endpoint settings
+        if let provider = aiManager.provider(id: selectedProvider) as? CHAICatalogProvider {
+            CHAICatalogProviderSettings(provider: provider)
+                .id(provider.credentialID)
+        }
+
         if selectedProvider == CHCustomEndpointProvider.providerID {
             Section {
                 #if os(iOS)
@@ -684,6 +689,10 @@ public struct CHAISettingsContent: View {
             let model = customModel.trimmingCharacters(in: .whitespacesAndNewlines)
             return ("server.rack", .gray, model.isEmpty ? "OpenAI-compatible API" : "\(model) · OpenAI-compatible API")
         default:
+            if let provider = aiManager.provider(id: id) as? CHAICatalogProvider {
+                return ("network", .blue, connectionSubtitle(model: provider.selectedModel.name,
+                                                             hasAPIKey: provider.apiKey != nil))
+            }
             return ("network", .blue, nil)
         }
     }
@@ -834,8 +843,7 @@ public struct CHAISettingsContent: View {
         // downloaded) still show their kit-canonical name instead of being
         // dropped silently — Chen's screenshot of LiftCoach Build 64 had
         // "On-Device AI" missing from the subtitle for exactly this reason.
-        aiManager.gatedProviderIDs
-            .subtracting(CHAIManager.alwaysFreeProviderIDs)
+        aiManager.effectiveGatedProviderIDs
             .subtracting(aiManager.disabledProviderIDs)
             .map { aiManager.displayName(forProviderID: $0) }
             .sorted()

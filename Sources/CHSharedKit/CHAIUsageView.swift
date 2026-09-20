@@ -179,23 +179,11 @@ public struct CHAIPricingView: View {
         let _ = modelCatalog.revision
 
         List {
-            Section("OpenAI") {
-                ForEach(models(for: CHOpenAIProvider.providerID)) { model in
-                    PricingRow(
-                        model: model.id,
-                        input: model.inputPerMillion,
-                        output: model.outputPerMillion
-                    )
-                }
-            }
-
-            Section("Anthropic Claude") {
-                ForEach(models(for: CHClaudeProvider.providerID)) { model in
-                    PricingRow(
-                        model: model.id,
-                        input: model.inputPerMillion,
-                        output: model.outputPerMillion
-                    )
+            ForEach(CHAICloudModelCatalog.snapshot.providers) { provider in
+                Section(provider.displayName ?? (provider.id == "openai" ? "OpenAI" : provider.id == "claude" ? "Anthropic Claude" : provider.id)) {
+                    ForEach(provider.models) { model in
+                        PricingRow(model: model.id, input: model.inputPerMillion, output: model.outputPerMillion)
+                    }
                 }
             }
 

@@ -172,7 +172,12 @@ public struct CHAISettingsView: View {
             }
             
             // Custom endpoint settings
-            if selectedProvider == CHCustomEndpointProvider.providerID {
+            if let provider = aiManager.provider(id: selectedProvider) as? CHAICatalogProvider {
+            CHAICatalogProviderSettings(provider: provider)
+                .id(provider.credentialID)
+        }
+
+        if selectedProvider == CHCustomEndpointProvider.providerID {
                 Section {
                     HStack {
                         Text("Base URL")

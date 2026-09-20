@@ -146,6 +146,8 @@ public final class CHAIManager: ObservableObject {
     /// ```
     @Published public var gatedProviderIDs: Set<String> = []
 
+    private var catalogProviderIDs: Set<String> = []
+    private var hostProviderIDs: Set<String> = []
     private var providers: [String: any CHAIProvider] = [:]
 
     private static let activeModelIDKey = "clawd_ai_active_model_id"
@@ -173,6 +175,7 @@ public final class CHAIManager: ObservableObject {
         self.activeModelID = UserDefaults.standard.string(forKey: Self.activeModelIDKey)
         self.activeModelDisplayName = UserDefaults.standard.string(forKey: Self.activeModelDisplayNameKey)
         registerBuiltInProviders()
+        synchronizeCatalogProviders(CHAICloudModelCatalog.snapshot)
     }
 
     /// Record the currently-active on-device model. Called by
@@ -219,7 +222,22 @@ public final class CHAIManager: ObservableObject {
     
     /// Register a custom provider
     public func registerProvider(_ provider: any CHAIProvider) {
+        objectWillChange.send()
+        hostProviderIDs.insert(provider.id)
+        catalogProviderIDs.remove(provider.id)
         providers[provider.id] = provider
+    }
+
+    /// Reconcile only catalog-owned registrations; host overrides remain authoritative.
+    func synchronizeCatalogProviders(_ manifest: CHAICloudModelCatalogManifest) {
+        objectWillChange.send()
+        for id in catalogProviderIDs { providers.removeValue(forKey: id) }
+        catalogProviderIDs.removeAll()
+        for definition in manifest.providers where !hostProviderIDs.contains(definition.id) {
+            guard providers[definition.id] == nil, let provider = CHAICatalogProvider(definition) else { continue }
+            providers[definition.id] = provider
+            catalogProviderIDs.insert(definition.id)
+        }
     }
 
     /// Provider ID used for requests on this device. This normally matches
@@ -227,7 +245,7 @@ public final class CHAIManager: ObservableObject {
     /// the manager selects an enabled fallback without changing persistence.
     public var effectiveActiveProviderID: String? {
         guard disabledProviderIDs.contains(activeProviderID) else {
-            return providers[activeProviderID] == nil ? nil : activeProviderID
+            return provider(id: activeProviderID) == nil ? nil : activeProviderID
         }
 
         if isAppleIntelligenceAvailable,
@@ -266,7 +284,8 @@ public final class CHAIManager: ObservableObject {
     /// provider in that case.
     public func provider(id: String) -> (any CHAIProvider)? {
         guard isProviderEnabled(id) else { return nil }
-        return providers[id]
+        guard let provider = providers[id], availableProvidersFilter.contains(provider.category) else { return nil }
+        return provider
     }
 
     /// Whether a provider can be shown or used on this device.
@@ -325,12 +344,12 @@ public final class CHAIManager: ObservableObject {
             let tracker = CHAIUsageTracker.shared
             let cost = tracker.logRequest(
                 provider: provider.displayName,
-                model: provider.id,
+                model: (provider as? CHAICatalogProvider)?.selectedModelID ?? provider.id,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens
             )
             // Log cost to activity log for visibility
-            logAICost(provider: provider.displayName, model: provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: false)
+            logAICost(provider: provider.displayName, model: (provider as? CHAICatalogProvider)?.selectedModelID ?? provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: false)
             return result
         } catch {
             lastError = error.localizedDescription
@@ -391,13 +410,13 @@ public final class CHAIManager: ObservableObject {
             let tracker = CHAIUsageTracker.shared
             let cost = tracker.logRequest(
                 provider: provider.displayName,
-                model: provider.id,
+                model: (provider as? CHAICatalogProvider)?.selectedModelID ?? provider.id,
                 inputTokens: inputTokens,
                 outputTokens: outputTokens,
                 imageTokens: imageTokens,
                 isVision: true
             )
-            logAICost(provider: provider.displayName, model: provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: true)
+            logAICost(provider: provider.displayName, model: (provider as? CHAICatalogProvider)?.selectedModelID ?? provider.id, inputTokens: inputTokens, outputTokens: outputTokens, cost: cost, isVision: true)
             return result
         } catch {
             lastError = error.localizedDescription
@@ -432,7 +451,7 @@ public final class CHAIManager: ObservableObject {
     /// other case (including: gate not registered, provider not gated,
     /// already unlocked).
     public func checkProviderUnlocked(_ provider: any CHAIProvider) throws {
-        guard gatedProviderIDs.contains(provider.id) else { return }
+        guard isLocked(providerID: provider.id) else { return }
         guard let gate = CHIAPGateRegistry.shared else { return }
         if gate.hasUnlockedProviders { return }
         throw CHAIError.providerLocked(displayName: provider.displayName)

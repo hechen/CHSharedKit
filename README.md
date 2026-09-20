@@ -272,6 +272,29 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Catalog-defined providers (2.14.0)
+
+`CHAICatalogProvider` registers providers whose optional catalog `api` descriptor
+uses `openai-chat-completions`. Shared pickers render their key and model settings
+automatically. Grok is included as the first example. See the
+[catalog format guide](https://github.com/hechen/ai-model-catalog#catalog-defined-providers-chsharedkit-2140)
+for adding another provider without an SDK release.
+
+Supported transport: HTTPS bearer authentication, text/image Chat Completions,
+and SSE streaming. Unknown formats are skipped. Keys are scoped to provider and
+endpoint; redirects are blocked. Host-registered providers take precedence.
+Withdrawn providers fail closed, and on-device-only filters exclude dispatch as
+well as picker rows. `gateAllExceptAppleIntelligence()` includes future providers
+through `allProvidersGateID` (`*`); `effectiveGatedProviderIDs` expands that policy
+for display. Explicit ID sets remain explicit.
+
+Hosts with custom inference code must bridge `CHAICatalogProvider` into that code.
+Hosts offering key-sync controls should include `CHAICatalogProvider.storedCredentialIDs`
+when moving tokens between Keychain tiers. Shared credentials never cross apps.
+One app release adopting this SDK is required; later compatible providers/models
+arrive through a catalog refresh. New API protocols or capabilities still need
+an SDK update.
+
 ### BYOK — storing API keys
 
 Keys are stored in the system Keychain:
