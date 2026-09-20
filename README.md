@@ -295,6 +295,34 @@ One app release adopting this SDK is required; later compatible providers/models
 arrive through a catalog refresh. New API protocols or capabilities still need
 an SDK update.
 
+
+### Which changes need an SDK update?
+
+The catalog supports multiple providers, but runtime compatibility depends on
+an implemented API adapter. CHSharedKit 2.14.0 supports these cases:
+
+| Change | JSON only? | Requirement |
+| --- | --- | --- |
+| Add/update OpenAI or Claude models, prices, or retirement rules | Yes | The model must work with the existing built-in adapter. |
+| Add a provider such as Grok using OpenAI-compatible Chat Completions | Yes | HTTPS, bearer API-key authentication, and the supported request/response format. |
+| Add a provider using a native Anthropic Messages or another API format | No | Add a catalog runtime adapter to CHSharedKit first. Built-in Claude support does not make arbitrary Messages-compatible providers catalog-configurable. |
+| Use OpenAI Responses, a different authentication scheme, or audio/tool-calling features | No | These are outside the current generic adapter and need SDK support. |
+
+The generic adapter currently supports text, image input, and SSE text streaming;
+each model must declare the capabilities it actually supports. An
+“OpenAI-compatible” label alone is insufficient: the provider must support the
+Chat Completions subset used by this adapter.
+
+Each app must ship one update adopting SDK 2.14.0 and route requests through the
+shared manager or an appropriate host bridge. After that, compatible additions
+arrive on catalog refresh without another SDK or app release. Users still select
+the provider and supply their own key. App capability filters, purchase gates,
+and consent rules continue to apply; on-device-only apps do not expose cloud
+providers.
+
+When a new API adapter is implemented and shipped, later providers using that
+supported format can also be added through JSON alone.
+
 ### BYOK — storing API keys
 
 Keys are stored in the system Keychain:
