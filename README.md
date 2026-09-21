@@ -272,6 +272,10 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Immediate offline model picker presentation (2.15.2)
+
+The on-device provider row and its lower Change Model / Download a Model section now present the picker from their own visible location. Scrolling the provider row offscreen no longer delays the lower action's sheet. The detail presenter stays mounted until dismissal when deleting the active model changes the selected provider.
+
 ### Offline model picker fixes (2.15.1)
 
 Catalog refresh now preserves in-progress download controls, and selecting an installed model cancels any pending automatic switch. Failed custom entries can be removed, repository checks reject stale responses, and errors retain their actual cause. Installed license labels describe the installed revision. Deleting a model preserves its files if updating the installation registry fails.

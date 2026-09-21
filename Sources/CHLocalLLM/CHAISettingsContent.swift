@@ -163,7 +163,8 @@ public struct CHAISettingsContent: View {
     @State private var isValidating = false
     @State private var validationResult: String?
     @State private var showingAPIKey = false
-    @State private var showModelPicker = false
+    private enum ModelPickerSource { case provider, detail }
+    @State private var modelPickerSource: ModelPickerSource?
 
     @State private var modelStore = LocalModelStore.shared
 
@@ -331,7 +332,7 @@ public struct CHAISettingsContent: View {
         #endif
 
         // On-Device detail section (when selected)
-        if selectedProvider == CHLocalLLMProvider.providerID {
+        if selectedProvider == CHLocalLLMProvider.providerID || modelPickerSource == .detail {
             onDeviceDetailSection
         }
 
@@ -535,7 +536,7 @@ public struct CHAISettingsContent: View {
             // just leave it selected — the detail section below exposes
             // "Change Model" which jumps straight to the catalog.
             if activeModel == nil {
-                showModelPicker = true
+                modelPickerSource = .provider
             }
         } label: {
             HStack(spacing: 12) {
@@ -575,23 +576,8 @@ public struct CHAISettingsContent: View {
                 }
             }
         }
-        // Download/browse picker sheet — tapping "Change Model" on the
-        // detail row opens this directly (2.4.6). 2.5.2: macOS now uses
-        // the native macOS picker variant (`ModelPickerView+macOS.swift`),
-        // so the iOS-only guard is gone — same call site builds the right
-        // platform variant via `#if os(...)` inside ModelPickerView.
-        .sheet(isPresented: $showModelPicker) {
-            #if os(iOS)
-            NavigationStack {
-                ModelPickerView(appIdentifier: appIdentifier) {
-                    showModelPicker = false
-                }
-            }
-            #else
-            ModelPickerView(appIdentifier: appIdentifier) {
-                showModelPicker = false
-            }
-            #endif
+        .sheet(isPresented: modelPickerPresentation(from: .provider)) {
+            modelPickerSheet
         }
         .onAppear {
             openaiKey = CHOpenAIProvider.apiKey ?? ""
@@ -612,7 +598,7 @@ public struct CHAISettingsContent: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Button("Change Model") { showModelPicker = true }
+                Button("Change Model") { modelPickerSource = .detail }
                     .foregroundStyle(.tint)
             } else if modelStore.activeDownloadModelID != nil {
                 LocalModelDownloadView()
@@ -622,12 +608,39 @@ public struct CHAISettingsContent: View {
                     Text("No model downloaded yet")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
-                Button("Download a Model") { showModelPicker = true }
+                Button("Download a Model") { modelPickerSource = .detail }
                     .foregroundStyle(.tint)
             }
         } header: {
             Text("On-Device")
         }
+        // List rows are lazy. Present from the section containing the action,
+        // so an offscreen provider row cannot defer the sheet until a scroll.
+        // Keep the presenter outside the conditional installed/download rows.
+        .sheet(isPresented: modelPickerPresentation(from: .detail)) {
+            modelPickerSheet
+        }
+    }
+
+    private func modelPickerPresentation(from source: ModelPickerSource) -> Binding<Bool> {
+        Binding(
+            get: { modelPickerSource == source },
+            set: { isPresented in
+                if isPresented { modelPickerSource = source }
+                else if modelPickerSource == source { modelPickerSource = nil }
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var modelPickerSheet: some View {
+        #if os(iOS)
+        NavigationStack {
+            ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
+        }
+        #else
+        ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
+        #endif
     }
 
     // MARK: - Provider row helpers
