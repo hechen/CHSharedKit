@@ -1,6 +1,7 @@
 import Foundation
 import CryptoKit
 import Testing
+import CHSharedKit
 @testable import CHLocalLLM
 
 @Suite("Pinned offline model installation")
@@ -325,6 +326,126 @@ struct OfflineModelInstallationTests {
         #expect(CHLocalMLXRepoID.from(URL(string: "https://huggingface.co.attacker.example/org/model")!) == nil)
         #expect(CHLocalMLXRepoID.from(URL(string: "http://huggingface.co/org/model")!) == nil)
     }
+
+    @Test("A catalog refresh cannot remove or replace the active download row")
+    @MainActor
+    func inFlightModelSurvivesCatalogRefresh() throws {
+        try withIsolatedStore { store, _ in
+            let original = fixtureModel(files: fixtureFiles())
+            store.downloadModel(original)
+            #expect(store.activeDownloadModelID == original.id)
+            let retired = fixtureModel(files: fixtureFiles(), revision: String(repeating: "b", count: 40), status: "retired")
+            #expect(store.allModels(catalog: [retired]).first { $0.id == original.id } == original)
+            #expect(store.allModels(catalog: []).first { $0.id == original.id } == original)
+            store.cancelDownload()
+            #expect(store.activeDownloadModelID == nil)
+            #expect(store.allModels(catalog: []).isEmpty)
+        }
+    }
+
+    @Test("Selecting an installed model supersedes another download's pending activation")
+    @MainActor
+    func newerInstalledSelectionClearsPendingActivation() throws {
+        let installed = fixtureModel(files: fixtureFiles(), id: "already-installed")
+        try withIsolatedStore(installed: [installed]) { store, _ in
+            let downloading = fixtureModel(files: fixtureFiles())
+            store.selectAndDownload(downloading)
+            #expect(store.pendingActiveModelID == downloading.id)
+            store.selectAndDownload(installed)
+            #expect(store.activeModelID == installed.id)
+            #expect(store.pendingActiveModelID == nil)
+            // The user may still keep the downloaded files; only the older
+            // auto-activation intent is superseded by the new selection.
+            #expect(store.activeDownloadModelID == downloading.id)
+        }
+    }
+
+    @Test("A deletion registry-write failure preserves metadata and model bytes")
+    func deletionWriteFailurePreservesInstallation() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let files = fixtureFiles()
+        let model = fixtureModel(files: files)
+        let directory = root.appendingPathComponent("releases/working")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try write(files, to: directory)
+        let records = [model.id: OfflineModelInstallation(model: model, relativeDirectory: "releases/working", integrityVerified: true)]
+        try OfflineModelInstaller.writeRegistry(records, baseDirectory: root, legacyMigrationComplete: true)
+        #expect(throws: CocoaError.self) {
+            _ = try OfflineModelInstaller.removeInstallation(
+                modelID: model.id, directory: directory, replacing: records, baseDirectory: root,
+                persist: { _, _ in throw CocoaError(.fileWriteNoPermission) },
+                removeFiles: { _ in Issue.record("File deletion must not run before the registry write succeeds") }
+            )
+        }
+        #expect(OfflineModelInstaller.readRegistry(baseDirectory: root) == records)
+        #expect(CHLocalMLXStorage.isSnapshotPresent(at: directory))
+        #expect(try Data(contentsOf: directory.appendingPathComponent("model.safetensors")) == files["model.safetensors"])
+    }
+
+    @Test("A file-cleanup failure reports committed removal rather than a kept installation")
+    func deletionCleanupFailureKeepsRegistryAuthoritative() throws {
+        let root = try temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = fixtureModel(files: fixtureFiles())
+        let directory = root.appendingPathComponent("releases/working")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try write(fixtureFiles(), to: directory)
+        let records = [model.id: OfflineModelInstallation(model: model, relativeDirectory: "releases/working", integrityVerified: true)]
+        try OfflineModelInstaller.writeRegistry(records, baseDirectory: root, legacyMigrationComplete: true)
+        let result = try OfflineModelInstaller.removeInstallation(
+            modelID: model.id, directory: directory, replacing: records, baseDirectory: root,
+            removeFiles: { _ in throw CocoaError(.fileWriteNoPermission) }
+        )
+        #expect(result.installations.isEmpty)
+        #expect(result.fileCleanupFailed)
+        #expect(OfflineModelInstaller.readRegistry(baseDirectory: root).isEmpty)
+        #expect(OfflineModelInstaller.hasCompletedLegacyMigration(baseDirectory: root))
+        #expect(CHLocalMLXStorage.isSnapshotPresent(at: directory))
+    }
+}
+
+@MainActor
+private func withIsolatedStore(
+    installed: [LocalModelInfo] = [], _ body: (LocalModelStore, URL) throws -> Void
+) throws {
+    let root = try temporaryDirectory()
+    let oldBase = CHLocalMLXStorage.baseDirectory
+    let oldLegacy = CHLocalMLXStorage.legacyBaseDirectories
+    let suiteName = "offline-install-tests.\(UUID().uuidString)"
+    let defaults = try #require(UserDefaults(suiteName: suiteName))
+    let manager = CHAIManager.shared
+    let priorProvider = manager.provider(id: CHLocalLLMProvider.providerID)
+    let priorActive = manager.activeProviderID
+    let priorModel = manager.activeModelID
+    let priorName = manager.activeModelDisplayName
+    var store: LocalModelStore?
+    defer {
+        store?.cancelDownload()
+        if let priorProvider { manager.registerProvider(priorProvider) }
+        else { manager.unregisterProvider(CHLocalLLMProvider.providerID) }
+        manager.activeProviderID = priorActive
+        if let priorModel, let priorName { manager.setActiveOnDeviceModel(id: priorModel, displayName: priorName) }
+        else { manager.clearActiveOnDeviceModel() }
+        CHLocalMLXStorage.baseDirectory = oldBase
+        CHLocalMLXStorage.legacyBaseDirectories = oldLegacy
+        defaults.removePersistentDomain(forName: suiteName)
+        try? FileManager.default.removeItem(at: root)
+    }
+    CHLocalMLXStorage.baseDirectory = root
+    CHLocalMLXStorage.legacyBaseDirectories = []
+    var records: [String: OfflineModelInstallation] = [:]
+    for model in installed {
+        let relativePath = "releases/\(model.id)"
+        let directory = root.appendingPathComponent(relativePath)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try write(fixtureFiles(), to: directory)
+        records[model.id] = OfflineModelInstallation(model: model, relativeDirectory: relativePath, integrityVerified: true)
+    }
+    try OfflineModelInstaller.writeRegistry(records, baseDirectory: root, legacyMigrationComplete: true)
+    let fixtureStore = LocalModelStore(defaults: defaults)
+    store = fixtureStore
+    try body(fixtureStore, root)
 }
 
 private func fixtureFiles() -> [String: Data] {

@@ -50,7 +50,8 @@ public struct ModelPickerView: View {
     /// Catalog models sorted by recommendation score descending.
     private var sortedCatalogModels: [LocalModelInfo] {
         store.allModels.filter {
-            !$0.isCustom && !store.isInstalled($0) && ($0.release?.status ?? "active") == "active"
+            !$0.isCustom && !store.isInstalled($0)
+                && ($0.id == store.activeDownloadModelID || ($0.release?.status ?? "active") == "active")
         }.sorted {
             let sa = $0.recommendationScore(for: appIdentifier)
             let sb = $1.recommendationScore(for: appIdentifier)
@@ -202,9 +203,13 @@ public struct ModelPickerView: View {
                 Text("Couldn’t refresh the model list. Your saved list and installed models are still available.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            if case .failed = store.downloadState {
-                Text("The model download couldn’t finish. Your installed models are unchanged. Choose Use or Update to try again.")
-                    .font(.caption).foregroundStyle(.orange)
+            if case .failed(let reason) = store.downloadState {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Model action failed", systemImage: "exclamationmark.triangle")
+                        .font(.caption.weight(.semibold))
+                    Text(reason).font(.caption)
+                }
+                .foregroundStyle(.orange)
             }
             Text("Refreshing checks availability. Model downloads start only when you choose them.")
                 .font(.caption).foregroundStyle(.secondary)
@@ -528,7 +533,7 @@ private struct ModelCard: View {
     @ViewBuilder
     private var licenseChip: some View {
         let color: Color = {
-            switch model.license {
+            switch displayModel.license {
             case .apache2: return .green
             case .mit: return .blue
             case .llamaCommunity: return .orange
@@ -537,7 +542,7 @@ private struct ModelCard: View {
             case .other: return .secondary
             }
         }()
-        Text(model.licenseDisplayName)
+        Text(displayModel.licenseDisplayName)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(color.opacity(0.15))
@@ -574,10 +579,15 @@ private struct ModelCard: View {
                 .font(.caption).foregroundStyle(.secondary)
         }
         if isRetiredOrRemoved {
-            Text(installedUseIssue == nil
-                 ? "No longer offered for download. You can keep using your installed copy."
-                 : "No longer offered for download. Its files are still stored on this device.")
-                .font(.caption).foregroundStyle(.secondary)
+            if isInstalled {
+                Text(installedUseIssue == nil
+                     ? "No longer offered for download. You can keep using your installed copy."
+                     : "No longer offered for download. Its files are still stored on this device.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("No longer listed. You can let this download finish or cancel it.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
         if hasUpdate {
             if let downloadIssue {
@@ -605,6 +615,18 @@ private struct ModelCard: View {
     }
 
     @ViewBuilder
+    private var removeCustomEntryButton: some View {
+        if model.isCustom {
+            Button(role: .destructive) { onRemove() } label: {
+                Label("Remove", systemImage: "trash")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityLabel("Remove \(displayModel.displayName)")
+        }
+    }
+
+    @ViewBuilder
     private var actionView: some View {
         switch state {
         case .notCompatible:
@@ -612,6 +634,7 @@ private struct ModelCard: View {
                 Spacer()
                 Text(downloadIssue ?? "This model needs more memory than this device has.")
                     .font(.caption).foregroundStyle(.tertiary)
+                removeCustomEntryButton
             }
         case .notInstalled(let canStart):
             HStack {
@@ -625,6 +648,7 @@ private struct ModelCard: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 .disabled(!canStart)
+                removeCustomEntryButton
             }
         case .downloading(let progress, let received, let total, let speed, let eta, let stalled):
             inlineProgress(
@@ -637,6 +661,8 @@ private struct ModelCard: View {
                 Text(isInstalled ? "Installing update…" : "Installing…")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                Button("Cancel") { onCancelDownload() }
+                    .buttonStyle(.bordered).controlSize(.small)
             }
         case .pendingActive:
             HStack(spacing: 6) {
@@ -781,6 +807,7 @@ struct AddCustomModelSheet: View {
     @State private var fetchedSize: Int64?
     @State private var isFetching = false
     @State private var fetchError: String?
+    @State private var checkGeneration = UUID()
 
     private var urlIsValid: Bool {
         guard let url = URL(string: urlText) else { return false }
@@ -791,7 +818,8 @@ struct AddCustomModelSheet: View {
     }
 
     private var canAdd: Bool {
-        urlIsValid && !modelName.trimmingCharacters(in: .whitespaces).isEmpty && fetchedSize != nil
+        urlIsValid && !modelName.trimmingCharacters(in: .whitespaces).isEmpty
+            && fetchedSize != nil && fetchError == nil && !isFetching
     }
 
     var body: some View {
@@ -803,6 +831,8 @@ struct AddCustomModelSheet: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .onChange(of: urlText) { _, _ in
+                            checkGeneration = UUID()
+                            isFetching = false
                             fetchedSize = nil
                             fetchError = nil
                         }
@@ -872,15 +902,20 @@ struct AddCustomModelSheet: View {
         guard urlIsValid, let url = URL(string: checkedText),
               let repoID = CHLocalMLXRepoID.from(url),
               let metadataURL = URL(string: "https://huggingface.co/api/models/\(repoID)?blobs=true") else { return }
+        let generation = UUID()
+        checkGeneration = generation
+        fetchedSize = nil
         isFetching = true
         fetchError = nil
-        defer { isFetching = false }
+        defer {
+            if checkGeneration == generation { isFetching = false }
+        }
         var request = URLRequest(url: metadataURL)
         request.timeoutInterval = 15
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard urlText == checkedText else { return }
+            guard checkGeneration == generation, urlText == checkedText else { return }
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                 fetchError = "This repository isn’t available. Use a public model repository."
                 return
@@ -908,7 +943,7 @@ struct AddCustomModelSheet: View {
                 modelName = url.lastPathComponent
             }
         } catch {
-            guard urlText == checkedText else { return }
+            guard checkGeneration == generation, urlText == checkedText else { return }
             fetchError = "Couldn’t check this repository. Check your connection and try again."
         }
     }

@@ -61,6 +61,11 @@ enum OfflineModelInstaller {
         fileprivate let staged: Staged
     }
 
+    struct DeletionResult {
+        let installations: [String: OfflineModelInstallation]
+        let fileCleanupFailed: Bool
+    }
+
     private struct Registry: Codable {
         let schemaVersion: Int
         let legacyMigrationComplete: Bool
@@ -277,6 +282,29 @@ enum OfflineModelInstaller {
         return records.values.contains {
             $0.directory(baseDirectory: baseDirectory).standardizedFileURL == path
         }
+    }
+
+    /// Registry writes are the only throwing part of deletion. A failed write
+    /// leaves all working bytes untouched. After a successful write, callers
+    /// adopt the new inventory even if unreferenced file cleanup fails.
+    static func removeInstallation(
+        modelID: String, directory: URL,
+        replacing records: [String: OfflineModelInstallation], baseDirectory: URL,
+        persist: ([String: OfflineModelInstallation], URL) throws -> Void = { records, base in
+            try writeRegistry(records, baseDirectory: base)
+        },
+        removeFiles: (URL) throws -> Void = { try FileManager.default.removeItem(at: $0) }
+    ) throws -> DeletionResult {
+        var updated = records
+        updated.removeValue(forKey: modelID)
+        try persist(updated, baseDirectory)
+        var cleanupFailed = false
+        if !isDirectoryReferenced(directory, by: updated, baseDirectory: baseDirectory),
+           FileManager.default.fileExists(atPath: directory.path) {
+            do { try removeFiles(directory) }
+            catch { cleanupFailed = true }
+        }
+        return DeletionResult(installations: updated, fileCleanupFailed: cleanupFailed)
     }
 
     static func verifyFile(_ url: URL, sizeBytes: Int64, sha256: String, path: String) throws {

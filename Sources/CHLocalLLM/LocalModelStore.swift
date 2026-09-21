@@ -149,6 +149,8 @@ public final class LocalModelStore {
     // download is running; cancelled by `cancelDownload()`.
     @ObservationIgnored private var activeTask: Task<Void, Never>?
     @ObservationIgnored private var downloadGeneration: UUID?
+    private var activeDownloadModel: LocalModelInfo?
+    @ObservationIgnored private let notificationsEnabled: Bool
     private var installations: [String: OfflineModelInstallation] = [:]
     /// 2.5.8: companion task that polls every 5 s during a download and flips
     /// `isDownloadStalled` if the most recent progress tick is older than
@@ -164,6 +166,7 @@ public final class LocalModelStore {
     /// while injected defaults avoid reading or migrating the host's selection.
     init(defaults: UserDefaults?) {
         _sharedDefaults = defaults
+        notificationsEnabled = defaults == nil
         installations = OfflineModelInstaller.readRegistry(baseDirectory: CHLocalMLXStorage.baseDirectory)
         do {
             try OfflineModelInstaller.cleanAbandonedStaging(baseDirectory: CHLocalMLXStorage.baseDirectory)
@@ -229,6 +232,7 @@ public final class LocalModelStore {
     // MARK: - Completion notification
 
     private func fireCompletionNotification() {
+        guard notificationsEnabled else { return }
         let content = UNMutableNotificationContent()
         content.title = downloadCompletionTitle ?? appIdentifier.defaultDownloadCompletionTitle
         content.body = downloadCompletionBody ?? appIdentifier.defaultDownloadCompletionBody
@@ -294,9 +298,19 @@ public final class LocalModelStore {
     /// Same-ID offers retain current metadata so the picker can expose Update;
     /// installedModel(forID:) remains the authority for loading and selection.
     public var allModels: [LocalModelInfo] {
-        var models = LocalModelCatalog.all
+        allModels(catalog: LocalModelCatalog.all)
+    }
+
+    func allModels(catalog: [LocalModelInfo]) -> [LocalModelInfo] {
+        // A refresh may remove, retire, or replace an offer while its exact
+        // release is downloading. Keep that row and its Cancel action stable.
+        var models = catalog.map { model in
+            guard let inFlight = activeDownloadModel, inFlight.id == model.id else { return model }
+            return inFlight
+        }
         var seen = Set(models.map(\.id))
-        for model in installedModels + customModels.map({ localModelInfo(for: $0) }) {
+        let inFlight = activeDownloadModel.map { [$0] } ?? []
+        for model in inFlight + installedModels + customModels.map({ localModelInfo(for: $0) }) {
             if seen.insert(model.id).inserted { models.append(model) }
         }
         return models
@@ -409,6 +423,7 @@ public final class LocalModelStore {
         let generation = UUID()
         downloadGeneration = generation
         activeDownloadModelID = model.id
+        activeDownloadModel = model
         downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
         speedRing.removeAll()
         lastTickTime = Date()
@@ -421,6 +436,7 @@ public final class LocalModelStore {
         let baseDirectory = CHLocalMLXStorage.baseDirectory
         activeTask = Task { [weak self] in
             do {
+                try Task.checkCancellation()
                 if model.release != nil {
                     let staged = try await OfflineModelInstaller.stage(model, baseDirectory: baseDirectory, progress: { [weak self] received, total in
                         Task { @MainActor [weak self] in
@@ -510,6 +526,7 @@ public final class LocalModelStore {
         downloadGeneration = nil
         activeTask = nil
         activeDownloadModelID = nil
+        activeDownloadModel = nil
         stopStallWatcher()
         isDownloadStalled = false
         currentDownloadSpeedBytesPerSecond = nil
@@ -648,15 +665,13 @@ public final class LocalModelStore {
     public func deleteModel(_ model: LocalModelInfo) {
         if activeDownloadModelID == model.id { cancelDownload() }
         let dir = modelURL(for: model)
+        let result: OfflineModelInstaller.DeletionResult
         do {
-            var updated = installations
-            updated.removeValue(forKey: model.id)
-            if !OfflineModelInstaller.isDirectoryReferenced(dir, by: updated, baseDirectory: CHLocalMLXStorage.baseDirectory),
-               FileManager.default.fileExists(atPath: dir.path) {
-                try FileManager.default.removeItem(at: dir)
-            }
-            try OfflineModelInstaller.writeRegistry(updated, baseDirectory: CHLocalMLXStorage.baseDirectory)
-            installations = updated
+            result = try OfflineModelInstaller.removeInstallation(
+                modelID: model.id, directory: dir, replacing: installations,
+                baseDirectory: CHLocalMLXStorage.baseDirectory
+            )
+            installations = result.installations
         } catch {
             downloadState = .failed(error.localizedDescription)
             return
@@ -665,6 +680,9 @@ public final class LocalModelStore {
         if model.isCustom {
             customModels.removeAll { $0.id == model.id }
             persistCustomModels()
+        }
+        if result.fileCleanupFailed {
+            downloadState = .failed("The model was removed from your installed models, but some files could not be deleted.")
         }
     }
 
@@ -699,6 +717,7 @@ public final class LocalModelStore {
         guard let installed = installedModel(forID: model.id),
               (try? OfflineModelInstaller.validateSnapshot(at: modelURL(for: installed), model: installed)) != nil
         else { return }
+        pendingActiveModelID = nil
         activeModelID = installed.id
         sharedDefaults.set(installed.id, forKey: Self.activeModelKey)
         registerInstalledProvider(installed)
@@ -739,6 +758,7 @@ public final class LocalModelStore {
     // MARK: - Helpers
 
     private func requestNotificationPermission() {
+        guard notificationsEnabled else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 

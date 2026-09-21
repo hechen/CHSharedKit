@@ -272,6 +272,10 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Offline model picker fixes (2.15.1)
+
+Catalog refresh now preserves in-progress download controls, and selecting an installed model cancels any pending automatic switch. Failed custom entries can be removed, repository checks reject stale responses, and errors retain their actual cause. Installed license labels describe the installed revision. Deleting a model preserves its files if updating the installation registry fails.
+
 ### Remote offline model catalog (2.15.0)
 
 CHLocalLLM model listings now refresh from the same public catalog repository as
