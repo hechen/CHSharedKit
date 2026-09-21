@@ -140,6 +140,29 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         _loadTask?.cancel()
     }
 
+    /// Installation checks own their load directly instead of joining warmUp's
+    /// intentionally persistent task. A cancelled check keeps its serialization
+    /// slot until native loading/generation returns, even past the deadline.
+    /// Synchronous MLX work cannot be forcibly interrupted safely.
+    static func validateInstallation(at directory: URL, model: LocalModelInfo) async throws {
+        try await LocalModelValidationCoordinator.shared.run {
+            try CHLocalMLXPlatform.requireSupported()
+            try Task.checkCancellation()
+            let container = try await Self.performLoad(url: directory, info: model, postNotifications: false)
+            try Task.checkCancellation()
+            let session = ChatSession(
+                container,
+                instructions: nil,
+                generateParameters: GenerateParameters(maxTokens: 8, maxKVSize: 1024, temperature: 0)
+            )
+            let response = try await session.respond(to: "Reply with OK.")
+            try Task.checkCancellation()
+            guard !response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw CHAIError.invalidResponse
+            }
+        }
+    }
+
     // MARK: - Model loading
 
     /// Returns the cached container if loaded; otherwise kicks off a single
@@ -193,8 +216,9 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
     }
 
     private static func performLoad(
-        url: URL, info: LocalModelInfo
+        url: URL, info: LocalModelInfo, postNotifications: Bool = true
     ) async throws -> ModelContainer {
+        try Task.checkCancellation()
         let t0 = Date()
         print("[CHLocalLLM] performLoad start id=\(info.id) name=\(info.displayName) url=\(url.path)")
 
@@ -222,29 +246,38 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         let hasTokenizerConfig = entries.contains("tokenizer_config.json")
         print("[CHLocalLLM] performLoad files: total=\(entries.count) safetensors=\(safetensorsCount) tokenizer.json=\(hasTokenizer) tokenizer_config.json=\(hasTokenizerConfig)")
 
-        await MainActor.run {
-            NotificationCenter.default.post(
-                name: .chLocalLLMWillLoad, object: nil,
-                userInfo: ["modelName": info.displayName]
-            )
+        if postNotifications {
+            await MainActor.run {
+                NotificationCenter.default.post(
+                    name: .chLocalLLMWillLoad, object: nil,
+                    userInfo: ["modelName": info.displayName]
+                )
+            }
         }
 
         do {
+            try Task.checkCancellation()
             print("[CHLocalLLM] performLoad calling LLMModelFactory.shared.loadContainer (this is the cold-start step, ~3-8 s on Apple Silicon)")
             let container = try await LLMModelFactory.shared.loadContainer(
                 from: url,
                 using: #huggingFaceTokenizerLoader()
             )
+            try Task.checkCancellation()
             let elapsed = Date().timeIntervalSince(t0)
             print("[CHLocalLLM] performLoad SUCCESS id=\(info.id) elapsed=\(String(format: "%.2f", elapsed))s")
-            await MainActor.run {
-                NotificationCenter.default.post(
-                    name: .chLocalLLMDidLoad, object: nil,
-                    userInfo: ["modelName": info.displayName]
-                )
+            if postNotifications {
+                await MainActor.run {
+                    NotificationCenter.default.post(
+                        name: .chLocalLLMDidLoad, object: nil,
+                        userInfo: ["modelName": info.displayName]
+                    )
+                }
             }
             return container
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
+            try Task.checkCancellation()
             let nserror = error as NSError
             print("[CHLocalLLM] performLoad ERROR id=\(info.id) domain=\(nserror.domain) code=\(nserror.code) desc=\(nserror.localizedDescription)")
             let lowered = nserror.localizedDescription.lowercased()
@@ -283,6 +316,58 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
             generateParameters: generateParameters
         )
         return session.streamResponse(to: prompt)
+    }
+}
+
+/// Serializes only installation validation, without occupying the main actor.
+/// Structured children propagate cancellation into the loader and drain before
+/// release; a timeout is a cancellation request, not a native execution kill.
+actor LocalModelValidationCoordinator {
+    static let shared = LocalModelValidationCoordinator()
+
+    private var isRunning = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    var queuedValidationCount: Int { waiters.count }
+
+    func run(
+        timeout: Duration = .seconds(60),
+        operation: @escaping @Sendable () async throws -> Void
+    ) async throws {
+        try Task.checkCancellation()
+        await acquire()
+        defer { release() }
+        try Task.checkCancellation()
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask {
+                try Task.checkCancellation()
+                try await operation()
+                try Task.checkCancellation()
+            }
+            group.addTask {
+                try await Task.sleep(for: timeout)
+                throw OfflineModelInstallationError.runtimeValidationTimedOut
+            }
+            defer { group.cancelAll() }
+            _ = try await group.next()
+        }
+        try Task.checkCancellation()
+    }
+
+    private func acquire() async {
+        if !isRunning {
+            isRunning = true
+            return
+        }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    private func release() {
+        if waiters.isEmpty {
+            isRunning = false
+        } else {
+            waiters.removeFirst().resume()
+        }
     }
 }
 

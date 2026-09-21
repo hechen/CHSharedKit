@@ -39,14 +39,14 @@ public enum AppIdentifier: String, Sendable {
 ///   automatically via swift-transformers.
 /// - `sizeBytes` is the approximate on-disk total of `.safetensors` + `.json`
 ///   files in the repo snapshot.
-public struct LocalModelInfo: Sendable, Identifiable, Equatable {
+public struct LocalModelInfo: Codable, Sendable, Identifiable, Equatable {
 
     // MARK: Stored properties
 
     public let id: String
     public let displayName: String
     public let description: String
-    /// Approximate on-disk total in bytes (sum of safetensors + JSON files).
+    /// Manifest file total for pinned releases; estimate for legacy/custom entries.
     public let sizeBytes: Int64
     public let quantization: String
     /// Hugging Face repo homepage URL. Use ``CHLocalMLXRepoID/from(_:)`` to
@@ -55,7 +55,7 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
     /// Expected SHA-256 hex digest. Always nil for MLX repos (Hub manages
     /// integrity per-file via ETags); retained for API parity with 2.4.x.
     public let sha256: String?
-    /// Minimum device RAM in whole GB required for reliable inference.
+    /// Estimated minimum device RAM in whole GB; not a runtime guarantee.
     public let minRAM_GB: Int
     /// License governing model use.
     public let license: LicenseType
@@ -72,6 +72,10 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
     public let strengths: [String]
     /// True for models added by the user via URL, false for catalog entries.
     public let isCustom: Bool
+    /// Exact downloadable release and catalog policy; nil for legacy/custom entries.
+    public let release: LocalModelRelease?
+
+    public var licenseDisplayName: String { release?.licenseName ?? license.rawValue }
 
     // MARK: Computed metadata
 
@@ -92,9 +96,11 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         case mit = "MIT"
         case llamaCommunity = "Llama Community"
         case gemma = "Gemma ToU"
+        case qwenResearch = "Qwen Research"
+        case other = "Other"
     }
 
-    public enum QualityTier: String, Sendable {
+    public enum QualityTier: String, Sendable, Codable {
         case fast = "Fast"
         case balanced = "Balanced"
         case higher = "Higher Quality"
@@ -133,7 +139,8 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         chatTemplate: ChatTemplate,
         languages: [String] = [],
         strengths: [String] = [],
-        isCustom: Bool = false
+        isCustom: Bool = false,
+        release: LocalModelRelease? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -150,11 +157,13 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
         self.languages = languages
         self.strengths = strengths
         self.isCustom = isCustom
+        self.release = release
     }
 
     // MARK: Per-app recommendation score (higher = better fit)
 
     public func recommendationScore(for app: AppIdentifier) -> Int {
+        if let release { return release.recommendations[app == .gymlog ? "liftcoach" : app.rawValue]?.score ?? 0 }
         switch (app, id) {
         // closet
         case (.closet, "phi3.5-mini-q4km"):         return 11
@@ -229,6 +238,7 @@ public struct LocalModelInfo: Sendable, Identifiable, Equatable {
     // MARK: Per-app task hint
 
     public func taskHint(for app: AppIdentifier) -> String {
+        if let release { return release.recommendations[app == .gymlog ? "liftcoach" : app.rawValue]?.reason ?? "Not yet evaluated for this app" }
         switch (app, id) {
         // distill
         case (.distill, "phi3.5-mini-q4km"):       return "Best reasoning for article summaries — top pick"
@@ -376,8 +386,9 @@ public enum LocalModelCatalog {
         quantization: "MLX-4bit",
         downloadURL: huggingFaceURL("mlx-community/Qwen2.5-3B-Instruct-4bit"),
         minRAM_GB: 6,
-        license: .apache2,
+        license: .qwenResearch,
         quality: .higher,
+        requiresAcknowledgment: true,
         chatTemplate: .chatML,
         languages: ["English", "Chinese", "French", "Spanish", "Arabic", "Japanese"],
         strengths: ["Strong reasoning", "Multilingual", "Efficient inference"]
@@ -544,7 +555,8 @@ public enum LocalModelCatalog {
 
     // MARK: Registry
 
-    public static let all: [LocalModelInfo] = [
+    /// Previous catalog retained for migration of installed selections only.
+    public static let legacyModels: [LocalModelInfo] = [
         qwen2_5_0_5B,
         qwen2_5_1_5B,
         qwen2_5_3B,
@@ -558,8 +570,15 @@ public enum LocalModelCatalog {
         qwen2VL_2B,
     ]
 
-    /// Default model for new installs (per 2.5.0 spec): Qwen 2.5 3B Instruct (4-bit).
-    public static let `default`: LocalModelInfo = qwen2_5_3B
+    /// Validated bundled/cached/remote metadata; refreshing never downloads weights.
+    public static var all: [LocalModelInfo] { CHOfflineModelCatalog.snapshot.models }
+
+    /// Keep the default resolvable even when a later manifest retires an entry.
+    public static var `default`: LocalModelInfo {
+        all.first { $0.id == qwen2_5_1_5B.id && CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil }
+            ?? all.first { CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil }
+            ?? qwen2_5_1_5B
+    }
 
     /// True for catalog entries that can accept image input via ``CHLocalVLMProvider``.
     public static func isVisionCapable(_ id: String) -> Bool {

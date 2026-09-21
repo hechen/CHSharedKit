@@ -66,7 +66,7 @@ public enum CHLocalMLXRepoID {
     /// Extracts the `org/name` repo id from a `huggingface.co/...` URL.
     /// Returns nil if the URL is not a Hugging Face repo URL.
     public static func from(_ url: URL) -> String? {
-        guard let host = url.host, host.contains("huggingface.co") else { return nil }
+        guard url.scheme?.lowercased() == "https", url.host?.lowercased() == "huggingface.co" else { return nil }
         // Strip leading "/", drop trailing path components like /resolve/.../file.
         let parts = url.path.split(separator: "/").map(String.init)
         guard parts.count >= 2 else { return nil }
@@ -159,14 +159,28 @@ public enum CHLocalMLXStorage {
         return canonical
     }
 
-    /// Heuristic for "this directory contains a usable MLX model snapshot":
-    /// `config.json` plus at least one `.safetensors` file at the top level.
+    /// Structural completeness only; this does not claim cryptographic verification.
+    /// Pinned installations additionally verify every declared file before activation.
     public static func isSnapshotPresent(at directory: URL) -> Bool {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: directory.appendingPathComponent("config.json").path)
+        func nonemptyFile(_ path: String) -> Bool {
+            guard OfflineModelInstaller.isSafeRelativePath(path),
+                  let values = try? directory.appendingPathComponent(path).resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
+            else { return false }
+            return values.isRegularFile == true && (values.fileSize ?? 0) > 0
+        }
+        guard nonemptyFile("config.json"), nonemptyFile("tokenizer_config.json"),
+              nonemptyFile("tokenizer.json") || nonemptyFile("tokenizer.model")
         else { return false }
         let contents = (try? fm.contentsOfDirectory(atPath: directory.path)) ?? []
-        return contents.contains { $0.hasSuffix(".safetensors") }
+        if contents.contains("model.safetensors.index.json") {
+            guard let data = try? Data(contentsOf: directory.appendingPathComponent("model.safetensors.index.json")),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let weights = json["weight_map"] as? [String: String], !weights.isEmpty
+            else { return false }
+            return Set(weights.values).allSatisfy(nonemptyFile)
+        }
+        return contents.contains { $0.hasSuffix(".safetensors") && nonemptyFile($0) }
     }
 
     #if canImport(Hub)
@@ -193,7 +207,10 @@ public enum CHLocalMLXStorage {
 @MainActor
 @discardableResult
 public func registerCHLocalLLMProvider() -> CHLocalLLMProvider? {
-    let installed = LocalModelStore.shared.installedModels
+    let store = LocalModelStore.shared
+    let installed = store.installedModels.filter {
+        (try? OfflineModelInstaller.validateSnapshot(at: store.modelURL(for: $0), model: $0)) != nil
+    }
     guard let model = installed.first(where: { $0.id == LocalModelCatalog.default.id })
             ?? installed.first else { return nil }
     let provider = CHLocalLLMProvider(

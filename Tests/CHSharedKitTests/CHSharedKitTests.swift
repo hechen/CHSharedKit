@@ -327,6 +327,24 @@ struct CHAIActiveOnDeviceModelTests {
     /// CHSharedKit-side label resolver hardcodes this string too.
     private let onDeviceProviderID = "on-device-llm"
 
+    @Test("Removing an active host provider releases registration and selects local Apple Intelligence")
+    func unregisterActiveProviderDoesNotChooseCloud() {
+        let manager = CHAIManager.shared
+        let priorSelection = manager.activeProviderID
+        let priorProvider = manager.provider(id: onDeviceProviderID)
+        defer {
+            if let priorProvider { manager.registerProvider(priorProvider) }
+            manager.activeProviderID = priorSelection
+        }
+        manager.registerProvider(StubOnDeviceProvider())
+        manager.activeProviderID = onDeviceProviderID
+        manager.unregisterProvider(onDeviceProviderID)
+        #expect(manager.provider(id: onDeviceProviderID) == nil)
+        #expect(manager.activeProviderID == CHAppleIntelligenceProvider.providerID)
+        manager.unregisterProvider(CHAppleIntelligenceProvider.providerID)
+        #expect(manager.provider(id: CHAppleIntelligenceProvider.providerID) != nil)
+    }
+
     @Test("setActiveOnDeviceModel writes both @Published properties + fires objectWillChange")
     func setActiveOnDeviceModelFiresObjectWillChange() async {
         let manager = CHAIManager.shared
@@ -826,9 +844,11 @@ struct CHLocalMLXColdStartTests {
 @Suite("LocalModelCatalog (MLX 2.5.0)")
 struct LocalModelCatalogMLXTests {
 
-    @Test("Default model is Qwen 2.5 3B per 2.5.0 spec")
-    func defaultIsQwen3B() {
-        #expect(LocalModelCatalog.default.id == "qwen2.5-3b-q4km")
+    @Test("Default model is an active pinned candidate rather than the retired research model")
+    func defaultIsActivePinnedCandidate() {
+        #expect(LocalModelCatalog.default.id == "qwen2.5-1.5b-q4km")
+        #expect(LocalModelCatalog.default.release?.status == "active")
+        #expect(LocalModelCatalog.default.release?.revision.count == 40)
     }
 
     @Test("Every catalog entry has a parseable Hugging Face repo id")
@@ -851,7 +871,7 @@ struct LocalModelCatalogMLXTests {
         #expect(!LocalModelCatalog.isVisionCapable("does-not-exist"))
     }
 
-    @Test("All 2.4.x catalog ids are still present (recommendation/taskHint switches keep resolving)")
+    @Test("Legacy IDs remain available for migration independently of current download offers")
     func legacyIdsPreserved() {
         let legacyIDs: Set<String> = [
             "qwen2.5-0.5b-q4km", "qwen2.5-1.5b-q4km", "qwen2.5-3b-q4km",
@@ -859,15 +879,16 @@ struct LocalModelCatalogMLXTests {
             "phi3-mini-4k-q4", "phi3.5-mini-q4km",
             "gemma2-2b-q4km", "smollm2-1.7b-q4km", "deepseek-r1-1.5b-q4km",
         ]
-        let presentIDs = Set(LocalModelCatalog.all.map(\.id))
+        let presentIDs = Set(LocalModelCatalog.legacyModels.map(\.id))
         for id in legacyIDs {
-            #expect(presentIDs.contains(id), "Legacy id \(id) missing — recommendationScore/taskHint switches will break for it")
+            #expect(presentIDs.contains(id), "Legacy id \(id) must remain available for installed snapshot migration")
         }
     }
 }
 
 // MARK: - 2.5.0 — Storage layout
 
+@MainActor
 @Suite("CHLocalMLXStorage")
 struct CHLocalMLXStorageTests {
 
@@ -953,6 +974,7 @@ struct LocalModelStoreAPITests {
 
 // MARK: - 2.5.3 — P0 storage path stability
 
+@MainActor
 @Suite("CHLocalMLXStorage 2.5.3 (P0 fix)", .serialized)
 struct CHLocalMLXStorage253Tests {
 
@@ -985,9 +1007,7 @@ struct CHLocalMLXStorage253Tests {
         CHLocalMLXStorage.legacyBaseDirectories = [tmp.appendingPathComponent("legacy")]
 
         let canonicalDir = CHLocalMLXStorage.localDirectory(forRepoID: "mlx-community/Test-1B")
-        try? FileManager.default.createDirectory(at: canonicalDir, withIntermediateDirectories: true)
-        try? Data("{}".utf8).write(to: canonicalDir.appendingPathComponent("config.json"))
-        try? Data().write(to: canonicalDir.appendingPathComponent("model.safetensors"))
+        _ = try? writeCompleteMLXFixture(at: canonicalDir)
 
         let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: "mlx-community/Test-1B")
         #expect(resolved.standardizedFileURL == canonicalDir.standardizedFileURL)
@@ -1012,9 +1032,7 @@ struct CHLocalMLXStorage253Tests {
         let legacyDir = legacy
             .appendingPathComponent("models", isDirectory: true)
             .appendingPathComponent("mlx-community/Test-1B", isDirectory: true)
-        try? FileManager.default.createDirectory(at: legacyDir, withIntermediateDirectories: true)
-        try? Data("{}".utf8).write(to: legacyDir.appendingPathComponent("config.json"))
-        try? Data().write(to: legacyDir.appendingPathComponent("model.safetensors"))
+        _ = try? writeCompleteMLXFixture(at: legacyDir)
 
         let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: "mlx-community/Test-1B")
         #expect(
@@ -1042,7 +1060,7 @@ struct CHLocalMLXStorage253Tests {
         #expect(resolved.standardizedFileURL == canonical.standardizedFileURL)
     }
 
-    @Test("isSnapshotPresent requires config.json + at least one .safetensors file")
+    @Test("Snapshot presence requires nonempty weights and tokenizer files")
     func snapshotPresenceHeuristic() {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("CHStorage253-\(UUID().uuidString)", isDirectory: true)
@@ -1055,6 +1073,8 @@ struct CHLocalMLXStorage253Tests {
         #expect(!CHLocalMLXStorage.isSnapshotPresent(at: tmp))
 
         try? Data().write(to: tmp.appendingPathComponent("model.safetensors"))
+        #expect(!CHLocalMLXStorage.isSnapshotPresent(at: tmp))
+        _ = try? writeCompleteMLXFixture(at: tmp)
         #expect(CHLocalMLXStorage.isSnapshotPresent(at: tmp))
     }
 }
@@ -1109,15 +1129,17 @@ struct VerifyOnLaunchTests {
         let legacyDir = tmp.appendingPathComponent("legacy")
             .appendingPathComponent("models", isDirectory: true)
             .appendingPathComponent(repoID, isDirectory: true)
-        try? FileManager.default.createDirectory(at: legacyDir, withIntermediateDirectories: true)
-        try? Data("{}".utf8).write(to: legacyDir.appendingPathComponent("config.json"))
-        try? Data(repeating: 0, count: 1024).write(to: legacyDir.appendingPathComponent("model.safetensors"))
+        let plantedBytes = try? writeCompleteMLXFixture(at: legacyDir)
 
-        let report = CHLocalModelStore.verifyOnLaunch()
+        let suiteName = "CHOfflineCatalogStorageTest.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = LocalModelStore(defaults: defaults)
+        let report = CHLocalModelStore.verifyOnLaunch(store: store)
         let qwenEntry = report.installedModels.first { $0.id == qwen.id }
         #expect(qwenEntry != nil, "Qwen 2.5 3B planted in legacy dir should be detected")
         #expect(qwenEntry?.isLegacyLocation == true, "Legacy-located models must be flagged as such")
-        #expect(qwenEntry?.sizeBytes == Int64(1024 + 2)) // safetensors + config.json ("{}" = 2 bytes)
+        #expect(qwenEntry?.sizeBytes == plantedBytes)
 
         try? FileManager.default.removeItem(at: tmp)
     }
@@ -1145,11 +1167,12 @@ struct LocalModelStore254Tests {
 
         let qwen = LocalModelCatalog.qwen2_5_3B
         let dir = CHLocalMLXStorage.localDirectory(forRepoID: CHLocalMLXRepoID.from(qwen.downloadURL)!)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? Data("{}".utf8).write(to: dir.appendingPathComponent("config.json"))
-        try? Data().write(to: dir.appendingPathComponent("model.safetensors"))
+        _ = try? writeCompleteMLXFixture(at: dir)
 
-        let store = LocalModelStore.shared
+        let suiteName = "CHOfflineCatalogSelectionTest.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let store = LocalModelStore(defaults: defaults)
         let priorActive = store.activeModelID
         defer {
             if let priorActive,
@@ -1859,4 +1882,18 @@ struct ChatMessageTypes270Tests {
         #expect(msg.role == .assistant)
         #expect(msg.content.contains("**markdown**"))
     }
+}
+
+// Structural fixture only; no runtime inference is attempted in storage tests.
+@discardableResult
+private func writeCompleteMLXFixture(at directory: URL) throws -> Int64 {
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let files: [String: Data] = [
+        "config.json": Data(#"{"model_type":"qwen2"}"#.utf8),
+        "tokenizer_config.json": Data("{}".utf8),
+        "tokenizer.json": Data("{}".utf8),
+        "model.safetensors": Data(repeating: 1, count: 32)
+    ]
+    for (path, data) in files { try data.write(to: directory.appendingPathComponent(path)) }
+    return Int64(files.values.reduce(0) { $0 + $1.count })
 }

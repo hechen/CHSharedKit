@@ -228,6 +228,15 @@ public final class CHAIManager: ObservableObject {
         providers[provider.id] = provider
     }
 
+    /// Release a host-registered provider, for example after deleting its local
+    /// model. Removing an active offline model must never select a cloud service.
+    public func unregisterProvider(_ id: String) {
+        guard hostProviderIDs.remove(id) != nil else { return }
+        objectWillChange.send()
+        providers.removeValue(forKey: id)
+        if activeProviderID == id { activeProviderID = CHAppleIntelligenceProvider.providerID }
+    }
+
     /// Reconcile only catalog-owned registrations; host overrides remain authoritative.
     func synchronizeCatalogProviders(_ manifest: CHAICloudModelCatalogManifest) {
         objectWillChange.send()

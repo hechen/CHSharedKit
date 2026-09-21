@@ -1,0 +1,919 @@
+{
+  "schemaVersion": 1,
+  "revision": 1,
+  "models": [
+    {
+      "chatTemplate": "chatML",
+      "description": "Alibaba Qwen 2.5 0.5B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Qwen 2.5 0.5B",
+      "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+      "id": "qwen2.5-0.5b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "Chinese",
+        "French",
+        "Spanish"
+      ],
+      "license": "Apache 2.0",
+      "minRAM_GB": 1,
+      "quality": "Fast",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 287926944,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+        "revision": "a5339a4131f135d0fdc6a5c8b5bbed2753bbe0f3",
+        "runtime": "mlx-text",
+        "modelType": "qwen2",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "added_tokens.json",
+            "sizeBytes": 605,
+            "sha256": "58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b"
+          },
+          {
+            "path": "config.json",
+            "sizeBytes": 783,
+            "sha256": "b045e57ea90b8f1b35f89f954b176a5c1faa02bd0af2c89bcec191239d66cef4"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 278064920,
+            "sha256": "ddffab9cbc7bf6dde941c6724841eeca8981fcfa81ca20ff8efff1396326d153"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 44209,
+            "sha256": "54001cb4c11197119c206dde28e7be08e5872aab6c6d271aed339ec77e84f870"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 613,
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 7031673,
+            "sha256": "a8506e7111b80c6d8635951a02eab0f4e1a8e4e5772da83846579e97b16f61bf"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 7308,
+            "sha256": "f7c61e32b7a17d19bf8e7037dcb74079a833e53ea9801f24008cac68458f03b7"
+          },
+          {
+            "path": "vocab.json",
+            "sizeBytes": 2776833,
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 5,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 3,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 4,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 4,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 5,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 3,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "Alibaba Qwen 2.5 1.5B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Qwen 2.5 1.5B",
+      "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-1.5B-Instruct-4bit",
+      "id": "qwen2.5-1.5b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "Chinese",
+        "French",
+        "Spanish",
+        "Arabic"
+      ],
+      "license": "Apache 2.0",
+      "minRAM_GB": 4,
+      "quality": "Balanced",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 878497944,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Qwen2.5-1.5B-Instruct-4bit",
+        "revision": "8b403126fc14f14cfc99bb4cfa72ecbc129ea677",
+        "runtime": "mlx-text",
+        "modelType": "qwen2",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "added_tokens.json",
+            "sizeBytes": 605,
+            "sha256": "58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b"
+          },
+          {
+            "path": "config.json",
+            "sizeBytes": 784,
+            "sha256": "636d3e2a15e8914b8cf82b05cc2288a811f9bd93c3bf1afc00cab701a70b47c0"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 868628559,
+            "sha256": "0979f33d1bc58afcf696d13f57977644e7b11a6f0eec3e631d8e9463d18c0717"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 51569,
+            "sha256": "6b98634d5044f0e2ad45228a374f8445904e571f1082392d08a6ce54f5d517ca"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 613,
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 7031673,
+            "sha256": "a8506e7111b80c6d8635951a02eab0f4e1a8e4e5772da83846579e97b16f61bf"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 7308,
+            "sha256": "f7c61e32b7a17d19bf8e7037dcb74079a833e53ea9801f24008cac68458f03b7"
+          },
+          {
+            "path": "vocab.json",
+            "sizeBytes": 2776833,
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 10,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 5,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 8,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 6,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 10,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 6,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "Qwen 2.5 3B Instruct · MLX 4-bit · Retired from new downloads; Qwen Research license",
+      "displayName": "Qwen 2.5 3B",
+      "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-3B-Instruct-4bit",
+      "id": "qwen2.5-3b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "Chinese",
+        "French",
+        "Spanish",
+        "Arabic",
+        "Japanese"
+      ],
+      "license": "Qwen Research",
+      "minRAM_GB": 6,
+      "quality": "Higher Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": true,
+      "sizeBytes": 1746177197,
+      "strengths": [
+        "Existing installation metadata",
+        "Separate commercial permission required"
+      ],
+      "release": {
+        "repoID": "mlx-community/Qwen2.5-3B-Instruct-4bit",
+        "revision": "4f83f8f146fdf28b512a06562b671d7af4fab457",
+        "runtime": "mlx-text",
+        "modelType": "qwen2",
+        "minimumRuntimeVersion": 1,
+        "status": "retired",
+        "files": [
+          {
+            "path": "added_tokens.json",
+            "sizeBytes": 605,
+            "sha256": "58b54bbe36fc752f79a24a271ef66a0a0830054b4dfad94bde757d851968060b"
+          },
+          {
+            "path": "config.json",
+            "sizeBytes": 785,
+            "sha256": "ceb97c46fe17f523ac42c0f0254fd18d9589f8725f0bbbe0bef541f8ef84547a"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 1736293090,
+            "sha256": "f212cf6fb9923281a09c135e05d43a052ee5ef7121f5b1dc0b0fb2de80f97cfd"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 66290,
+            "sha256": "7edb73f1af3c860b1344ece4abe04b258246afdfeba4cb39d3b84a0459890bee"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 613,
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 7031673,
+            "sha256": "a8506e7111b80c6d8635951a02eab0f4e1a8e4e5772da83846579e97b16f61bf"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 7308,
+            "sha256": "f7c61e32b7a17d19bf8e7037dcb74079a833e53ea9801f24008cac68458f03b7"
+          },
+          {
+            "path": "vocab.json",
+            "sizeBytes": 2776833,
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 0,
+            "reason": "Retired from new downloads; separate commercial permission required.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "llama3",
+      "description": "Meta Llama 3.2 1B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Llama 3.2 1B",
+      "downloadURL": "https://huggingface.co/mlx-community/Llama-3.2-1B-Instruct-4bit",
+      "id": "llama3.2-1b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "German",
+        "French",
+        "Italian",
+        "Spanish"
+      ],
+      "license": "Llama Community",
+      "minRAM_GB": 3,
+      "quality": "Fast",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": true,
+      "sizeBytes": 712575975,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Llama-3.2-1B-Instruct-4bit",
+        "revision": "08231374eeacb049a0eade7922910865b8fce912",
+        "runtime": "mlx-text",
+        "modelType": "llama",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "config.json",
+            "sizeBytes": 1121,
+            "sha256": "73bfb89e5a43c76ada2d7a9609862139578a71cfbb43e30bf5d4571026dd3741"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 695283921,
+            "sha256": "35e396644bca888eec399f9c0f843ec7fa78b8f8c5e06841661be62b4edf96dd"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 26159,
+            "sha256": "437f66af94c5f921f4fbe465341bdee4dc6a37ab8f29bbb12fd7caad577dedd7"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 296,
+            "sha256": "6f38c73729248f6c127296386e3cdde96e254636cc58b4169d3fd32328d9a8ec"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 17209920,
+            "sha256": "6b9e4e7fb171f92fd137b777cc2714bf87d11576700a1dcd7a399e7bbe39537b"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 54558,
+            "sha256": "022d5ae3df4737998ab97d8f31ac2bcb4c06dd8ebe5a8aba2b4aceef1e5ea7d3"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 4,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 4,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 4,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 4,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 4,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 5,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "llama3",
+      "description": "Meta Llama 3.2 3B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Llama 3.2 3B",
+      "downloadURL": "https://huggingface.co/mlx-community/Llama-3.2-3B-Instruct-4bit",
+      "id": "llama3.2-3b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "German",
+        "French",
+        "Italian",
+        "Spanish",
+        "Hindi",
+        "Portuguese"
+      ],
+      "license": "Llama Community",
+      "minRAM_GB": 6,
+      "quality": "Higher Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": true,
+      "sizeBytes": 1824807894,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Llama-3.2-3B-Instruct-4bit",
+        "revision": "7f0dc925e0d0afb0322d96f9255cfddf2ba5636e",
+        "runtime": "mlx-text",
+        "modelType": "llama",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "config.json",
+            "sizeBytes": 1122,
+            "sha256": "c546925585e48f43890d9dc5150df4fec73dd3780d92961c5ace451934cc4cd6"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 1807496278,
+            "sha256": "d75e1ee0ea653cc5b76191ec934c7c0d568e94d4e47846619f1f4bc715b7b265"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 45720,
+            "sha256": "2ef31fa0b9dcda01f87835851d5e1d5a39ab6258ae618af6ea864c3747e556e4"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 296,
+            "sha256": "6f38c73729248f6c127296386e3cdde96e254636cc58b4169d3fd32328d9a8ec"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 17209920,
+            "sha256": "6b9e4e7fb171f92fd137b777cc2714bf87d11576700a1dcd7a399e7bbe39537b"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 54558,
+            "sha256": "022d5ae3df4737998ab97d8f31ac2bcb4c06dd8ebe5a8aba2b4aceef1e5ea7d3"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 8,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 7,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 9,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 9,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 7,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 7,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "Microsoft Phi-3 Mini 4k Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Phi-3 Mini",
+      "downloadURL": "https://huggingface.co/mlx-community/Phi-3-mini-4k-instruct-4bit",
+      "id": "phi3-mini-4k-q4",
+      "isCustom": false,
+      "languages": [
+        "English"
+      ],
+      "license": "MIT",
+      "minRAM_GB": 6,
+      "quality": "Highest Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 2151578230,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Phi-3-mini-4k-instruct-4bit",
+        "revision": "5b3819ed6317784fb20eddeae9bed984f778d0d0",
+        "runtime": "mlx-text",
+        "modelType": "phi3",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "config.json",
+            "sizeBytes": 1030,
+            "sha256": "0e2e43bc4358b4cabbcc33c496f34e170fdfe04612a47428f1691d1e9ec5a568"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 2149696167,
+            "sha256": "8d75680621a09474f6601e9176f2f61f92a5e4c079d68d583901f51699fda50a"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 32695,
+            "sha256": "4ef199a5c6c29fa54d84d3710bfad4b5424b75bbd68872f9e1e12234bd3fd9c3"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 569,
+            "sha256": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 1844436,
+            "sha256": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 3333,
+            "sha256": "d6e13c85fbde9cf71f663da027cf558ab2bb9df80bd60c718be10dbba8d2a2be"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 7,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 9,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 8,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 8,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 8,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 9,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "Microsoft Phi-3.5 Mini Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Phi-3.5 Mini",
+      "downloadURL": "https://huggingface.co/mlx-community/Phi-3.5-mini-instruct-4bit",
+      "id": "phi3.5-mini-q4km",
+      "isCustom": false,
+      "languages": [
+        "English"
+      ],
+      "license": "MIT",
+      "minRAM_GB": 6,
+      "quality": "Highest Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 2152081350,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/Phi-3.5-mini-instruct-4bit",
+        "revision": "7b2052fd882fe017300d4d42a4eb06a27b816af4",
+        "runtime": "mlx-text",
+        "modelType": "phi3",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "added_tokens.json",
+            "sizeBytes": 293,
+            "sha256": "5f5c94d30901fe9c961d776d51eadbda4454991a77b53d36e0be0571a8e72a7d"
+          },
+          {
+            "path": "config.json",
+            "sizeBytes": 4149,
+            "sha256": "6db0d08266c26038265c3a523917ff89214c4fd5893adbbb2cbca3128b9fa1d0"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 2149696133,
+            "sha256": "37e64496aa28fa5d5e4f29561f435defcbf6f7c8387f360c0aed45d37b93dfd7"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 32695,
+            "sha256": "4ef199a5c6c29fa54d84d3710bfad4b5424b75bbd68872f9e1e12234bd3fd9c3"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 569,
+            "sha256": "474d699677e264edd3851559548cbbb61801ad8da6b249c81455007602313c34"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 1844436,
+            "sha256": "d0f067e1e15cd0a36ebef3668024882cb67a80b86fb4b7b4b128481f0d474db7"
+          },
+          {
+            "path": "tokenizer.model",
+            "sizeBytes": 499723,
+            "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 3352,
+            "sha256": "cf1de23ab67807aed30e5145164c405c8c92890ca546112dd010de510fac3d1f"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 11,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 11,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 11,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 11,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 11,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 11,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "gemma",
+      "description": "Google Gemma 2 2B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "Gemma 2 2B",
+      "downloadURL": "https://huggingface.co/mlx-community/gemma-2-2b-it-4bit",
+      "id": "gemma2-2b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English"
+      ],
+      "license": "Gemma ToU",
+      "minRAM_GB": 5,
+      "quality": "Higher Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": true,
+      "sizeBytes": 1492850373,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/gemma-2-2b-it-4bit",
+        "revision": "2c715097ff9c081a6ac1e5cd239e2ac756b5bd99",
+        "runtime": "mlx-text",
+        "modelType": "gemma2",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "config.json",
+            "sizeBytes": 982,
+            "sha256": "41c1077a8a8b14f3e016c0000365aae99fb9eb128596c8378a178f717dca1640"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 1470988882,
+            "sha256": "f87c0f8cfa7bea0d01266bd04fae9b60babfa21a57eefbbaf5354321a0dabbf2"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 46678,
+            "sha256": "cb1ab8d56b40451421668d828f8650cbf17c2d901d6f43a16f9a0f3ab49e42c9"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 555,
+            "sha256": "db82f8bd9b25d14f9c788e6bde64de84d42f1c2538f1c245ba6cb3e872d14b18"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 17525357,
+            "sha256": "3f289bc05132635a8bc7aca7aa21255efd5e18f3710f43e3cdb96bcd41be4922"
+          },
+          {
+            "path": "tokenizer.model",
+            "sizeBytes": 4241003,
+            "sha256": "61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 46916,
+            "sha256": "f3a9ecd05833ba49de8432fff27b66bb061ad6a69d17df158de03dc07420e02a"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 8,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 6,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 7,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 7,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 6,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 7,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "DeepSeek-R1 Distill Qwen 1.5B · MLX 4-bit · Text model candidate; app inference unverified",
+      "displayName": "DeepSeek-R1 1.5B",
+      "downloadURL": "https://huggingface.co/mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
+      "id": "deepseek-r1-1.5b-q4km",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "Chinese"
+      ],
+      "license": "MIT",
+      "minRAM_GB": 4,
+      "quality": "Higher Quality",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 1011384346,
+      "strengths": [
+        "Text generation candidate",
+        "MLX 4-bit",
+        "App inference unverified"
+      ],
+      "release": {
+        "repoID": "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
+        "revision": "933185be1b8f81d9a21dcfa15ff73470d3545240",
+        "runtime": "mlx-text",
+        "modelType": "qwen2",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "config.json",
+            "sizeBytes": 885,
+            "sha256": "6acfef5ca4034c20cbdecc3ae28458235b6612574b0dee8ce75b37c11a68f6b3"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 999901724,
+            "sha256": "52809782c0af2ebd9c8a4269baaa3f219daab4f9bdd4f54c0d5d84352dc53edd"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 51710,
+            "sha256": "544f383a80134e296962f608a0333ac87431867c261ec8f7b79d1bcfa5a5938b"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 485,
+            "sha256": "59cda48bbe8bab9d61ffb410e6e3c07b6d98bff73cee7c88ff8b51f95f21ab1c"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 11422778,
+            "sha256": "e20ddafc659ba90242154b55275402edeca0715e5dbb30f56815a4ce081f4893"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 6764,
+            "sha256": "d9125f504eea1bb56c8bb7cfa32ae9b782ab8e0fc59a5cd58d1ef7728fb61273"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 5,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 9,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 8,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 7,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 9,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 9,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    }
+  ]
+}

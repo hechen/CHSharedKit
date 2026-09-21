@@ -272,6 +272,16 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Remote offline model catalog (2.15.0)
+
+CHLocalLLM model listings now refresh from the same public catalog repository as
+cloud providers, with a bundled fallback and a validated cache. Installed model
+revisions remain device-owned; changing listings never downloads weights or
+switches the active provider. Explicit updates verify pinned files and run a
+local smoke test before replacing the installed release. Recommendations require
+an app-specific evaluation record. See [offline catalog integration and update
+semantics](docs/OFFLINE_MODEL_CATALOG.md).
+
 ### Catalog-defined providers (2.14.0)
 
 `CHAICatalogProvider` registers providers whose optional catalog `api` descriptor

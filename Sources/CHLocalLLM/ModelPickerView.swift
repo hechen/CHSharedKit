@@ -2,6 +2,33 @@
 import SwiftUI
 import CHSharedKit
 
+private enum ModelLicenseAcknowledgment {
+    static func key(for model: LocalModelInfo) -> String {
+        "chlocallm.acked.\(model.id).\(model.release?.revision ?? "legacy")"
+    }
+
+    static func isRequired(for model: LocalModelInfo) -> Bool {
+        guard model.requiresAcknowledgment else { return false }
+        if UserDefaults.standard.bool(forKey: key(for: model)) { return false }
+        if model.release == nil && model.license == .llamaCommunity {
+            return !UserDefaults.standard.bool(forKey: "chlocallm.acked.llama")
+        }
+        return true
+    }
+
+    static func record(for model: LocalModelInfo) {
+        UserDefaults.standard.set(true, forKey: key(for: model))
+    }
+
+    static func termsURL(for model: LocalModelInfo) -> URL {
+        if let url = model.release?.licenseURL { return url }
+        if model.license == .llamaCommunity {
+            return URL(string: "https://www.llama.com/llama-downloads")!
+        }
+        return model.downloadURL
+    }
+}
+
 // MARK: - ModelPickerView
 
 /// Scrollable model picker with per-app recommendations, device compatibility badges,
@@ -11,7 +38,9 @@ public struct ModelPickerView: View {
     public var onDismiss: (() -> Void)?
 
     @State private var store = LocalModelStore.shared
+    @ObservedObject private var catalog = CHOfflineModelCatalog.shared
     @State private var showAcknowledgmentFor: LocalModelInfo?
+    @State private var acknowledgmentIsUpdate = false
     @State private var showAddCustomModel = false
 
     private var deviceRAM_GB: Int {
@@ -20,20 +49,37 @@ public struct ModelPickerView: View {
 
     /// Catalog models sorted by recommendation score descending.
     private var sortedCatalogModels: [LocalModelInfo] {
-        LocalModelCatalog.all.sorted {
+        store.allModels.filter {
+            !$0.isCustom && !store.isInstalled($0) && ($0.release?.status ?? "active") == "active"
+        }.sorted {
             let sa = $0.recommendationScore(for: appIdentifier)
             let sb = $1.recommendationScore(for: appIdentifier)
             if sa != sb { return sa > sb }
-            return $0.sizeBytes < $1.sizeBytes
+            if $0.sizeBytes != $1.sizeBytes { return $0.sizeBytes < $1.sizeBytes }
+            return $0.id < $1.id
         }
     }
 
     private var recommendedModels: [LocalModelInfo] {
-        Array(sortedCatalogModels.prefix(3))
+        Array(sortedCatalogModels.filter {
+            $0.release?.recommendations[appIdentifier.rawValue == "gymlog" ? "liftcoach" : appIdentifier.rawValue]?.verification == "passed"
+                && CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil
+                && deviceRAM_GB >= $0.minRAM_GB
+        }.prefix(3))
     }
 
     private var otherCatalogModels: [LocalModelInfo] {
-        Array(sortedCatalogModels.dropFirst(3))
+        let recommendedIDs = Set(recommendedModels.map(\.id))
+        return sortedCatalogModels.filter { !recommendedIDs.contains($0.id) }
+    }
+
+    private var installedModels: [LocalModelInfo] {
+        store.allModels.filter { !$0.isCustom && store.isInstalled($0) }.sorted {
+            if ($0.id == store.activeModelID) != ($1.id == store.activeModelID) {
+                return $0.id == store.activeModelID
+            }
+            return $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
     }
 
     private var customModelInfos: [LocalModelInfo] {
@@ -48,20 +94,34 @@ public struct ModelPickerView: View {
     public var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                // Recommended section
-                sectionHeader("Recommended for \(appIdentifier.displayName)")
-                ForEach(Array(recommendedModels.enumerated()), id: \.element.id) { index, model in
-                    modelCard(model, isTopRecommendation: index == 0)
-                        .padding(.horizontal)
-                        .padding(.bottom, 10)
+                catalogStatus
+                    .padding(.horizontal)
+
+                if !installedModels.isEmpty {
+                    sectionHeader("Installed Models")
+                    ForEach(installedModels, id: \.id) { model in
+                        modelCard(model, isTopRecommendation: false)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
                 }
 
-                // All Models section
-                sectionHeader("All Models")
-                ForEach(otherCatalogModels, id: \.id) { model in
-                    modelCard(model, isTopRecommendation: false)
-                        .padding(.horizontal)
-                        .padding(.bottom, 10)
+                if !recommendedModels.isEmpty {
+                    sectionHeader("Recommended for \(appIdentifier.displayName)")
+                    ForEach(Array(recommendedModels.enumerated()), id: \.element.id) { index, model in
+                        modelCard(model, isTopRecommendation: index == 0)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
+                }
+
+                if !otherCatalogModels.isEmpty {
+                    sectionHeader("Available Models")
+                    ForEach(otherCatalogModels, id: \.id) { model in
+                        modelCard(model, isTopRecommendation: false)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+                    }
                 }
 
                 // Custom Models section
@@ -84,6 +144,8 @@ public struct ModelPickerView: View {
         }
         .navigationTitle("Choose a Model")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await catalog.refreshIfNeeded() }
+        .refreshable { await catalog.refresh() }
         .toolbar {
             if let onDismiss {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -95,10 +157,11 @@ public struct ModelPickerView: View {
         .sheet(item: $showAcknowledgmentFor) { model in
             LlamaAcknowledgmentSheet(model: model) {
                 showAcknowledgmentFor = nil
-                // 2.5.4: post-acknowledgment, kick straight into select-and-download.
-                // The previous two-step pre-download sheet is removed; the card
-                // already shows size, RAM, and license.
-                store.selectAndDownload(model)
+                if acknowledgmentIsUpdate {
+                    store.downloadModel(model)
+                } else {
+                    store.selectAndDownload(model)
+                }
             } onCancel: {
                 showAcknowledgmentFor = nil
             }
@@ -120,6 +183,35 @@ public struct ModelPickerView: View {
 
     // MARK: Helpers
 
+    private var catalogStatus: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                if catalog.isRefreshing {
+                    ProgressView().controlSize(.small)
+                    Text("Checking for model updates…")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Refresh Models", systemImage: "arrow.clockwise") {
+                    Task { await catalog.refresh() }
+                }
+                .font(.caption)
+                .disabled(catalog.isRefreshing)
+            }
+            if catalog.lastRefreshError != nil {
+                Text("Couldn’t refresh the model list. Your saved list and installed models are still available.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if case .failed = store.downloadState {
+                Text("The model download couldn’t finish. Your installed models are unchanged. Choose Use or Update to try again.")
+                    .font(.caption).foregroundStyle(.orange)
+            }
+            Text("Refreshing checks availability. Model downloads start only when you choose them.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 8)
+    }
+
     @ViewBuilder
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
@@ -140,6 +232,7 @@ public struct ModelPickerView: View {
             deviceRAM_GB: deviceRAM_GB,
             store: store,
             onSelectTapped: { handleSelectTapped(model) },
+            onUpdateTapped: { handleUpdateTapped(model) },
             onCancelDownload: { store.cancelDownload() },
             onRetryDownload: { store.retryDownload(model) },
             onRemove: { store.deleteModel(model) }
@@ -158,7 +251,7 @@ public struct ModelPickerView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Add Custom Model")
                         .font(.subheadline.weight(.medium))
-                    Text("Paste any HuggingFace GGUF URL")
+                    Text("Add a Hugging Face MLX model")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -180,11 +273,24 @@ public struct ModelPickerView: View {
     /// redundant. Only the Llama community-license acknowledgment sheet
     /// is kept because Meta's terms require explicit one-time consent.
     private func handleSelectTapped(_ model: LocalModelInfo) {
-        let llamaAcked = UserDefaults.standard.bool(forKey: "chlocallm.acked.llama")
-        if model.requiresAcknowledgment && !llamaAcked {
+        if store.isInstalled(model) {
+            store.setActiveModel(model)
+            return
+        }
+        if ModelLicenseAcknowledgment.isRequired(for: model) {
+            acknowledgmentIsUpdate = false
             showAcknowledgmentFor = model
         } else {
             store.selectAndDownload(model)
+        }
+    }
+
+    private func handleUpdateTapped(_ model: LocalModelInfo) {
+        if ModelLicenseAcknowledgment.isRequired(for: model) {
+            acknowledgmentIsUpdate = true
+            showAcknowledgmentFor = model
+        } else {
+            store.downloadModel(model)
         }
     }
 }
@@ -218,6 +324,7 @@ private enum ModelCardState {
     /// inline progress UI shows a "Stalled — Retry" banner instead of the
     /// frozen byte/speed numbers.
     case downloading(progress: Double, received: Int64, total: Int64, speed: Double?, eta: TimeInterval?, stalled: Bool)
+    case installing
     case pendingActive
     case installed
     case active
@@ -230,20 +337,39 @@ private struct ModelCard: View {
     let deviceRAM_GB: Int
     var store: LocalModelStore
     let onSelectTapped: () -> Void
+    let onUpdateTapped: () -> Void
     let onCancelDownload: () -> Void
     let onRetryDownload: () -> Void
     let onRemove: () -> Void
 
-    private var isCompatible: Bool { deviceRAM_GB >= model.minRAM_GB }
-    private var isBorderline: Bool { deviceRAM_GB == model.minRAM_GB - 1 }
+    private var displayModel: LocalModelInfo { store.installedModel(forID: model.id) ?? model }
+    private var downloadIssue: String? { CHOfflineModelCatalog.compatibilityIssue(for: model) }
+    private var installedUseIssue: String? {
+        guard let installed = store.installedModel(forID: model.id) else { return nil }
+        do {
+            try CHLocalMLXPlatform.requireSupported()
+            try OfflineModelInstaller.validateSnapshot(at: store.modelURL(for: installed), model: installed)
+            return nil
+        } catch {
+            if LocalModelCatalog.isVisionCapable(installed.id) {
+                return "This is an image model. Choose a text model for this app."
+            }
+            return "Your installed copy isn’t supported by this version of the app. You can remove it to free space."
+        }
+    }
+    private var hasUpdate: Bool { store.updateAvailable(for: model) }
+    private var isRetiredOrRemoved: Bool {
+        !model.isCustom && (model.release?.status == "retired" || !LocalModelCatalog.all.contains { $0.id == model.id })
+    }
+    private var isCompatible: Bool { deviceRAM_GB >= displayModel.minRAM_GB }
+    private var isBorderline: Bool { deviceRAM_GB == displayModel.minRAM_GB - 1 }
     private var isInstalled: Bool { store.isInstalled(model) }
-    private var isActive: Bool { store.activeModelID == model.id && isInstalled }
+    private var isActive: Bool { store.activeModelID == model.id && isInstalled && installedUseIssue == nil }
     private var isDownloadingThisModel: Bool { store.activeDownloadModelID == model.id }
     private var anyDownloadActive: Bool { store.activeDownloadModelID != nil }
     private var isPendingActive: Bool { store.pendingActiveModelID == model.id }
 
     private var state: ModelCardState {
-        if !isCompatible && !isBorderline { return .notCompatible }
         if isDownloadingThisModel, case .downloading(let p, let r, let t) = store.downloadState {
             return .downloading(
                 progress: p,
@@ -254,8 +380,10 @@ private struct ModelCard: View {
                 stalled: store.isDownloadStalled
             )
         }
+        if isDownloadingThisModel, case .installing = store.downloadState { return .installing }
         if isActive { return .active }
         if isInstalled { return .installed }
+        if downloadIssue != nil || (!isCompatible && !isBorderline) { return .notCompatible }
         if isPendingActive { return .pendingActive }
         return .notInstalled(canStart: !anyDownloadActive)
     }
@@ -264,15 +392,18 @@ private struct ModelCard: View {
         VStack(alignment: .leading, spacing: 10) {
             headerRow
             chipsRow
-            if !model.strengths.isEmpty {
+            if !displayModel.strengths.isEmpty {
                 strengthsRow
             }
             if !model.isCustom {
-                Text(model.taskHint(for: appIdentifier))
+                Text(displayModel.release == nil
+                     ? "Not yet evaluated for \(appIdentifier.displayName)"
+                     : displayModel.taskHint(for: appIdentifier))
                     .font(.caption)
                     .foregroundStyle(.indigo)
             }
             Divider()
+            releaseStatus
             actionView
         }
         .padding()
@@ -282,7 +413,7 @@ private struct ModelCard: View {
             RoundedRectangle(cornerRadius: 14)
                 .strokeBorder(borderColor, lineWidth: borderLineWidth)
         )
-        .opacity((isCompatible || isBorderline) ? 1.0 : 0.55)
+        .opacity((isInstalled || (downloadIssue == nil && (isCompatible || isBorderline))) ? 1.0 : 0.65)
     }
 
     private var borderColor: Color {
@@ -301,11 +432,13 @@ private struct ModelCard: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Text(model.displayName).font(.headline)
-                    qualityChip
-                    sizeCategoryChip
+                    Text(displayModel.displayName).font(.headline)
+                    if !model.isCustom {
+                        qualityChip
+                        sizeCategoryChip
+                    }
                 }
-                Text(model.description)
+                Text(model.isCustom ? "Added from Hugging Face" : displayModel.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -331,10 +464,10 @@ private struct ModelCard: View {
     @ViewBuilder
     private var chipsRow: some View {
         HStack(spacing: 6) {
-            licenseChip
+            if !model.isCustom { licenseChip }
             compatibilityChip
             Spacer()
-            Text(formattedSize(model.sizeBytes))
+            Text(displayModel.sizeBytes > 0 ? formattedSize(displayModel.sizeBytes) : "Size unknown")
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
         }
@@ -344,7 +477,7 @@ private struct ModelCard: View {
     private var strengthsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(model.strengths, id: \.self) { strength in
+                ForEach(displayModel.strengths, id: \.self) { strength in
                     Text(strength)
                         .font(.caption2)
                         .padding(.horizontal, 7).padding(.vertical, 3)
@@ -352,8 +485,8 @@ private struct ModelCard: View {
                         .foregroundStyle(.indigo)
                         .clipShape(Capsule())
                 }
-                if model.languages.count > 1 {
-                    Text("\(model.languages.count) languages")
+                if displayModel.languages.count > 1 {
+                    Text("\(displayModel.languages.count) languages")
                         .font(.caption2)
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Color(.systemGray5))
@@ -367,14 +500,14 @@ private struct ModelCard: View {
     @ViewBuilder
     private var qualityChip: some View {
         let color: Color = {
-            switch model.quality {
+            switch displayModel.quality {
             case .fast: return .orange
             case .balanced: return .blue
             case .higher: return .purple
             case .highest: return .indigo
             }
         }()
-        Text(model.quality.rawValue)
+        Text(displayModel.quality.rawValue)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(color.opacity(0.15))
@@ -384,7 +517,7 @@ private struct ModelCard: View {
 
     @ViewBuilder
     private var sizeCategoryChip: some View {
-        Text(model.sizeCategory.rawValue)
+        Text(displayModel.sizeCategory.rawValue)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Color(.systemGray5))
@@ -400,9 +533,11 @@ private struct ModelCard: View {
             case .mit: return .blue
             case .llamaCommunity: return .orange
             case .gemma: return .teal
+            case .qwenResearch: return .orange
+            case .other: return .secondary
             }
         }()
-        Text(model.license.rawValue)
+        Text(model.licenseDisplayName)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(color.opacity(0.15))
@@ -413,7 +548,8 @@ private struct ModelCard: View {
     @ViewBuilder
     private var compatibilityChip: some View {
         let (label, color): (String, Color) = {
-            if deviceRAM_GB >= model.minRAM_GB { return ("Compatible", .green) }
+            if installedUseIssue != nil || (!isInstalled && downloadIssue != nil) { return ("Not supported", .red) }
+            if deviceRAM_GB >= displayModel.minRAM_GB { return ("Meets memory estimate", .green) }
             if isBorderline { return ("May run slowly", .yellow) }
             return ("Not supported", .red)
         }()
@@ -428,12 +564,53 @@ private struct ModelCard: View {
     // MARK: Actions (2.5.4 state-driven)
 
     @ViewBuilder
+    private var releaseStatus: some View {
+        if model.isCustom {
+            Text("Custom model · Not evaluated for \(appIdentifier.displayName)")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        if let installedUseIssue {
+            Text(installedUseIssue)
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        if isRetiredOrRemoved {
+            Text(installedUseIssue == nil
+                 ? "No longer offered for download. You can keep using your installed copy."
+                 : "No longer offered for download. Its files are still stored on this device.")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        if hasUpdate {
+            if let downloadIssue {
+                Text("A newer version is available, but it cannot run in this app. \(downloadIssue)")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else if deviceRAM_GB < model.minRAM_GB - 1 {
+                Text("A newer version is available, but it needs more memory than this device has.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Update available. Your installed copy is kept until the update finishes.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var updateButton: some View {
+        if hasUpdate {
+            Button("Update", systemImage: "arrow.down.circle") { onUpdateTapped() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(anyDownloadActive || downloadIssue != nil || deviceRAM_GB < model.minRAM_GB - 1)
+                .accessibilityLabel("Update \(displayModel.displayName)")
+        }
+    }
+
+    @ViewBuilder
     private var actionView: some View {
         switch state {
         case .notCompatible:
             HStack {
                 Spacer()
-                Text("Not supported on this device")
+                Text(downloadIssue ?? "This model needs more memory than this device has.")
                     .font(.caption).foregroundStyle(.tertiary)
             }
         case .notInstalled(let canStart):
@@ -454,6 +631,13 @@ private struct ModelCard: View {
                 progress: progress, received: received, total: total,
                 speed: speed, eta: eta, stalled: stalled
             )
+        case .installing:
+            HStack(spacing: 6) {
+                ProgressView().controlSize(.small)
+                Text(isInstalled ? "Installing update…" : "Installing…")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+            }
         case .pendingActive:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
@@ -462,33 +646,40 @@ private struct ModelCard: View {
                 Spacer()
             }
         case .installed:
-            HStack {
+            VStack(alignment: .leading, spacing: 8) {
                 Label("Installed", systemImage: "internaldrive")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
-                Spacer()
-                Button {
-                    onSelectTapped()
-                } label: {
-                    Label("Use", systemImage: "checkmark.circle")
-                        .frame(minWidth: 80)
+                HStack {
+                    Spacer()
+                    updateButton
+                    Button {
+                        onSelectTapped()
+                    } label: {
+                        Label("Use", systemImage: "checkmark.circle")
+                            .frame(minWidth: 80)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .disabled(installedUseIssue != nil)
+                    Button(role: .destructive) { onRemove() } label: {
+                        Image(systemName: "trash")
+                    }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .accessibilityLabel("Remove \(displayModel.displayName)")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                Button(role: .destructive) { onRemove() } label: {
-                    Image(systemName: "trash")
-                }
-                .buttonStyle(.bordered).controlSize(.small)
             }
         case .active:
             HStack {
                 inUsePill
                 Spacer()
+                updateButton
                 Button(role: .destructive) { onRemove() } label: {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered).controlSize(.small)
                 .help("Delete this model from disk")
+                .accessibilityLabel("Remove \(displayModel.displayName)")
             }
         }
     }
@@ -587,17 +778,16 @@ struct AddCustomModelSheet: View {
 
     @State private var urlText = ""
     @State private var modelName = ""
-    @State private var selectedTemplate: LocalModelInfo.ChatTemplate = .chatML
     @State private var fetchedSize: Int64?
     @State private var isFetching = false
     @State private var fetchError: String?
 
     private var urlIsValid: Bool {
         guard let url = URL(string: urlText) else { return false }
-        return url.scheme == "https"
-            && url.host == "huggingface.co"
-            && urlText.contains("/resolve/main/")
-            && urlText.hasSuffix(".gguf")
+        return CHLocalMLXRepoID.from(url) != nil
+            && url.path.split(separator: "/").count == 2
+            && url.query == nil && url.fragment == nil
+            && url.user == nil && url.password == nil && url.port == nil
     }
 
     private var canAdd: Bool {
@@ -608,7 +798,7 @@ struct AddCustomModelSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("https://huggingface.co/.../resolve/main/model.gguf", text: $urlText)
+                    TextField("https://huggingface.co/mlx-community/model-name", text: $urlText)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
@@ -617,20 +807,20 @@ struct AddCustomModelSheet: View {
                             fetchError = nil
                         }
                 } header: {
-                    Text("HuggingFace GGUF URL")
+                    Text("Hugging Face Model Repository")
                 } footer: {
                     if let error = fetchError {
                         Text(error).foregroundStyle(.red)
                     } else if let size = fetchedSize {
-                        Text("File size: \(formattedSize(size))").foregroundStyle(.secondary)
+                        Text(size > 0 ? "Repository found · Approx. \(formattedSize(size))" : "Repository found. Download size unavailable.").foregroundStyle(.secondary)
                     } else {
-                        Text("Must be a direct .gguf file URL from huggingface.co")
+                        Text("Use an MLX-format text model. Custom models aren’t evaluated for this app.")
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 Section {
-                    Button(isFetching ? "Checking…" : "Check URL") {
+                    Button(isFetching ? "Checking…" : "Check Repository") {
                         Task { await checkURL() }
                     }
                     .disabled(!urlIsValid || isFetching)
@@ -638,19 +828,6 @@ struct AddCustomModelSheet: View {
 
                 Section("Model Name") {
                     TextField("e.g. My Custom 7B", text: $modelName)
-                }
-
-                Section {
-                    Picker("Template", selection: $selectedTemplate) {
-                        Text("ChatML (Qwen, Phi, SmolLM)").tag(LocalModelInfo.ChatTemplate.chatML)
-                        Text("Llama 3").tag(LocalModelInfo.ChatTemplate.llama3)
-                        Text("Llama 2 / Mistral").tag(LocalModelInfo.ChatTemplate.llama2)
-                        Text("Gemma 2").tag(LocalModelInfo.ChatTemplate.gemma)
-                    }
-                } header: {
-                    Text("Chat Template")
-                } footer: {
-                    Text("Match the template to the model family. Most HuggingFace GGUF models are ChatML.")
                 }
             }
             .navigationTitle("Add Custom Model")
@@ -660,7 +837,7 @@ struct AddCustomModelSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Add") {
+                    Button("Add and Download") {
                         guard let url = URL(string: urlText),
                               let size = fetchedSize else { return }
                         let entry = CustomModelEntry(
@@ -668,7 +845,7 @@ struct AddCustomModelSheet: View {
                             displayName: modelName.trimmingCharacters(in: .whitespaces),
                             downloadURL: url,
                             sizeBytes: size,
-                            chatTemplate: selectedTemplate
+                            chatTemplate: .chatML
                         )
                         dismiss()
                         onAdd(entry)
@@ -680,38 +857,59 @@ struct AddCustomModelSheet: View {
         }
     }
 
+    private struct RepositoryMetadata: Decodable {
+        struct File: Decodable {
+            struct LargeFile: Decodable { let size: Int64 }
+            let rfilename: String
+            let size: Int64?
+            let lfs: LargeFile?
+        }
+        let siblings: [File]
+    }
+
     private func checkURL() async {
-        guard let url = URL(string: urlText) else { return }
+        let checkedText = urlText
+        guard urlIsValid, let url = URL(string: checkedText),
+              let repoID = CHLocalMLXRepoID.from(url),
+              let metadataURL = URL(string: "https://huggingface.co/api/models/\(repoID)?blobs=true") else { return }
         isFetching = true
         fetchError = nil
         defer { isFetching = false }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "HEAD"
+        var request = URLRequest(url: metadataURL)
         request.timeoutInterval = 15
 
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            if let http = response as? HTTPURLResponse {
-                if http.statusCode == 200 || http.statusCode == 206 {
-                    let size = http.value(forHTTPHeaderField: "Content-Length")
-                        .flatMap { Int64($0) }
-                        ?? http.value(forHTTPHeaderField: "x-linked-size")
-                        .flatMap { Int64($0) }
-                    if let size, size > 0 {
-                        fetchedSize = size
-                    } else {
-                        fetchError = "Could not determine file size. Try downloading anyway?"
-                        fetchedSize = 0 // allow proceeding
-                    }
-                } else if http.statusCode == 401 || http.statusCode == 403 {
-                    fetchError = "This file requires authentication and cannot be downloaded."
-                } else {
-                    fetchError = "HTTP \(http.statusCode) — file may not exist."
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard urlText == checkedText else { return }
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                fetchError = "This repository isn’t available. Use a public model repository."
+                return
+            }
+            let metadata = try JSONDecoder().decode(RepositoryMetadata.self, from: data)
+            let files = metadata.siblings.filter {
+                $0.rfilename.hasSuffix(".safetensors") || $0.rfilename.hasSuffix(".json")
+            }
+            guard files.contains(where: { $0.rfilename == "config.json" }),
+                  files.contains(where: { $0.rfilename.hasSuffix(".safetensors") }) else {
+                fetchError = "This repository doesn’t contain the files needed for an MLX model."
+                return
+            }
+            var total: Int64 = 0
+            for file in files {
+                let sum = total.addingReportingOverflow(max(0, file.size ?? file.lfs?.size ?? 0))
+                guard !sum.overflow else {
+                    fetchError = "Couldn’t read the model’s download size."
+                    return
                 }
+                total = sum.partialValue
+            }
+            fetchedSize = total
+            if modelName.trimmingCharacters(in: .whitespaces).isEmpty {
+                modelName = url.lastPathComponent
             }
         } catch {
-            fetchError = "Network error: \(error.localizedDescription)"
+            guard urlText == checkedText else { return }
+            fetchError = "Couldn’t check this repository. Check your connection and try again."
         }
     }
 
@@ -733,28 +931,18 @@ private struct LlamaAcknowledgmentSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Label("License Acknowledgment", systemImage: "doc.text")
-                        .font(.headline)
-
-                    Text("Llama 3.2 is released under the Meta Llama Community License. By downloading you agree to:")
-                        .font(.subheadline)
+                    Text(model.licenseDisplayName)
+                        .font(.title2.bold())
+                    Text("\(model.displayName) is provided under this license. Review its terms before downloading.")
                         .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        bullet("Use the model only for permitted purposes as defined in the Llama Community License")
-                        bullet("Not use outputs to train other LLMs without Meta's permission")
-                        bullet("Include required attribution in any products using this model")
-                        bullet("Comply with Meta's usage policy at llama.meta.com/llama3/use-policy")
-                    }
-
-                    Text("The model runs entirely on your device. No data is sent to Meta or any server.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 4)
+                    Link("Read License Terms", destination: ModelLicenseAcknowledgment.termsURL(for: model))
+                    Text("Once downloaded, the model runs on your device.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding()
             }
-            .navigationTitle("Llama 3.2 License")
+            .navigationTitle("Model License")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -762,21 +950,13 @@ private struct LlamaAcknowledgmentSheet: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("I Accept") {
-                        UserDefaults.standard.set(true, forKey: "chlocallm.acked.llama")
+                        ModelLicenseAcknowledgment.record(for: model)
                         onAccept()
                     }
                     .fontWeight(.semibold)
                     .tint(.indigo)
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    private func bullet(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text("•").foregroundStyle(.secondary)
-            Text(text).font(.subheadline)
         }
     }
 }

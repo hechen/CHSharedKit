@@ -148,23 +148,38 @@ public final class LocalModelStore {
     // Active download task (HubApi.snapshot wrapped in Task) — non-nil while a
     // download is running; cancelled by `cancelDownload()`.
     @ObservationIgnored private var activeTask: Task<Void, Never>?
+    @ObservationIgnored private var downloadGeneration: UUID?
+    private var installations: [String: OfflineModelInstallation] = [:]
     /// 2.5.8: companion task that polls every 5 s during a download and flips
     /// `isDownloadStalled` if the most recent progress tick is older than
     /// `stallThresholdSeconds`. Cancelled when `activeTask` finishes,
     /// fails, or is cancelled.
     @ObservationIgnored private var stallWatcher: Task<Void, Never>?
 
-    private init() {
+    private convenience init() {
+        self.init(defaults: nil)
+    }
+
+    /// Internal seam for fixtures: storage follows the configured baseDirectory,
+    /// while injected defaults avoid reading or migrating the host's selection.
+    init(defaults: UserDefaults?) {
+        _sharedDefaults = defaults
+        installations = OfflineModelInstaller.readRegistry(baseDirectory: CHLocalMLXStorage.baseDirectory)
+        do {
+            try OfflineModelInstaller.cleanAbandonedStaging(baseDirectory: CHLocalMLXStorage.baseDirectory)
+        } catch {
+            print("[CHLocalModelStore] Could not clean interrupted model downloads: \(error.localizedDescription)")
+        }
         // 2.5.3: storage location is now fixed at `Application Support/CHSharedKit/`
         // (see CHLocalMLXStorage). The 2.5.0–2.5.2 line that overrode it to the
         // App Group container is gone — App Group containers were wiped on TF
         // reinstall when only one app in the group was installed.
 
         // Restore active model id (prefer App Group suite; migrate from .standard if needed).
-        let sharedSuite = UserDefaults(suiteName: "group.app.chen.sharedllm") ?? .standard
+        let sharedSuite = defaults ?? UserDefaults(suiteName: "group.app.chen.sharedllm") ?? .standard
         if let id = sharedSuite.string(forKey: LocalModelStore.activeModelKey) {
             activeModelID = id
-        } else if let legacyID = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey) {
+        } else if defaults == nil, let legacyID = UserDefaults.standard.string(forKey: LocalModelStore.activeModelKey) {
             activeModelID = legacyID
             sharedSuite.set(legacyID, forKey: LocalModelStore.activeModelKey)
             UserDefaults.standard.removeObject(forKey: LocalModelStore.activeModelKey)
@@ -174,24 +189,25 @@ public final class LocalModelStore {
         if let data = sharedSuite.data(forKey: LocalModelStore.customModelsKey),
            let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: data) {
             customModels = entries
-        } else if let legacyData = UserDefaults.standard.data(forKey: LocalModelStore.customModelsKey),
+        } else if defaults == nil, let legacyData = UserDefaults.standard.data(forKey: LocalModelStore.customModelsKey),
                   let entries = try? JSONDecoder().decode([CustomModelEntry].self, from: legacyData) {
             customModels = entries
             sharedSuite.set(legacyData, forKey: LocalModelStore.customModelsKey)
             UserDefaults.standard.removeObject(forKey: LocalModelStore.customModelsKey)
         }
 
+        migrateLegacyInstallations()
+
         // Cold-launch: if the user had selected an on-device model that's still
         // installed (now in MLX format), wire up the provider with CHAIManager
         // so the unified "Active Provider" label resolves on first render.
         if let id = activeModelID,
-           let info = (LocalModelCatalog.all + customModels.map(localModelInfo(for:)))
-               .first(where: { $0.id == id }) {
+           let info = installedModel(forID: id) {
             CHAIManager.shared.setActiveOnDeviceModel(
                 id: id,
                 displayName: info.displayName
             )
-            if isInstalled(info) {
+            if (try? OfflineModelInstaller.validateSnapshot(at: modelURL(for: info), model: info)) != nil {
                 let provider = CHLocalLLMProvider(
                     modelURL: modelURL(for: info),
                     modelInfo: info
@@ -202,9 +218,11 @@ public final class LocalModelStore {
 
         // 2.5.0 migration: legacy `<group>/CHLocalModels/*.gguf` files are
         // useless under MLX. Sweep them on a background task to reclaim disk.
-        let legacyDir = Self.legacyGGUFDirectory(appGroupID: appGroupID)
-        Task.detached(priority: .background) {
-            Self.removeLegacyGGUFFilesIfNeeded(at: legacyDir)
+        if defaults == nil {
+            let legacyDir = Self.legacyGGUFDirectory(appGroupID: appGroupID)
+            Task.detached(priority: .background) {
+                Self.removeLegacyGGUFFilesIfNeeded(at: legacyDir)
+            }
         }
     }
 
@@ -234,11 +252,16 @@ public final class LocalModelStore {
     /// snapshot. New downloads always land at the canonical path. See
     /// ``CHLocalMLXStorage/resolvedDirectory(forRepoID:)``.
     public func modelURL(for model: LocalModelInfo) -> URL {
+        if let installation = installations[model.id] {
+            return installation.directory(baseDirectory: CHLocalMLXStorage.baseDirectory)
+        }
+        return legacyModelURL(for: model)
+    }
+
+    private func legacyModelURL(for model: LocalModelInfo) -> URL {
         if let repoID = CHLocalMLXRepoID.from(model.downloadURL) {
             return CHLocalMLXStorage.resolvedDirectory(forRepoID: repoID)
         }
-        // Fall back: derive a stable folder name from the model id so custom
-        // entries that don't parse as Hub URLs still have a local home.
         return CHLocalMLXStorage.baseDirectory
             .appendingPathComponent("custom", isDirectory: true)
             .appendingPathComponent(model.id, isDirectory: true)
@@ -246,22 +269,87 @@ public final class LocalModelStore {
 
     // MARK: - Queries
 
-    /// True when the model snapshot exists locally with the files required
-    /// to load via MLX (`config.json` + at least one `.safetensors`).
+    /// Exact metadata for the bytes installed on this device, even when the
+    /// remote catalog removes, retires, or updates that model ID.
+    public func installedModel(forID id: String) -> LocalModelInfo? {
+        guard let record = installations[id],
+              CHLocalMLXStorage.isSnapshotPresent(at: record.directory(baseDirectory: CHLocalMLXStorage.baseDirectory))
+        else { return nil }
+        return record.model
+    }
+
     public func isInstalled(_ model: LocalModelInfo) -> Bool {
-        CHLocalMLXStorage.isSnapshotPresent(at: modelURL(for: model))
+        installedModel(forID: model.id) != nil
     }
 
     public var installedModels: [LocalModelInfo] {
-        LocalModelCatalog.all.filter { isInstalled($0) }
+        installations.keys.sorted().compactMap { installedModel(forID: $0) }
     }
 
     public var availableModels: [LocalModelInfo] {
         LocalModelCatalog.all.filter { !isInstalled($0) }
     }
 
+    /// Current offers plus installed entries removed from the remote catalog.
+    /// Same-ID offers retain current metadata so the picker can expose Update;
+    /// installedModel(forID:) remains the authority for loading and selection.
     public var allModels: [LocalModelInfo] {
-        LocalModelCatalog.all + customModels.map { localModelInfo(for: $0) }
+        var models = LocalModelCatalog.all
+        var seen = Set(models.map(\.id))
+        for model in installedModels + customModels.map({ localModelInfo(for: $0) }) {
+            if seen.insert(model.id).inserted { models.append(model) }
+        }
+        return models
+    }
+
+    public func updateAvailable(for model: LocalModelInfo) -> Bool {
+        guard let installed = installedModel(forID: model.id),
+              let offered = LocalModelCatalog.all.first(where: { $0.id == model.id }),
+              let release = offered.release,
+              CHOfflineModelCatalog.compatibilityIssue(for: offered) == nil
+        else { return false }
+        return installed.release?.revision != release.revision
+            || installed.release?.repoID != release.repoID
+    }
+
+    private func migrateLegacyInstallations() {
+        let baseDirectory = CHLocalMLXStorage.baseDirectory
+        guard !OfflineModelInstaller.hasCompletedLegacyMigration(baseDirectory: baseDirectory) else { return }
+        // Named constants remain available even when the remote catalog removes an ID.
+        let legacy = [
+            LocalModelCatalog.qwen2_5_0_5B, LocalModelCatalog.qwen2_5_1_5B,
+            LocalModelCatalog.qwen2_5_3B, LocalModelCatalog.llama3_2_1B,
+            LocalModelCatalog.llama3_2_3B, LocalModelCatalog.phi3Mini4k,
+            LocalModelCatalog.phi3_5Mini, LocalModelCatalog.gemma2_2B,
+            LocalModelCatalog.smolLM2_1_7B, LocalModelCatalog.deepSeekR1_1_5B,
+            LocalModelCatalog.qwen2VL_2B
+        ]
+        var updated = installations
+        for model in legacy + LocalModelCatalog.all + customModels.map({ localModelInfo(for: $0) }) {
+            guard updated[model.id] == nil else { continue }
+            let snapshot = Self.legacyDescriptor(model)
+            guard let installation = OfflineModelInstaller.legacyInstallation(snapshot, at: legacyModelURL(for: snapshot)) else { continue }
+            updated[model.id] = installation
+        }
+        do {
+            try OfflineModelInstaller.writeRegistry(updated, baseDirectory: baseDirectory, legacyMigrationComplete: true)
+            installations = updated
+        } catch {
+            // Keep existing bytes usable this launch even if metadata cannot be persisted.
+            installations = updated
+            print("[CHLocalModelStore] Could not persist legacy installation metadata: \(error.localizedDescription)")
+        }
+    }
+
+    private static func legacyDescriptor(_ model: LocalModelInfo) -> LocalModelInfo {
+        LocalModelInfo(
+            id: model.id, displayName: model.displayName, description: model.description,
+            sizeBytes: model.sizeBytes, quantization: model.quantization,
+            downloadURL: model.downloadURL, sha256: model.sha256, minRAM_GB: model.minRAM_GB,
+            license: model.license, quality: model.quality,
+            requiresAcknowledgment: model.requiresAcknowledgment, chatTemplate: model.chatTemplate,
+            languages: model.languages, strengths: model.strengths, isCustom: model.isCustom
+        )
     }
 
     public func localModelInfo(for entry: CustomModelEntry) -> LocalModelInfo {
@@ -290,150 +378,157 @@ public final class LocalModelStore {
     }
 
     public var installedDefaultModel: LocalModelInfo? {
-        isInstalled(LocalModelCatalog.default) ? LocalModelCatalog.default : nil
+        installedModel(forID: LocalModelCatalog.default.id)
     }
 
     /// Total bytes used by installed models (recursive directory size).
     public var totalStorageUsed: Int64 {
-        installedModels.reduce(0) { acc, model in
-            acc + Self.directorySize(at: modelURL(for: model))
-        }
+        let directories = Set(installedModels.map { modelURL(for: $0).standardizedFileURL })
+        return directories.reduce(0) { $0 + Self.directorySize(at: $1) }
     }
 
     // MARK: - Download
 
     public func downloadModel(_ model: LocalModelInfo) {
-        switch downloadState {
-        case .idle, .installed, .failed: break
-        default: return
-        }
-        guard let repoID = CHLocalMLXRepoID.from(model.downloadURL) else {
-            downloadState = .failed("Model URL is not a Hugging Face repo: \(model.downloadURL.absoluteString)")
+        guard activeTask == nil else { return }
+        if let issue = CHOfflineModelCatalog.compatibilityIssue(for: model) {
+            downloadState = .failed(issue)
             return
         }
-
+        guard model.release != nil || model.isCustom,
+              CHLocalMLXRepoID.from(model.downloadURL) != nil else {
+            downloadState = .failed(OfflineModelInstallationError.invalidRelease.localizedDescription)
+            return
+        }
+        // Legacy custom snapshots have no remote release identity. Reusing their
+        // known installed bytes is safer than overwriting them from mutable main.
+        if model.release == nil, isInstalled(model) {
+            downloadState = .installed
+            return
+        }
+        let generation = UUID()
+        downloadGeneration = generation
         activeDownloadModelID = model.id
         downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
-        // Reset 2.5.4 speed-tracking state for this download.
         speedRing.removeAll()
         lastTickTime = Date()
         lastTickBytes = 0
         currentDownloadSpeedBytesPerSecond = nil
-        // 2.5.8: reset stall state and arm the watcher. HubApi can stall
-        // mid-download (network drop, server-side pause); the watcher flips
-        // `isDownloadStalled` after `stallThresholdSeconds` of progress
-        // silence so the picker UI shows a Retry button instead of a
-        // frozen 72%.
         isDownloadStalled = false
         startStallWatcher()
-        print("[CHLocalModelStore] downloadModel start id=\(model.id) repoID=\(repoID) sizeBytes=\(model.sizeBytes)")
         requestNotificationPermission()
 
-        let totalEstimate = model.sizeBytes
-        let modelID = model.id
+        let baseDirectory = CHLocalMLXStorage.baseDirectory
         activeTask = Task { [weak self] in
             do {
-                let hub = CHLocalMLXStorage.hubApi()
-                // 2.5.3: HubApi reports progress in *file count* (e.g. 8/10
-                // files), not bytes. We synthesize bytes from the catalog's
-                // known total × fraction; not byte-perfect but tracks reality.
-                let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
-                    let fraction = progress.fractionCompleted
-                    let total = totalEstimate
-                    let received = Int64(Double(total) * fraction)
-                    let filesDone = progress.completedUnitCount
-                    let filesTotal = progress.totalUnitCount
-                    print("[CHLocalModelStore] progress fraction=\(String(format: "%.3f", fraction)) files=\(filesDone)/\(filesTotal) bytesEst=\(received)/\(total)")
-                    Task { @MainActor [weak self] in
-                        self?.applyDownloadProgress(
-                            fraction: fraction,
-                            received: received,
-                            total: total
+                if model.release != nil {
+                    let staged = try await OfflineModelInstaller.stage(model, baseDirectory: baseDirectory, progress: { [weak self] received, total in
+                        Task { @MainActor [weak self] in
+                            guard let self, self.downloadGeneration == generation else { return }
+                            self.applyDownloadProgress(
+                                fraction: total > 0 ? Double(received) / Double(total) : 0,
+                                received: received, total: total
+                            )
+                        }
+                    })
+                    defer { try? FileManager.default.removeItem(at: staged.cleanupDirectory) }
+                    try Task.checkCancellation()
+                    guard let self, self.downloadGeneration == generation else { return }
+                    self.downloadState = .installing
+                    self.stopStallWatcher()
+                    self.isDownloadStalled = false
+                    let validated = try await OfflineModelInstaller.validateForActivation(staged) { directory, model in
+                        try await Self.validateModelRuntime(at: directory, model: model)
+                    }
+                    try Task.checkCancellation()
+                    guard self.downloadGeneration == generation else { return }
+                    self.installations = try OfflineModelInstaller.commit(
+                        validated, replacing: self.installations, baseDirectory: baseDirectory
+                    )
+                    self.finishDownload(modelID: model.id, generation: generation)
+                } else {
+                    // Custom repositories use Hub without a verified manifest,
+                    // but each download still stages away from working snapshots.
+                    let repoID = CHLocalMLXRepoID.from(model.downloadURL)!
+                    let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
+                        let fraction = progress.fractionCompleted
+                        Task { @MainActor [weak self] in
+                            guard let self, self.downloadGeneration == generation else { return }
+                            self.applyDownloadProgress(fraction: fraction, received: Int64(Double(model.sizeBytes) * fraction), total: model.sizeBytes)
+                        }
+                    }
+                    let staged = try await OfflineModelInstaller.stageCustom(model, baseDirectory: baseDirectory) { staging in
+                        try await HubApi(downloadBase: staging).snapshot(
+                            from: Hub.Repo(id: repoID), matching: ["*.safetensors", "*.json", "*.model"],
+                            progressHandler: progressHandler
                         )
                     }
-                }
-                _ = try await hub.snapshot(
-                    from: Hub.Repo(id: repoID),
-                    matching: ["*.safetensors", "*.json"],
-                    progressHandler: progressHandler
-                )
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    print("[CHLocalModelStore] downloadModel SUCCESS id=\(modelID)")
-                    self.downloadState = .installed
-                    self.activeDownloadModelID = nil
-                    self.activeTask = nil
+                    defer { try? FileManager.default.removeItem(at: staged.cleanupDirectory) }
+                    try Task.checkCancellation()
+                    guard let self, self.downloadGeneration == generation else { return }
+                    self.downloadState = .installing
                     self.stopStallWatcher()
                     self.isDownloadStalled = false
-                    self.currentDownloadSpeedBytesPerSecond = nil
-                    self.fireCompletionNotification()
-                    // 2.5.4: auto-promote pending → active if the user
-                    // selected this model before/during the download.
-                    self.promotePendingActiveIfMatches(modelID: modelID)
-                }
-            } catch is CancellationError {
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    print("[CHLocalModelStore] downloadModel CANCELLED id=\(modelID)")
-                    self.downloadState = .idle
-                    self.activeDownloadModelID = nil
-                    self.activeTask = nil
-                    self.stopStallWatcher()
-                    self.isDownloadStalled = false
-                    self.currentDownloadSpeedBytesPerSecond = nil
-                    // Cancellation drops any pending-active intent for this model.
-                    if self.pendingActiveModelID == modelID {
-                        self.pendingActiveModelID = nil
+                    let validated = try await OfflineModelInstaller.validateForActivation(staged) { directory, model in
+                        try await Self.validateModelRuntime(at: directory, model: model)
                     }
+                    try Task.checkCancellation()
+                    guard self.downloadGeneration == generation else { return }
+                    self.installations = try OfflineModelInstaller.commit(
+                        validated, replacing: self.installations, baseDirectory: baseDirectory
+                    )
+                    self.finishDownload(modelID: model.id, generation: generation)
                 }
             } catch {
-                let message = error.localizedDescription
-                await MainActor.run { [weak self] in
-                    guard let self else { return }
-                    print("[CHLocalModelStore] downloadModel ERROR id=\(modelID) underlying=\(message)")
-                    self.downloadState = .failed(message)
-                    self.activeDownloadModelID = nil
-                    self.activeTask = nil
-                    self.stopStallWatcher()
-                    self.isDownloadStalled = false
-                    self.currentDownloadSpeedBytesPerSecond = nil
-                    if self.pendingActiveModelID == modelID {
-                        self.pendingActiveModelID = nil
-                    }
-                }
+                guard let self, self.downloadGeneration == generation else { return }
+                self.downloadState = error is CancellationError ? .idle : .failed(error.localizedDescription)
+                self.finishDownloadTracking()
+                if self.pendingActiveModelID == model.id { self.pendingActiveModelID = nil }
             }
         }
     }
 
-    public func cancelDownload() {
-        activeTask?.cancel()
-        activeTask = nil
-        stopStallWatcher()
-        isDownloadStalled = false
-        if case .downloading = downloadState {
-            downloadState = .idle
-            activeDownloadModelID = nil
-            pendingActiveModelID = nil
-            currentDownloadSpeedBytesPerSecond = nil
+    private func finishDownload(modelID: String, generation: UUID) {
+        guard downloadGeneration == generation else { return }
+        downloadState = .installed
+        finishDownloadTracking()
+        fireCompletionNotification()
+        if pendingActiveModelID == modelID {
+            promotePendingActiveIfMatches(modelID: modelID)
+        } else if activeModelID == modelID, let installed = installedModel(forID: modelID) {
+            // Explicit Update replaces a selected model only after installation
+            // succeeds. It never promotes a different, inactive model.
+            registerInstalledProvider(installed)
         }
     }
 
-    /// 2.5.8: re-issue a stalled or failed download for the same model.
-    /// HubApi resumes per-file from the partial-cache metadata so files
-    /// that already completed don't re-download — only the remaining
-    /// shards do. Calling `retryDownload` while another download is in
-    /// flight is a no-op (caller should call `cancelDownload()` first).
+    private nonisolated static func validateModelRuntime(at directory: URL, model: LocalModelInfo) async throws {
+        try await CHLocalLLMProvider.validateInstallation(at: directory, model: model)
+    }
+
+    private func finishDownloadTracking() {
+        downloadGeneration = nil
+        activeTask = nil
+        activeDownloadModelID = nil
+        stopStallWatcher()
+        isDownloadStalled = false
+        currentDownloadSpeedBytesPerSecond = nil
+    }
+
+    public func cancelDownload() {
+        // Invalidate ownership before cancellation can enqueue its completion.
+        downloadGeneration = nil
+        activeTask?.cancel()
+        finishDownloadTracking()
+        downloadState = .idle
+        pendingActiveModelID = nil
+    }
+
     public func retryDownload(_ model: LocalModelInfo) {
-        // Reset terminal state so `downloadModel`'s guard accepts the call.
-        if case .failed = downloadState {
-            downloadState = .idle
-        }
-        // If we got here while marked stalled but `activeTask` is still alive,
-        // cancel it first so the new download can take over the in-flight
-        // URLSession connections cleanly.
-        if isDownloadStalled, activeTask != nil {
-            cancelDownload()
-        }
+        let pending = pendingActiveModelID
+        if isDownloadStalled { cancelDownload() }
+        guard activeTask == nil else { return }
+        pendingActiveModelID = pending
         downloadModel(model)
     }
 
@@ -493,6 +588,9 @@ public final class LocalModelStore {
 
     @MainActor
     private func applyDownloadProgress(fraction: Double, received: Int64, total: Int64) {
+        // A queued final network callback must not turn runtime validation back
+        // into a download after the stage has completed.
+        guard case .downloading = downloadState else { return }
         downloadState = .downloading(
             progress: fraction,
             bytesReceived: received,
@@ -531,9 +629,7 @@ public final class LocalModelStore {
     @MainActor
     private func promotePendingActiveIfMatches(modelID: String) {
         guard pendingActiveModelID == modelID else { return }
-        let candidate = (LocalModelCatalog.all + customModels.map { localModelInfo(for: $0) })
-            .first { $0.id == modelID }
-        guard let model = candidate else {
+        guard let model = installedModel(forID: modelID) else {
             pendingActiveModelID = nil
             return
         }
@@ -550,11 +646,22 @@ public final class LocalModelStore {
     }
 
     public func deleteModel(_ model: LocalModelInfo) {
+        if activeDownloadModelID == model.id { cancelDownload() }
         let dir = modelURL(for: model)
-        try? FileManager.default.removeItem(at: dir)
-        if activeModelID == model.id {
-            clearActiveModel()
+        do {
+            var updated = installations
+            updated.removeValue(forKey: model.id)
+            if !OfflineModelInstaller.isDirectoryReferenced(dir, by: updated, baseDirectory: CHLocalMLXStorage.baseDirectory),
+               FileManager.default.fileExists(atPath: dir.path) {
+                try FileManager.default.removeItem(at: dir)
+            }
+            try OfflineModelInstaller.writeRegistry(updated, baseDirectory: CHLocalMLXStorage.baseDirectory)
+            installations = updated
+        } catch {
+            downloadState = .failed(error.localizedDescription)
+            return
         }
+        if activeModelID == model.id { clearActiveModel() }
         if model.isCustom {
             customModels.removeAll { $0.id == model.id }
             persistCustomModels()
@@ -589,28 +696,31 @@ public final class LocalModelStore {
     // MARK: - Active model
 
     public func setActiveModel(_ model: LocalModelInfo) {
-        guard isInstalled(model) else { return }
-        activeModelID = model.id
-        sharedDefaults.set(model.id, forKey: Self.activeModelKey)
-        let provider = CHLocalLLMProvider(
-            modelURL: modelURL(for: model),
-            modelInfo: model
-        )
-        CHAIManager.shared.registerProvider(provider)
-        CHAIManager.shared.setActiveOnDeviceModel(
-            id: model.id,
-            displayName: model.displayName
-        )
+        guard let installed = installedModel(forID: model.id),
+              (try? OfflineModelInstaller.validateSnapshot(at: modelURL(for: installed), model: installed)) != nil
+        else { return }
+        activeModelID = installed.id
+        sharedDefaults.set(installed.id, forKey: Self.activeModelKey)
+        registerInstalledProvider(installed)
         CHAIManager.shared.activeProviderID = CHLocalLLMProvider.providerID
     }
 
+    private func registerInstalledProvider(_ model: LocalModelInfo) {
+        let provider = CHLocalLLMProvider(modelURL: modelURL(for: model), modelInfo: model)
+        CHAIManager.shared.registerProvider(provider)
+        CHAIManager.shared.setActiveOnDeviceModel(id: model.id, displayName: model.displayName)
+    }
+
     public func clearActiveModel() {
+        let hadActiveModel = activeModelID != nil
         activeModelID = nil
         sharedDefaults.removeObject(forKey: Self.activeModelKey)
         CHAIManager.shared.clearActiveOnDeviceModel()
+        if hadActiveModel { CHAIManager.shared.unregisterProvider(CHLocalLLMProvider.providerID) }
     }
 
     public func resetDownloadState() {
+        if activeTask != nil { cancelDownload() }
         downloadState = .idle
         activeDownloadModelID = nil
     }
@@ -744,17 +854,20 @@ public final class LocalModelStore {
     /// ```
     @discardableResult
     public static func verifyOnLaunch() -> StorageReport {
+        verifyOnLaunch(store: shared)
+    }
+
+    @discardableResult
+    static func verifyOnLaunch(store: LocalModelStore) -> StorageReport {
         let canonical = CHLocalMLXStorage.baseDirectory
         let legacy = CHLocalMLXStorage.legacyBaseDirectories
         let fm = FileManager.default
 
         var entries: [StorageReport.ModelEntry] = []
-        for model in LocalModelCatalog.all {
-            guard let repoID = CHLocalMLXRepoID.from(model.downloadURL) else { continue }
-            let resolved = CHLocalMLXStorage.resolvedDirectory(forRepoID: repoID)
+        for model in store.installedModels {
+            let resolved = store.modelURL(for: model)
             guard CHLocalMLXStorage.isSnapshotPresent(at: resolved) else { continue }
-            let canonicalDir = CHLocalMLXStorage.localDirectory(forRepoID: repoID)
-            let isLegacy = resolved.standardizedFileURL != canonicalDir.standardizedFileURL
+            let isLegacy = !resolved.standardizedFileURL.path.hasPrefix(canonical.standardizedFileURL.path + "/")
             let size = directorySize(at: resolved, fm: fm)
             entries.append(.init(
                 id: model.id,
@@ -772,7 +885,7 @@ public final class LocalModelStore {
         // `UserDefaults.standard` suite, so each app sees a different
         // "active model" picker state. That's the most common cause
         // of "models aren't shared between my apps" reports.
-        let configuredGroupID = CHLocalModelStore.shared.appGroupID
+        let configuredGroupID = store.appGroupID
         let groupAccessible = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: configuredGroupID
         ) != nil
