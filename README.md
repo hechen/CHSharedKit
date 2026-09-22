@@ -209,6 +209,16 @@ CHAIManager.shared.disabledProviderIDs = [
 ]
 ```
 
+As of 2.15.3, disabling `"on-device-llm"` also hides the downloadable-model
+row, installed-model details, and download sheets in `CHAIProviderPickerView`
+and `CHAISettingsContent`. These surfaces respect `availableProvidersFilter`
+and do not initialize local model storage when local models are hidden. Apple
+Intelligence remains a separate provider. Hosts that disable downloads should
+also omit their own `LocalModelStore` startup and offline-catalog refreshes.
+The manager preserves the saved provider choice and resolves its usual enabled
+fallback; migrate that preference explicitly if the app must avoid a cloud
+fallback for users who previously chose local models.
+
 ### Sending requests
 
 ```swift

@@ -131,7 +131,7 @@ public struct CHAISettingsSheet: View {
 public struct CHAISettingsContent: View {
     public let appIdentifier: AppIdentifier
 
-    @StateObject private var aiManager = CHAIManager.shared
+    @ObservedObject private var aiManager = CHAIManager.shared
     @ObservedObject private var modelCatalog = CHAICloudModelCatalog.shared
     @State private var openaiKey = ""
     @State private var claudeKey = ""
@@ -166,7 +166,20 @@ public struct CHAISettingsContent: View {
     private enum ModelPickerSource { case provider, detail }
     @State private var modelPickerSource: ModelPickerSource?
 
-    @State private var modelStore = LocalModelStore.shared
+    // Resolve the singleton only while local models are offered. Its initializer
+    // restores installations and cleans staging files, which is unnecessary for
+    // hosts that only expose Apple Intelligence and cloud providers.
+    private let makeModelStore: @MainActor () -> LocalModelStore
+
+    var showsDownloadableModels: Bool {
+        aiManager.isProviderEnabled(CHLocalLLMProvider.providerID)
+            && aiManager.availableProvidersFilter.contains(.onDeviceLocal)
+    }
+
+    var modelStore: LocalModelStore? {
+        guard showsDownloadableModels else { return nil }
+        return makeModelStore()
+    }
 
     // 2.6.0 IAP gating — picker mirrors the registered gate's published state
     // and routes locked-row taps to the banner instead of the activate path.
@@ -183,6 +196,14 @@ public struct CHAISettingsContent: View {
 
     public init(appIdentifier: AppIdentifier) {
         self.appIdentifier = appIdentifier
+        self.makeModelStore = { LocalModelStore.shared }
+    }
+
+    // Test seam: verifies that merely opening a hidden local-model surface
+    // never resolves the store. Production always uses the lazy singleton.
+    init(appIdentifier: AppIdentifier, makeModelStore: @escaping @MainActor () -> LocalModelStore) {
+        self.appIdentifier = appIdentifier
+        self.makeModelStore = makeModelStore
     }
 
     /// Source of truth for the currently-selected provider — reads
@@ -197,7 +218,7 @@ public struct CHAISettingsContent: View {
 
     // Active installed model — checks allModels so custom models are found too
     private var activeModel: LocalModelInfo? {
-        guard let id = modelStore.activeModelID else { return nil }
+        guard let modelStore, let id = modelStore.activeModelID else { return nil }
         return modelStore.allModels.first { $0.id == id && modelStore.isInstalled($0) }
     }
 
@@ -211,6 +232,14 @@ public struct CHAISettingsContent: View {
                 Text(CHAIActiveProviderLabel.text(for: aiManager))
                     .foregroundStyle(.secondary)
             }
+        }
+        .onAppear {
+            openaiKey = CHOpenAIProvider.apiKey ?? ""
+            claudeKey = CHClaudeProvider.apiKey ?? ""
+            customKey = CHCustomEndpointProvider.apiKey ?? ""
+        }
+        .onChange(of: showsDownloadableModels) { _, isAvailable in
+            if !isAvailable { modelPickerSource = nil }
         }
 
         // 2.6.0: IAP unlock banner. Renders only when a gate is registered,
@@ -259,7 +288,9 @@ public struct CHAISettingsContent: View {
 
         Section {
             // On-Device — smart tap: management sheet if installed, picker if not
-            onDeviceProviderRow
+            if showsDownloadableModels {
+                onDeviceProviderRow
+            }
 
             // Apple Intelligence — never gated
             providerRow(
@@ -279,7 +310,11 @@ public struct CHAISettingsContent: View {
         } header: {
             Text("On This Device")
         } footer: {
-            Text("Apple Intelligence and downloaded models keep requests on this device.")
+            if showsDownloadableModels {
+                Text("Apple Intelligence and downloaded models keep requests on this device.")
+            } else {
+                Text("Apple Intelligence keeps requests on this device.")
+            }
         }
 
         Section {
@@ -332,7 +367,8 @@ public struct CHAISettingsContent: View {
         #endif
 
         // On-Device detail section (when selected)
-        if selectedProvider == CHLocalLLMProvider.providerID || modelPickerSource == .detail {
+        if showsDownloadableModels,
+           selectedProvider == CHLocalLLMProvider.providerID || modelPickerSource == .detail {
             onDeviceDetailSection
         }
 
@@ -516,6 +552,7 @@ public struct CHAISettingsContent: View {
         let isActiveLocked = isLocked && selectedProvider == CHLocalLLMProvider.providerID
 
         Button {
+            guard showsDownloadableModels else { return }
             if isLocked {
                 pulseTrigger += 1
                 #if os(iOS)
@@ -579,11 +616,6 @@ public struct CHAISettingsContent: View {
         .sheet(isPresented: modelPickerPresentation(from: .provider)) {
             modelPickerSheet
         }
-        .onAppear {
-            openaiKey = CHOpenAIProvider.apiKey ?? ""
-            claudeKey = CHClaudeProvider.apiKey ?? ""
-            customKey = CHCustomEndpointProvider.apiKey ?? ""
-        }
     }
 
     @ViewBuilder
@@ -600,7 +632,7 @@ public struct CHAISettingsContent: View {
                 }
                 Button("Change Model") { modelPickerSource = .detail }
                     .foregroundStyle(.tint)
-            } else if modelStore.activeDownloadModelID != nil {
+            } else if modelStore?.activeDownloadModelID != nil {
                 LocalModelDownloadView()
             } else {
                 HStack {
@@ -624,9 +656,9 @@ public struct CHAISettingsContent: View {
 
     private func modelPickerPresentation(from source: ModelPickerSource) -> Binding<Bool> {
         Binding(
-            get: { modelPickerSource == source },
+            get: { showsDownloadableModels && modelPickerSource == source },
             set: { isPresented in
-                if isPresented { modelPickerSource = source }
+                if isPresented && showsDownloadableModels { modelPickerSource = source }
                 else if modelPickerSource == source { modelPickerSource = nil }
             }
         )
@@ -634,13 +666,15 @@ public struct CHAISettingsContent: View {
 
     @ViewBuilder
     private var modelPickerSheet: some View {
-        #if os(iOS)
-        NavigationStack {
+        if showsDownloadableModels {
+            #if os(iOS)
+            NavigationStack {
+                ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
+            }
+            #else
             ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
+            #endif
         }
-        #else
-        ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
-        #endif
     }
 
     // MARK: - Provider row helpers
@@ -856,10 +890,12 @@ public struct CHAISettingsContent: View {
         // downloaded) still show their kit-canonical name instead of being
         // dropped silently — Chen's screenshot of LiftCoach Build 64 had
         // "On-Device AI" missing from the subtitle for exactly this reason.
-        aiManager.effectiveGatedProviderIDs
+        var providerIDs = aiManager.effectiveGatedProviderIDs
             .subtracting(aiManager.disabledProviderIDs)
-            .map { aiManager.displayName(forProviderID: $0) }
-            .sorted()
+        if !showsDownloadableModels {
+            providerIDs.remove(CHLocalLLMProvider.providerID)
+        }
+        return providerIDs.map { aiManager.displayName(forProviderID: $0) }.sorted()
     }
 
     @MainActor
