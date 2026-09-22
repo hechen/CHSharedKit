@@ -252,6 +252,7 @@ public struct CHAISettingsContent: View {
                 CHAIProviderUnlockBanner(
                     priceLabel: priceLabel,
                     lockedProviderNames: lockedProviderDisplayNames,
+                    showsDownloadableModels: showsDownloadableModels,
                     isPurchasing: false,
                     pulseTrigger: pulseTrigger,
                     onPurchase: { Task { await runPurchase() } },
@@ -269,6 +270,7 @@ public struct CHAISettingsContent: View {
                 CHAIProviderUnlockBanner(
                     priceLabel: nil,
                     lockedProviderNames: lockedProviderDisplayNames,
+                    showsDownloadableModels: showsDownloadableModels,
                     isPurchasing: true,
                     pulseTrigger: pulseTrigger,
                     onPurchase: {},

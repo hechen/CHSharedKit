@@ -12,6 +12,7 @@ import CHSharedKit
 public struct CHAIProviderUnlockBanner: View {
     public let priceLabel: String?
     public let lockedProviderNames: [String]
+    public let showsDownloadableModels: Bool
     public let isPurchasing: Bool
     public let onPurchase: () -> Void
     public let onRestore: () -> Void
@@ -24,6 +25,7 @@ public struct CHAIProviderUnlockBanner: View {
     public init(
         priceLabel: String?,
         lockedProviderNames: [String],
+        showsDownloadableModels: Bool = true,
         isPurchasing: Bool,
         pulseTrigger: Int,
         onPurchase: @escaping () -> Void,
@@ -31,6 +33,7 @@ public struct CHAIProviderUnlockBanner: View {
     ) {
         self.priceLabel = priceLabel
         self.lockedProviderNames = lockedProviderNames
+        self.showsDownloadableModels = showsDownloadableModels
         self.isPurchasing = isPurchasing
         self.pulseTrigger = pulseTrigger
         self.onPurchase = onPurchase
@@ -69,10 +72,12 @@ public struct CHAIProviderUnlockBanner: View {
 
             // 2.7.0: value-prop bullets between subtitle and CTA.
             VStack(alignment: .leading, spacing: 4) {
-                bulletRow(
-                    icon: "lock.shield.fill",
-                    text: Self.localizedPrivacyBullet
-                )
+                if showsDownloadableModels {
+                    bulletRow(
+                        icon: "lock.shield.fill",
+                        text: Self.localizedPrivacyBullet
+                    )
+                }
                 bulletRow(
                     icon: "key.fill",
                     text: Self.localizedBYOKBullet
@@ -113,9 +118,8 @@ public struct CHAIProviderUnlockBanner: View {
                     .disabled(isPurchasing)
             }
 
-            // 2.6.1: surface the always-free provider so users don't think
-            // they're paying for Apple Intelligence (which they aren't —
-            // Apple Intelligence is OS-provided and free regardless).
+            // Clarify that this unlock is for third-party providers; a host
+            // app may itself be paid, so avoid calling the whole app free.
             Text(Self.localizedAlwaysFreeCaption)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -237,10 +241,10 @@ public struct CHAIProviderUnlockBanner: View {
 
     static var localizedAlwaysFreeCaption: String {
         switch lang {
-        case .zhHans: return "Apple Intelligence 始终免费"
-        case .zhHant: return "Apple Intelligence 始終免費"
-        case .ja:     return "Apple Intelligence は常に無料"
-        case .en:     return "Apple Intelligence stays free"
+        case .zhHans: return "Apple Intelligence 无需此项解锁"
+        case .zhHant: return "Apple Intelligence 無需此項解鎖"
+        case .ja:     return "Apple Intelligence はこの購入なしで利用できます"
+        case .en:     return "Apple Intelligence is included without this unlock"
         }
     }
 

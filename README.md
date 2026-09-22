@@ -218,6 +218,9 @@ also omit their own `LocalModelStore` startup and offline-catalog refreshes.
 The manager preserves the saved provider choice and resolves its usual enabled
 fallback; migrate that preference explicitly if the app must avoid a cloud
 fallback for users who previously chose local models.
+As of 2.15.4, the purchase banner also omits the offline-model benefit when
+downloads are disabled and describes Apple Intelligence as included without
+the optional unlock.
 
 ### Sending requests
 
