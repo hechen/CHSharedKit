@@ -7,8 +7,8 @@ import CHSharedKit
 /// preview path stays cheap and the parent controls re-render timing.
 ///
 /// Placement: appears as a `Section` content above the AI Provider list.
-/// Hidden entirely once `hasUnlockedProviders` flips true; the parent
-/// switches to a small "Restore Purchases" link in the section footer.
+/// Hidden entirely once `hasUnlockedProviders` flips true; from 2.16.0 the
+/// parent shows ``CHAIProviderOwnershipCard`` in its place.
 public struct CHAIProviderUnlockBanner: View {
     public let priceLabel: String?
     public let lockedProviderNames: [String]
@@ -106,7 +106,7 @@ public struct CHAIProviderUnlockBanner: View {
                     .frame(minHeight: 22)
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
+                .controlSize(CHAIUnlockStrings.actionControlSize)
                 .tint(.indigo)
                 // 2.7.0: enable the button after 1 s even if the price
                 // hasn't loaded — StoreKit's purchase sheet will fetch it.
@@ -114,7 +114,7 @@ public struct CHAIProviderUnlockBanner: View {
 
                 Button(Self.localizedRestore, action: onRestore)
                     .buttonStyle(.bordered)
-                    .controlSize(.regular)
+                    .controlSize(CHAIUnlockStrings.actionControlSize)
                     .disabled(isPurchasing)
             }
 

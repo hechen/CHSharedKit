@@ -186,6 +186,9 @@ public struct CHAISettingsContent: View {
     @State private var unlockState: UnlockState = .none
     @State private var pulseTrigger: Int = 0
     @State private var purchaseError: String?
+    // 2.16.0: restore reports what it achieved, not only failures.
+    @State private var isRestoring = false
+    @State private var restoreOutcome: CHAIRestoreOutcome?
 
     private enum UnlockState: Equatable {
         case none                       // no gate registered or empty gatedProviderIDs
@@ -279,6 +282,29 @@ public struct CHAISettingsContent: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                 .listRowBackground(Color.clear)
             }
+        } else if case .unlocked = unlockState {
+            // 2.16.0: acknowledge the purchase and keep Restore reachable at
+            // full size, instead of a caption link in the Cloud APIs footer.
+            Section {
+                CHAIProviderOwnershipCard(
+                    productName: CHIAPGateRegistry.shared?.unlockProductDisplayName,
+                    isRestoring: isRestoring,
+                    restoreOutcome: restoreOutcome,
+                    onRestore: { Task { await runRestore() } }
+                )
+                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                .listRowBackground(Color.clear)
+            }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        }
+        // A restore from the locked banner that found nothing still needs
+        // saying; the ownership card shows its own outcome inline.
+        if case .locked = unlockState, let restoreOutcome {
+            Section {
+                Label(restoreOutcome.message, systemImage: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         if let purchaseError {
             Section {
@@ -331,18 +357,10 @@ public struct CHAISettingsContent: View {
         } header: {
             Text("Cloud APIs")
         } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Connect with an API key from OpenAI or Anthropic. ChatGPT and Claude subscriptions do not include API usage.")
-                if case .unlocked = unlockState {
-                    // 2.6.0: post-unlock, banner collapses to a tiny Restore
-                    // link here so users with a previous purchase can rescue
-                    // the unlock state on a fresh install.
-                    Button("Restore Purchases") { Task { await runRestore() } }
-                        .font(.caption)
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.tint)
-                }
-            }
+            // 2.16.0: Restore moved to the ownership card at the top. It sat
+            // here as a caption-size link from 2.6.0, filed under an
+            // explanation of API keys it had nothing to do with.
+            Text("Connect with an API key from OpenAI or Anthropic. ChatGPT and Claude subscriptions do not include API usage.")
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
         .task { await modelCatalog.refreshIfNeeded() }
@@ -915,14 +933,20 @@ public struct CHAISettingsContent: View {
 
     @MainActor
     private func runRestore() async {
-        guard let gate = CHIAPGateRegistry.shared else { return }
+        guard let gate = CHIAPGateRegistry.shared, !isRestoring else { return }
         purchaseError = nil
+        restoreOutcome = nil
+        isRestoring = true
+        defer { isRestoring = false }
+        let wasUnlocked = gate.hasUnlockedProviders
         do {
             try await gate.restorePurchases()
+            refreshUnlockState()
+            restoreOutcome = .after(wasUnlocked: wasUnlocked, isUnlocked: gate.hasUnlockedProviders)
         } catch {
             purchaseError = "Restore failed: \(error.localizedDescription)"
+            refreshUnlockState()
         }
-        refreshUnlockState()
     }
 
     @ViewBuilder

@@ -9,7 +9,7 @@ import Combine
 // behind the paywall via ``CHAIManager/gatedProviderIDs``.
 //
 // The kit owns the gating logic + the picker UI (banner + locked-row chrome +
-// post-unlock Restore link). Consumer apps own the StoreKit + product-id
+// post-purchase ownership card). Consumer apps own the StoreKit + product-id
 // specifics.
 
 /// Adopted by each consumer app's IAP manager. The kit reads this to decide
@@ -50,10 +50,20 @@ public protocol CHIAPGate: AnyObject, ObservableObject
     func startPurchase() async throws
 
     /// Restore previous purchases (handles family-sharing and same-Apple-ID
-    /// reinstalls). The kit calls this from the post-unlock "Restore" link.
-    /// On success, conformers update `hasUnlockedProviders` and fire
-    /// `objectWillChange`.
+    /// reinstalls). The kit calls this from the unlock banner and from the
+    /// post-purchase ownership card. On success, conformers update
+    /// `hasUnlockedProviders` and fire `objectWillChange`.
     func restorePurchases() async throws
+
+    /// 2.16.0: the unlock product's name as the host markets it, e.g.
+    /// `"AI Pro"`. Shown on the post-purchase ownership card. Optional —
+    /// the default `nil` keeps the generic "AI providers unlocked" wording,
+    /// so existing conformers compile and render unchanged.
+    var unlockProductDisplayName: String? { get }
+}
+
+public extension CHIAPGate {
+    var unlockProductDisplayName: String? { nil }
 }
 
 // MARK: - CHIAPGateRegistry

@@ -285,6 +285,20 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Purchase ownership and restore (2.16.0)
+
+Once the unlock is owned, `CHAIProviderPickerView` shows a `CHAIProviderOwnershipCard` at the top of the picker instead of hiding the purchase entirely. It states the ownership and carries Restore Purchases as a full-size bordered button. Restore no longer appears as a caption-size link in the Cloud APIs footer.
+
+Restore now reports its result rather than only its failures: purchases restored, purchase already confirmed, or no purchase found for this Apple Account. Purchase and restore buttons use `.large` controls on macOS.
+
+Name your unlock on the card by implementing the new optional `CHIAPGate` requirement:
+
+```swift
+var unlockProductDisplayName: String? { "AI Pro" }
+```
+
+It defaults to `nil`, which keeps generic wording, so existing gates compile unchanged. The restore outcome logic is exposed as `CHAIRestoreOutcome.after(wasUnlocked:isUnlocked:)` for hosts that build their own purchase UI.
+
 ### Immediate offline model picker presentation (2.15.2)
 
 The on-device provider row and its lower Change Model / Download a Model section now present the picker from their own visible location. Scrolling the provider row offscreen no longer delays the lower action's sheet. The detail presenter stays mounted until dismissal when deleting the active model changes the selected provider.
