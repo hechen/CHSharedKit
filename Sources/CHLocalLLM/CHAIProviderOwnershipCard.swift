@@ -105,6 +105,10 @@ public struct CHAIProviderOwnershipCard: View {
                 .transition(.opacity)
             }
         }
+        // 2.16.2: fill the row. The single-row variant stretched through its
+        // Spacer; the stacked one sized to its content and left the card
+        // short of the list's width.
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.green.opacity(0.08))
         .clipShape(.rect(cornerRadius: 12, style: .continuous))
