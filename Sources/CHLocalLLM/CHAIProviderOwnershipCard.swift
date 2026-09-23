@@ -69,24 +69,22 @@ public struct CHAIProviderOwnershipCard: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.title2)
-                    .foregroundStyle(.green)
-                    .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(CHAIUnlockStrings.ownedTitle(productName: productName))
-                        .font(.headline)
-                    Text(CHAIUnlockStrings.ownedSubtitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+            // 2.16.1: one row when it fits, the button beneath when it does
+            // not. On a phone the side-by-side row wrapped "Restore
+            // Purchases" onto two lines and broke the subtitle early; the
+            // Mac and iPad have the width for a single row. ViewThatFits
+            // measures ideal (unwrapped) widths, so it only takes the row
+            // when every line fits whole.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .center, spacing: 10) {
+                    header
+                    Spacer(minLength: 12)
+                    restoreButton
                 }
-
-                Spacer(minLength: 8)
-
-                restoreButton
+                VStack(alignment: .leading, spacing: 12) {
+                    header
+                    restoreButton
+                }
             }
 
             if let restoreOutcome {
@@ -118,6 +116,24 @@ public struct CHAIProviderOwnershipCard: View {
         .animation(.easeInOut(duration: 0.2), value: restoreOutcome)
     }
 
+    private var header: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.title2)
+                .foregroundStyle(.green)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(CHAIUnlockStrings.ownedTitle(productName: productName))
+                    .font(.headline)
+                Text(CHAIUnlockStrings.ownedSubtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
     private var restoreButton: some View {
         Button(action: onRestore) {
             HStack(spacing: 6) {
@@ -125,6 +141,10 @@ public struct CHAIProviderOwnershipCard: View {
                     ProgressView().controlSize(.small)
                 }
                 Text(CHAIUnlockStrings.restorePurchases)
+                    // Never wrap the label; the layout moves the button to
+                    // its own line instead.
+                    .lineLimit(1)
+                    .fixedSize()
             }
         }
         .buttonStyle(.bordered)

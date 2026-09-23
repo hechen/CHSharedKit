@@ -289,6 +289,8 @@ API model without publishing a new package or app build.
 
 Once the unlock is owned, `CHAIProviderPickerView` shows a `CHAIProviderOwnershipCard` at the top of the picker instead of hiding the purchase entirely. It states the ownership and carries Restore Purchases as a full-size bordered button. Restore no longer appears as a caption-size link in the Cloud APIs footer.
 
+As of 2.16.1 the card puts Restore beside the status when the row fits on one line and beneath it when it does not, so the button never wraps on a phone.
+
 Restore now reports its result rather than only its failures: purchases restored, purchase already confirmed, or no purchase found for this Apple Account. Purchase and restore buttons use `.large` controls on macOS.
 
 Name your unlock on the card by implementing the new optional `CHIAPGate` requirement:
