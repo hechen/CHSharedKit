@@ -47,8 +47,19 @@ public struct CHAIProviderPickerView: View {
     }
 
     public var body: some View {
-        List {
-            CHAISettingsContent(appIdentifier: appIdentifier)
+        Group {
+            #if os(macOS)
+            // 2.17.0: a grouped Form, like every other Mac Settings pane. As
+            // a List it drew bold black footers and full-width tinted rows.
+            Form {
+                CHAISettingsContent(appIdentifier: appIdentifier)
+            }
+            .formStyle(.grouped)
+            #else
+            List {
+                CHAISettingsContent(appIdentifier: appIdentifier)
+            }
+            #endif
         }
         .themedListBackground()
         .themedNavigationBar()
@@ -160,8 +171,9 @@ public struct CHAISettingsContent: View {
     @AppStorage("clawd_openai_model") private var openaiModel: String = "gpt-5.6-terra"
     @AppStorage("clawd_claude_model") private var claudeModel: String = "claude-sonnet-5"
 
-    @State private var isValidating = false
-    @State private var validationResult: String?
+    // 2.17.0: typed state for the Test Connection row, which now sits in
+    // the provider's own section instead of a section at the page bottom.
+    @State private var connectionTest = CHAIConnectionTestState.idle
     @State private var showingAPIKey = false
     private enum ModelPickerSource { case provider, detail }
     @State private var modelPickerSource: ModelPickerSource?
@@ -227,23 +239,20 @@ public struct CHAISettingsContent: View {
 
     public var body: some View {
         let _ = modelCatalog.revision
+        #if os(iOS)
         // Summary row — always shows the currently-active provider so
         // the user sees at a glance what the app will use before
-        // scrolling through the picker below.
-        Section {
-            LabeledContent("Current Provider") {
-                Text(CHAIActiveProviderLabel.text(for: aiManager))
-                    .foregroundStyle(.secondary)
+        // scrolling through the picker below. On the Mac the Provider
+        // menu shows the choice itself.
+        withSettingsLifecycle(
+            Section {
+                LabeledContent("Current Provider") {
+                    Text(CHAIActiveProviderLabel.text(for: aiManager))
+                        .foregroundStyle(.secondary)
+                }
             }
-        }
-        .onAppear {
-            openaiKey = CHOpenAIProvider.apiKey ?? ""
-            claudeKey = CHClaudeProvider.apiKey ?? ""
-            customKey = CHCustomEndpointProvider.apiKey ?? ""
-        }
-        .onChange(of: showsDownloadableModels) { _, isAvailable in
-            if !isAvailable { modelPickerSource = nil }
-        }
+        )
+        #endif
 
         // 2.6.0: IAP unlock banner. Renders only when a gate is registered,
         // at least one provider is gated, and the user hasn't unlocked.
@@ -314,6 +323,9 @@ public struct CHAISettingsContent: View {
             }
         }
 
+        #if os(macOS)
+        withSettingsLifecycle(macProviderSection)
+        #else
         Section {
             // On-Device — smart tap: management sheet if installed, picker if not
             if showsDownloadableModels {
@@ -360,30 +372,13 @@ public struct CHAISettingsContent: View {
             // 2.16.0: Restore moved to the ownership card at the top. It sat
             // here as a caption-size link from 2.6.0, filed under an
             // explanation of API keys it had nothing to do with.
-            Text("Connect with an API key from OpenAI or Anthropic. ChatGPT and Claude subscriptions do not include API usage.")
+            // 2.17.0: named every service and wraps. It listed only OpenAI
+            // and Anthropic, above a Grok row, and truncated on the Mac.
+            Text("Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.")
+                .fixedSize(horizontal: false, vertical: true)
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
-        .task { await modelCatalog.refreshIfNeeded() }
-        .onAppear { refreshUnlockState() }
-        .onReceive(gatePublisher) { _ in
-            refreshUnlockState()
-        }
 
-        #if os(macOS)
-        if aiManager.availableProviders.contains(where: {
-            $0.id == CHCustomEndpointProvider.providerID
-        }) {
-            Section {
-                cloudProviderRow(
-                    id: CHCustomEndpointProvider.providerID,
-                    name: "Custom Endpoint"
-                )
-            } header: {
-                Text("Advanced")
-            } footer: {
-                Text("Connect an OpenAI-compatible service that you operate or trust.")
-            }
-        }
         #endif
 
         // On-Device detail section (when selected)
@@ -392,7 +387,8 @@ public struct CHAISettingsContent: View {
             onDeviceDetailSection
         }
 
-        // Apple Intelligence info
+        // Apple Intelligence info. On the Mac the Provider footer says this.
+        #if os(iOS)
         if selectedProvider == CHAppleIntelligenceProvider.providerID {
             Section {
                 HStack {
@@ -404,6 +400,7 @@ public struct CHAISettingsContent: View {
                 Text("Apple Intelligence")
             }
         }
+        #endif
 
         // OpenAI settings
         //
@@ -425,10 +422,17 @@ public struct CHAISettingsContent: View {
         // .onChange (load value → write same value back), which is
         // harmless.
         if selectedProvider == CHOpenAIProvider.providerID {
-            Section {
-                keyField("sk-...", key: $openaiKey)
-                    .onChange(of: openaiKey) { _, val in CHOpenAIProvider.apiKey = val }
-
+            CHAIProviderCredentialSection(
+                providerName: "OpenAI",
+                keyPlaceholder: "sk-...",
+                apiKey: $openaiKey,
+                billingAccountName: "OpenAI",
+                endpointHost: URL(string: CHOpenAIProvider.baseURL)?.host(),
+                apiKeyURL: URL(string: "https://platform.openai.com/api-keys"),
+                privacyPolicyURL: URL(string: "https://openai.com/policies/privacy-policy/"),
+                connectionTest: connectionTest,
+                onTestConnection: testConnection
+            ) {
                 // 2.9.6: $openaiModel is `@AppStorage`-bound so the
                 // picker writes directly to UserDefaults. No
                 // `.onChange { CHOpenAIProvider.model = val }`
@@ -439,28 +443,27 @@ public struct CHAISettingsContent: View {
                         Text(model.name).tag(model.id)
                     }
                 }
-            } header: {
-                Text("OpenAI")
-            } footer: {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Text("Get your API key at")
-                        if let url = URL(string: "https://platform.openai.com/api-keys") {
-                            Link("platform.openai.com", destination: url)
-                        }
-                    }
-                    Text("API key stored securely in Keychain.")
-                }
+            }
+            .onChange(of: openaiKey) { _, val in
+                CHOpenAIProvider.apiKey = val
+                connectionTest = .idle
             }
             .onAppear { openaiKey = CHOpenAIProvider.apiKey ?? "" }
         }
 
         // Claude settings
         if selectedProvider == CHClaudeProvider.providerID {
-            Section {
-                keyField("sk-ant-...", key: $claudeKey)
-                    .onChange(of: claudeKey) { _, val in CHClaudeProvider.apiKey = val }
-
+            CHAIProviderCredentialSection(
+                providerName: "Anthropic Claude",
+                keyPlaceholder: "sk-ant-...",
+                apiKey: $claudeKey,
+                billingAccountName: "Anthropic",
+                endpointHost: URL(string: CHClaudeProvider.baseURL)?.host(),
+                apiKeyURL: URL(string: "https://console.anthropic.com/settings/keys"),
+                privacyPolicyURL: URL(string: "https://www.anthropic.com/legal/privacy"),
+                connectionTest: connectionTest,
+                onTestConnection: testConnection
+            ) {
                 // 2.9.6: same fix as the OpenAI Picker — $claudeModel
                 // writes directly via `@AppStorage`.
                 Picker("Model", selection: $claudeModel) {
@@ -468,26 +471,23 @@ public struct CHAISettingsContent: View {
                         Text(model.name).tag(model.id)
                     }
                 }
-            } header: {
-                Text("Anthropic Claude")
-            } footer: {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 4) {
-                        Text("Get your API key at")
-                        if let url = URL(string: "https://console.anthropic.com/settings/keys") {
-                            Link("console.anthropic.com", destination: url)
-                        }
-                    }
-                    Text("API key stored securely in Keychain.")
-                }
+            }
+            .onChange(of: claudeKey) { _, val in
+                CHClaudeProvider.apiKey = val
+                connectionTest = .idle
             }
             .onAppear { claudeKey = CHClaudeProvider.apiKey ?? "" }
         }
 
         // Custom endpoint settings
         if let provider = aiManager.provider(id: selectedProvider) as? CHAICatalogProvider {
-            CHAICatalogProviderSettings(provider: provider)
-                .id(provider.credentialID)
+            CHAICatalogProviderSettings(
+                provider: provider,
+                connectionTest: connectionTest,
+                onTestConnection: testConnection,
+                onAPIKeyChange: { connectionTest = .idle }
+            )
+            .id(provider.credentialID)
         }
 
         if selectedProvider == CHCustomEndpointProvider.providerID {
@@ -508,26 +508,46 @@ public struct CHAISettingsContent: View {
                 }
                 #else
                 LabeledContent("Base URL") {
-                    TextField("http://localhost:11434/v1", text: $customURL)
-                        .multilineTextAlignment(.trailing)
+                    TextField(text: $customURL, prompt: Text("http://localhost:11434/v1")) { Text("Base URL") }
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: 340)
                         .autocorrectionDisabled()
                 }
                 LabeledContent("Model") {
-                    TextField("llama3", text: $customModel)
-                        .multilineTextAlignment(.trailing)
+                    TextField(text: $customModel, prompt: Text("llama3")) { Text("Model") }
+                        .labelsHidden()
+                        .textFieldStyle(.roundedBorder)
+                        .multilineTextAlignment(.leading)
+                        .frame(maxWidth: 340)
                         .autocorrectionDisabled()
                 }
                 #endif
-                keyField("API Key (optional)", key: $customKey)
+                LabeledContent("API Key") {
+                    keyField("Optional", key: $customKey)
+                }
+                CHAIConnectionTestRow(
+                    state: connectionTest,
+                    canTest: !customURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                    action: testConnection
+                )
             } header: {
                 Text("Custom Endpoint")
             } footer: {
                 Text("OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.")
             }
-            .onChange(of: customURL) { _, val in CHCustomEndpointProvider.baseURL = val }
-            .onChange(of: customModel) { _, val in CHCustomEndpointProvider.model = val }
+            .onChange(of: customURL) { _, val in
+                CHCustomEndpointProvider.baseURL = val
+                connectionTest = .idle
+            }
+            .onChange(of: customModel) { _, val in
+                CHCustomEndpointProvider.model = val
+                connectionTest = .idle
+            }
             .onChange(of: customKey) { _, val in
                 CHCustomEndpointProvider.apiKey = val.isEmpty ? nil : val
+                connectionTest = .idle
             }
             .onAppear {
                 customKey = CHCustomEndpointProvider.apiKey ?? ""
@@ -536,31 +556,121 @@ public struct CHAISettingsContent: View {
             }
         }
 
-        // Test Connection (cloud providers only)
-        let isCloudProvider = selectedProvider != CHAppleIntelligenceProvider.providerID
-                           && selectedProvider != CHLocalLLMProvider.providerID
-        if isCloudProvider {
-            Section {
-                Button {
-                    saveKeys()
-                    validateCurrentProvider()
-                } label: {
-                    HStack {
-                        Text("Test Connection")
-                        Spacer()
-                        if isValidating { ProgressView().scaleEffect(0.8) }
+    }
+
+    // MARK: - Lifecycle
+
+    /// Loads keys, tracks the gate and resets stale state. Attached to the
+    /// first always-present section: the summary row on iOS, the Provider
+    /// menu on the Mac.
+    private func withSettingsLifecycle<V: View>(_ section: V) -> some View {
+        section
+            .onAppear {
+                openaiKey = CHOpenAIProvider.apiKey ?? ""
+                claudeKey = CHClaudeProvider.apiKey ?? ""
+                customKey = CHCustomEndpointProvider.apiKey ?? ""
+                refreshUnlockState()
+            }
+            .onChange(of: showsDownloadableModels) { _, isAvailable in
+                if !isAvailable { modelPickerSource = nil }
+            }
+            // One provider's test result must not show on the next one's row.
+            .onChange(of: selectedProvider) { _, _ in connectionTest = .idle }
+            .task { await modelCatalog.refreshIfNeeded() }
+            .onReceive(gatePublisher) { _ in
+                refreshUnlockState()
+            }
+    }
+
+    #if os(macOS)
+    // MARK: - Mac provider menu
+
+    /// 2.17.0: the Mac chooses a provider from one pop-up menu, the control
+    /// System Settings uses for a single choice. It replaced three iOS-style
+    /// lists of 36 pt icon tiles that drew as tinted push buttons in a Mac
+    /// Form and made the page several times taller than the Settings window.
+    @ViewBuilder
+    private var macProviderSection: some View {
+        let cloudProviders = aiManager.availableProviders.filter { appearsInCloudAPIs($0.id) }
+        let offersCustomEndpoint = aiManager.availableProviders.contains {
+            $0.id == CHCustomEndpointProvider.providerID
+        }
+        Section {
+            Picker("Provider", selection: Binding(
+                get: { selectedProvider },
+                set: { selectMacProvider($0) }
+            )) {
+                Section("On This Device") {
+                    macMenuItem(CHAppleIntelligenceProvider.providerID,
+                                name: "Apple Intelligence", icon: "apple.intelligence")
+                        .disabled(!aiManager.isAppleIntelligenceAvailable)
+                    if showsDownloadableModels {
+                        macMenuItem(CHLocalLLMProvider.providerID, name: "On-Device AI", icon: "cpu")
                     }
                 }
-                .disabled(isValidating)
-
-                if let result = validationResult {
-                    Text(result)
-                        .font(.caption)
-                        .foregroundStyle(result.contains("✓") ? .green : .red)
+                if !cloudProviders.isEmpty {
+                    Section("Cloud") {
+                        ForEach(cloudProviders, id: \.id) { provider in
+                            macMenuItem(provider.id, name: provider.name,
+                                        icon: cloudProviderMeta(provider.id).icon)
+                        }
+                    }
+                }
+                if offersCustomEndpoint {
+                    Section("Advanced") {
+                        macMenuItem(CHCustomEndpointProvider.providerID,
+                                    name: "Custom Endpoint", icon: "server.rack")
+                    }
                 }
             }
+            .pickerStyle(.menu)
+
+            if aiManager.isLocked(providerID: selectedProvider) {
+                Label("Locked — unlock above to use this provider", systemImage: "lock.fill")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        } footer: {
+            Text(macProviderFooter)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
+
+    private func macMenuItem(_ id: String, name: String, icon: String) -> some View {
+        let isLocked = aiManager.isLocked(providerID: id)
+        return Label(isLocked ? "\(name) (Locked)" : name, systemImage: icon)
+            .tag(id)
+    }
+
+    private func selectMacProvider(_ id: String) {
+        // A locked choice points at the unlock card instead of switching.
+        if aiManager.isLocked(providerID: id) {
+            pulseTrigger += 1
+            return
+        }
+        if id == CHAppleIntelligenceProvider.providerID,
+           !aiManager.isAppleIntelligenceAvailable { return }
+        aiManager.activeProviderID = id
+        // The Mac has no provider row to present from; the detail
+        // section below does, so a first-time pick opens its catalog.
+        if id == CHLocalLLMProvider.providerID, activeModel == nil {
+            modelPickerSource = .detail
+        }
+    }
+
+    private var macProviderFooter: String {
+        switch selectedProvider {
+        case CHAppleIntelligenceProvider.providerID:
+            return "Apple Intelligence runs on this Mac. It is free, and requests never leave the device."
+        case CHLocalLLMProvider.providerID:
+            return "Runs a downloaded model entirely on this Mac, even offline."
+        case CHCustomEndpointProvider.providerID:
+            return "Connect an OpenAI-compatible service that you operate or trust."
+        default:
+            return "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage."
+        }
+    }
+    #endif
 
     // MARK: - On-Device rows
 
@@ -632,7 +742,9 @@ public struct CHAISettingsContent: View {
                         .fontWeight(.semibold)
                 }
             }
+            .contentShape(Rectangle())
         }
+        .providerRowButtonStyle()
         .sheet(isPresented: modelPickerPresentation(from: .provider)) {
             modelPickerSheet
         }
@@ -701,20 +813,25 @@ public struct CHAISettingsContent: View {
 
     @ViewBuilder
     private func cloudProviderRow(id: String, name: String) -> some View {
-        let (icon, iconColor, subtitle) = cloudProviderMeta(id)
+        let meta = cloudProviderMeta(id)
         providerRow(
             id: id,
-            icon: icon,
-            iconColor: iconColor,
+            icon: meta.icon,
+            iconColor: meta.color,
             name: name,
             badge: nil,
             badgeColor: .clear,
-            subtitle: subtitle,
-            available: true
+            subtitle: meta.subtitle,
+            available: true,
+            // 2.17.0: the selected provider cannot answer without a key; say
+            // so on its row instead of only in the grey subtitle.
+            warning: selectedProvider == id && meta.needsAPIKey
+                ? "Needs an API key — add it below"
+                : nil
         )
     }
 
-    private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?) {
+    private func cloudProviderMeta(_ id: String) -> (icon: String, color: Color, subtitle: String?, needsAPIKey: Bool) {
         // 2.9.5 introduced dynamic subtitles; 2.9.6 fixes the
         // observation path. The lookup MUST go through the
         // `@AppStorage` properties (`openaiModel` / `claudeModel`),
@@ -742,7 +859,7 @@ public struct CHAISettingsContent: View {
                     recommendedFallback: CHOpenAIProvider.recommendedModel.displayName
                 ),
                 hasAPIKey: !openaiKey.isEmpty
-            ))
+            ), openaiKey.isEmpty)
         case CHClaudeProvider.providerID:
             let match = CHClaudeProvider.availableModels.first(where: { $0.id == claudeModel })
             return ("sparkles", .orange, connectionSubtitle(
@@ -751,16 +868,18 @@ public struct CHAISettingsContent: View {
                     recommendedFallback: CHClaudeProvider.recommendedModel.displayName
                 ),
                 hasAPIKey: !claudeKey.isEmpty
-            ))
+            ), claudeKey.isEmpty)
         case CHCustomEndpointProvider.providerID:
             let model = customModel.trimmingCharacters(in: .whitespacesAndNewlines)
-            return ("server.rack", .gray, model.isEmpty ? "OpenAI-compatible API" : "\(model) · OpenAI-compatible API")
+            // The key is optional for a self-hosted endpoint.
+            return ("server.rack", .gray, model.isEmpty ? "OpenAI-compatible API" : "\(model) · OpenAI-compatible API", false)
         default:
             if let provider = aiManager.provider(id: id) as? CHAICatalogProvider {
+                let hasAPIKey = provider.apiKey != nil
                 return ("network", .blue, connectionSubtitle(model: provider.selectedModel.name,
-                                                             hasAPIKey: provider.apiKey != nil))
+                                                             hasAPIKey: hasAPIKey), !hasAPIKey)
             }
-            return ("network", .blue, nil)
+            return ("network", .blue, nil, false)
         }
     }
 
@@ -797,7 +916,8 @@ public struct CHAISettingsContent: View {
         badgeColor: Color,
         subtitle: String?,
         available: Bool,
-        unavailableReason: String? = nil
+        unavailableReason: String? = nil,
+        warning: String? = nil
     ) -> some View {
         // 2.6.0: gating short-circuit. Locked rows route taps to the unlock
         // banner (pulse) instead of the activate path. Apple Intelligence is
@@ -848,6 +968,10 @@ public struct CHAISettingsContent: View {
                             .foregroundStyle(.indigo)
                     } else if let reason = unavailableReason, !available {
                         Text(reason).font(.caption).foregroundStyle(.tertiary)
+                    } else if let warning {
+                        Label(warning, systemImage: "exclamationmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
                     } else if let sub = subtitle {
                         Text(sub).font(.caption).foregroundStyle(.secondary)
                             .opacity(isLocked ? 0.6 : 1.0)
@@ -860,7 +984,9 @@ public struct CHAISettingsContent: View {
                         .fontWeight(.semibold)
                 }
             }
+            .contentShape(Rectangle())
         }
+        .providerRowButtonStyle()
         .disabled(!available)
     }
 
@@ -976,14 +1102,14 @@ public struct CHAISettingsContent: View {
     private func keyField(_ placeholder: String, key: Binding<String>) -> some View {
         HStack {
             if showingAPIKey {
-                TextField(placeholder, text: key)
+                TextField(text: key, prompt: Text(placeholder)) { Text("API Key") }
                     .textContentType(.password)
                     #if os(iOS)
                     .textInputAutocapitalization(.never)
                     #endif
                     .autocorrectionDisabled()
             } else {
-                SecureField(placeholder, text: key)
+                SecureField(text: key, prompt: Text(placeholder)) { Text("API Key") }
                     .textContentType(.password)
             }
             Button { showingAPIKey.toggle() } label: {
@@ -992,6 +1118,12 @@ public struct CHAISettingsContent: View {
             }
             .buttonStyle(.plain)
         }
+        .labelsHidden()
+        #if os(macOS)
+        .textFieldStyle(.roundedBorder)
+        .multilineTextAlignment(.leading)
+        .frame(maxWidth: 366)
+        #endif
     }
 
     // MARK: - Actions
@@ -1006,17 +1138,37 @@ public struct CHAISettingsContent: View {
         CHClaudeProvider.model = claudeModel
     }
 
-    private func validateCurrentProvider() {
-        isValidating = true
-        validationResult = nil
+    private func testConnection() {
+        saveKeys()
+        let providerID = selectedProvider
+        connectionTest = CHAIConnectionTestState(isTesting: true)
         Task {
+            let result: CHAIConnectionTestState.Result
             do {
-                let ok = try await aiManager.validateProvider(selectedProvider)
-                validationResult = ok ? "✓ Connected successfully" : "✗ Connection failed"
+                let ok = try await aiManager.validateProvider(providerID)
+                result = ok ? .connected : .failed("Connection failed")
             } catch {
-                validationResult = "✗ \(error.localizedDescription)"
+                result = .failed(error.localizedDescription)
             }
-            isValidating = false
+            // Drop a late answer once the user has switched provider or
+            // edited the settings under test (both reset to idle).
+            guard selectedProvider == providerID, connectionTest.isTesting else { return }
+            connectionTest = CHAIConnectionTestState(result: result)
         }
+    }
+}
+
+private extension View {
+    /// 2.17.0: on the Mac a default-style Button in a Form draws a grey push
+    /// button behind the whole row, so every provider looked pressed. The
+    /// row is a list choice, not a push button; the checkmark marks the pick.
+    /// iOS keeps the default style for its row tap highlight.
+    @ViewBuilder
+    func providerRowButtonStyle() -> some View {
+        #if os(macOS)
+        buttonStyle(.plain)
+        #else
+        self
+        #endif
     }
 }

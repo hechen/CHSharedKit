@@ -285,6 +285,14 @@ targets, and nonnegative prices before replacing the active catalog. Add a
 retired ID and its fallback in the manifest to move users away from a removed
 API model without publishing a new package or app build.
 
+### Provider credentials (2.17.0)
+
+`CHAIProviderCredentialSection` is the one section every bring-your-own-key provider now uses: OpenAI, Claude, and catalog providers through `CHAICatalogProviderSettings`. It has a labelled key field (bordered on macOS, with a reveal toggle), the model picker you pass in, and a Test Connection row. The footer wraps and says the key is stored in the Keychain, names the host that requests go to and who bills them, and links to where to get a key and to the privacy policy. `CHAIConnectionTestRow` and `CHAIConnectionTestState` are public too, so a host-specific section can show the same row.
+
+Test Connection now sits in the provider's own section, is disabled when there is no key to test, and shows its result inline. Editing the key or switching provider clears the result. To add the row to a catalog provider, use `CHAICatalogProviderSettings(provider:connectionTest:onTestConnection:onAPIKeyChange:)`. The `init(provider:)` initializer still works.
+
+On macOS, `CHAIProviderPickerView` is a grouped `Form` like the rest of Mac Settings, and the provider is chosen from a single Provider pop-up menu. That replaces the iOS-style lists of icon rows, which drew as tinted push buttons on the Mac. The layout on iOS is unchanged, except that a selected cloud provider with no key now says so on its row.
+
 ### Purchase ownership and restore (2.16.0)
 
 Once the unlock is owned, `CHAIProviderPickerView` shows a `CHAIProviderOwnershipCard` at the top of the picker instead of hiding the purchase entirely. It states the ownership and carries Restore Purchases as a full-size bordered button. Restore no longer appears as a caption-size link in the Cloud APIs footer.
