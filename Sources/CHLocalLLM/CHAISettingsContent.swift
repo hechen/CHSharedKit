@@ -250,6 +250,11 @@ public struct CHAISettingsContent: View {
                     Text(CHAIActiveProviderLabel.text(for: aiManager))
                         .foregroundStyle(.secondary)
                 }
+                // 2.18.0: a locked choice runs on its fallback; say why the
+                // row above names a provider the user did not pick.
+                if let notice = aiManager.activeProviderLockedFallbackNotice {
+                    lockedFallbackLabel(notice)
+                }
             }
         )
         #endif
@@ -558,6 +563,19 @@ public struct CHAISettingsContent: View {
 
     }
 
+    /// 2.18.0: "OpenAI is locked. Apple Intelligence is used until you
+    /// unlock." Shown while a locked choice is served by its fallback.
+    private func lockedFallbackLabel(_ notice: String) -> some View {
+        Label(notice, systemImage: "lock.fill")
+            #if os(macOS)
+            .font(.callout)
+            #else
+            .font(.caption)
+            #endif
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     // MARK: - Lifecycle
 
     /// Loads keys, tracks the gate and resets stale state. Attached to the
@@ -577,7 +595,9 @@ public struct CHAISettingsContent: View {
             // One provider's test result must not show on the next one's row.
             .onChange(of: selectedProvider) { _, _ in connectionTest = .idle }
             .task { await modelCatalog.refreshIfNeeded() }
-            .onReceive(gatePublisher) { _ in
+            // `objectWillChange` fires before the gate's value changes;
+            // read it on the next main-queue turn, once it has settled.
+            .onReceive(gatePublisher.receive(on: DispatchQueue.main)) { _ in
                 refreshUnlockState()
             }
     }
@@ -629,6 +649,9 @@ public struct CHAISettingsContent: View {
                 Label(String(localized: "Locked — unlock above to use this provider", bundle: .module), systemImage: "lock.fill")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            } else if let notice = aiManager.activeProviderLockedFallbackNotice {
+                // 2.18.0: the menu shows the fallback actually in use.
+                lockedFallbackLabel(notice)
             }
         } footer: {
             Text(macProviderFooter)
@@ -1022,7 +1045,9 @@ public struct CHAISettingsContent: View {
         return Self.bridgeGatePublisher(gate)
     }
 
-    private static func bridgeGatePublisher<G: CHIAPGate>(_ gate: G) -> AnyPublisher<Void, Never> {
+    /// `nonisolated`: the `map` closure runs on the gate's publishing thread,
+    /// which need not be main (the value is received on main below).
+    nonisolated private static func bridgeGatePublisher<G: CHIAPGate>(_ gate: G) -> AnyPublisher<Void, Never> {
         gate.objectWillChange
             .map { _ in () }
             .eraseToAnyPublisher()

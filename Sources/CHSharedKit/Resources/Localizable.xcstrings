@@ -183,6 +183,66 @@
         }
       }
     },
+    "%@ is locked. %@ is used until you unlock.": {
+      "extractionState": "manual",
+      "generatesSymbol": false,
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is locked. %2$@ is used until you unlock."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ ist gesperrt. Bis zur Freischaltung wird %2$@ verwendet."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ est verrouillé. %2$@ est utilisé jusqu’au déverrouillage."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ è bloccato. Fino allo sblocco viene usato %2$@."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ está bloqueado. %2$@ será usado até você desbloquear."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ está bloqueado. Se usará %2$@ hasta que lo desbloquees."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 未解锁。解锁前将使用 %2$@。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@はロック中です。アンロックするまで%2$@を使用します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@이(가) 잠겨 있습니다. 잠금 해제 전까지 %2$@을(를) 사용합니다."
+          }
+        }
+      }
+    },
     "%@ model updated": {
       "extractionState": "manual",
       "generatesSymbol": false,

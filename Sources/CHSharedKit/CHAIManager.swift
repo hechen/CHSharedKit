@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import SwiftUI
 #if canImport(FoundationModels)
@@ -126,11 +127,19 @@ public final class CHAIManager: ObservableObject {
 
     /// 2.6.0: provider IDs gated behind a one-time IAP. Empty by default
     /// (no gating). When non-empty AND `CHIAPGateRegistry.shared` is set
-    /// AND the gate's `hasUnlockedProviders == false`, calls to `send` /
-    /// `stream` / `sendWithVision` for any provider in this set throw
-    /// ``CHAIError/providerLocked(displayName:)`` BEFORE dispatching to
-    /// the underlying provider, and the picker's `CHAISettingsContent`
-    /// renders an unlock banner + locks the matching rows.
+    /// AND the gate's `hasUnlockedProviders == false`, the matching
+    /// providers are locked: the picker's `CHAISettingsContent` renders an
+    /// unlock banner + locks the matching rows, and no request is ever
+    /// dispatched to them.
+    ///
+    /// 2.18.0: a locked stored choice (never bought, refunded, revoked)
+    /// no longer fails every request. ``effectiveActiveProviderID`` serves
+    /// it from Apple Intelligence when available, else from another
+    /// unlocked provider, while ``activeProviderID`` and the provider's API
+    /// key stay untouched, so a restore or re-purchase resumes the user's
+    /// provider automatically. Only when no unlocked provider can serve the
+    /// request do `send` / `stream` / `sendWithVision` throw
+    /// ``CHAIError/providerLocked(displayName:)``.
     ///
     /// Common config (all paid providers, Apple Intelligence stays free):
     ///
@@ -149,6 +158,16 @@ public final class CHAIManager: ObservableObject {
     private var catalogProviderIDs: Set<String> = []
     private var hostProviderIDs: Set<String> = []
     private var providers: [String: any CHAIProvider] = [:]
+
+    /// Forwards the registered ``CHIAPGate``'s changes to this manager's
+    /// observers. A refund or restore changes which provider serves
+    /// requests, so every view that shows the effective provider must
+    /// re-render when the entitlement flips, not only the picker banner.
+    private var iapGateObservation: AnyCancellable?
+
+    /// Test seam for ``isAppleIntelligenceAvailable``. `nil` in production,
+    /// where FoundationModels answers.
+    var appleIntelligenceAvailabilityOverride: Bool?
 
     private static let activeModelIDKey = "clawd_ai_active_model_id"
     private static let activeModelDisplayNameKey = "clawd_ai_active_model_name"
@@ -176,6 +195,39 @@ public final class CHAIManager: ObservableObject {
         self.activeModelDisplayName = UserDefaults.standard.string(forKey: Self.activeModelDisplayNameKey)
         registerBuiltInProviders()
         synchronizeCatalogProviders(CHAICloudModelCatalog.snapshot)
+        observeIAPGate(CHIAPGateRegistry.shared)
+    }
+
+    /// 2.18.0: subscribes to the registered gate. Called by
+    /// ``CHIAPGateRegistry/shared`` whenever a host registers or clears its
+    /// gate, so hosts need no extra wiring.
+    func observeIAPGate(_ gate: (any CHIAPGate)?) {
+        guard let gate else {
+            iapGateObservation = nil
+            objectWillChange.send()
+            return
+        }
+        // Forwarded synchronously on the main thread, like any nested
+        // ObservableObject. A gate that publishes from a StoreKit listener
+        // thread is hopped to main; the closure is deliberately nonisolated
+        // so an off-main delivery cannot trip a main-actor assertion.
+        iapGateObservation = Self.changes(of: gate).sink { @Sendable [weak self] in
+            if Thread.isMainThread {
+                MainActor.assumeIsolated { self?.objectWillChange.send() }
+            } else {
+                DispatchQueue.main.async {
+                    MainActor.assumeIsolated { self?.objectWillChange.send() }
+                }
+            }
+        }
+        objectWillChange.send()
+    }
+
+    /// Opens the `any CHIAPGate` existential so its publisher can be erased.
+    /// `nonisolated` so the `map` closure carries no main-actor assertion:
+    /// it runs on whichever thread the gate publishes from.
+    nonisolated private static func changes<G: CHIAPGate>(of gate: G) -> AnyPublisher<Void, Never> {
+        gate.objectWillChange.map { _ in () }.eraseToAnyPublisher()
     }
 
     /// Record the currently-active on-device model. Called by
@@ -237,6 +289,18 @@ public final class CHAIManager: ObservableObject {
         if activeProviderID == id { activeProviderID = CHAppleIntelligenceProvider.providerID }
     }
 
+    /// Test seam: swaps a registered provider in place without changing how
+    /// it was registered (built-in, host or catalog), so a test can stand
+    /// in for a built-in such as Apple Intelligence and put it back exactly.
+    /// Returns the provider it replaced.
+    @discardableResult
+    func _swapProviderForTesting(_ provider: any CHAIProvider) -> (any CHAIProvider)? {
+        objectWillChange.send()
+        let previous = providers[provider.id]
+        providers[provider.id] = provider
+        return previous
+    }
+
     /// Reconcile only catalog-owned registrations; host overrides remain authoritative.
     func synchronizeCatalogProviders(_ manifest: CHAICloudModelCatalogManifest) {
         objectWillChange.send()
@@ -251,12 +315,76 @@ public final class CHAIManager: ObservableObject {
 
     /// Provider ID used for requests on this device. This normally matches
     /// ``activeProviderID``. When the stored provider is disabled locally,
-    /// the manager selects an enabled fallback without changing persistence.
+    /// or (2.18.0) locked behind an unlock the user does not own, the
+    /// manager selects a fallback without changing persistence. See
+    /// ``effectiveProviderID(forStoredChoice:)``.
     public var effectiveActiveProviderID: String? {
-        guard disabledProviderIDs.contains(activeProviderID) else {
-            return provider(id: activeProviderID) == nil ? nil : activeProviderID
-        }
+        effectiveProviderID(forStoredChoice: activeProviderID)
+    }
 
+    /// Resolves a stored provider choice (the global selection or a
+    /// per-feature override) to the provider that may serve requests now.
+    ///
+    /// * Usable choice: returned unchanged.
+    /// * Disabled on this device: the first unlocked fallback, else the
+    ///   pre-2.18 fallback order.
+    /// * 2.18.0, locked (gating active, gate not unlocked: never bought,
+    ///   refunded, revoked): Apple Intelligence when available, else another
+    ///   unlocked provider, never another locked one. With no such provider
+    ///   the locked ID itself is returned, so dispatch fails with
+    ///   ``CHAIError/providerLocked(displayName:)`` naming the user's choice.
+    /// * Not registered, or excluded by ``availableProvidersFilter``: `nil`.
+    ///
+    /// The stored choice and its API key are never modified, so a restore
+    /// or re-purchase resumes the user's provider on the next request.
+    public func effectiveProviderID(forStoredChoice id: String) -> String? {
+        if !isProviderEnabled(id) {
+            return unlockedFallbackProviderID(excluding: id) ?? disabledFallbackProviderID()
+        }
+        guard provider(id: id) != nil else { return nil }
+        guard isLocked(providerID: id) else { return id }
+        return unlockedFallbackProviderID(excluding: id) ?? id
+    }
+
+    /// Apple Intelligence first (it is never gated), then OpenAI, Claude and
+    /// any other provider in ID order. Every candidate must be registered,
+    /// enabled, allowed by the filter, not locked, and pass `accepts`.
+    private func unlockedFallbackProviderID(
+        excluding excludedID: String,
+        accepts: (any CHAIProvider) -> Bool = { _ in true }
+    ) -> String? {
+        let apple = CHAppleIntelligenceProvider.providerID
+        if isAppleIntelligenceAvailable, isAvailableFallback(apple),
+           let provider = providers[apple], accepts(provider) {
+            return apple
+        }
+        let preferred = [CHOpenAIProvider.providerID, CHClaudeProvider.providerID]
+        return (preferred + providers.keys.sorted()).first { id in
+            guard id != excludedID, id != apple, isAvailableFallback(id),
+                  !isLocked(providerID: id), let provider = providers[id] else { return false }
+            return accepts(provider)
+        }
+    }
+
+    /// 2.18.0: an image request needs a vision-capable fallback. When the
+    /// stored choice is locked and its fallback is text-only (Apple
+    /// Intelligence), use an unlocked vision provider if one exists;
+    /// otherwise report the lock, which tells the user how to proceed,
+    /// rather than "vision not supported".
+    func visionProvider(for resolved: any CHAIProvider, storedChoice: String) throws -> any CHAIProvider {
+        guard !resolved.supportsVision, resolved.id != storedChoice,
+              isProviderEnabled(storedChoice), isLocked(providerID: storedChoice) else { return resolved }
+        if let id = unlockedFallbackProviderID(excluding: storedChoice, accepts: { $0.supportsVision }),
+           let provider = providers[id] {
+            return provider
+        }
+        throw CHAIError.providerLocked(displayName: displayName(forProviderID: storedChoice))
+    }
+
+    /// The pre-2.18 fallback for a disabled choice, used only when no
+    /// unlocked provider exists. It may name a locked provider, whose
+    /// request then fails with the actionable locked error.
+    private func disabledFallbackProviderID() -> String? {
         if isAppleIntelligenceAvailable,
            isAvailableFallback(CHAppleIntelligenceProvider.providerID) {
             return CHAppleIntelligenceProvider.providerID
@@ -326,6 +454,7 @@ public final class CHAIManager: ObservableObject {
     
     /// Check if Apple Intelligence is available
     public var isAppleIntelligenceAvailable: Bool {
+        if let appleIntelligenceAvailabilityOverride { return appleIntelligenceAvailabilityOverride }
         #if canImport(FoundationModels)
         if #available(iOS 26, macOS 26, *) {
             return SystemLanguageModel.default.isAvailable
@@ -339,6 +468,16 @@ public final class CHAIManager: ObservableObject {
         guard let provider = activeProvider else {
             throw CHAIError.noProvider
         }
+        return try await send(prompt: prompt, systemPrompt: systemPrompt, to: provider)
+    }
+
+    /// Shared dispatch for the global and per-feature `send` overloads. The
+    /// provider is resolved by the caller; nothing here writes
+    /// ``activeProviderID``, so concurrent requests cannot leave a
+    /// temporary provider behind as the user's saved choice.
+    func send(prompt: String, systemPrompt: String?, to provider: any CHAIProvider) async throws -> String {
+        // Last line of defence: resolution already avoids locked providers
+        // whenever an unlocked fallback exists.
         try checkProviderUnlocked(provider)
         let composedSystem = await composedSystemPrompt(systemPrompt)
         isProcessing = true
@@ -371,6 +510,11 @@ public final class CHAIManager: ObservableObject {
     /// them (or a single chunk for providers that don't support streaming).
     public func stream(prompt: String, systemPrompt: String? = nil) async throws -> AsyncThrowingStream<String, Error> {
         guard let provider = activeProvider else { throw CHAIError.noProvider }
+        return try await stream(prompt: prompt, systemPrompt: systemPrompt, to: provider)
+    }
+
+    /// Shared dispatch for the global and per-feature `stream` overloads.
+    func stream(prompt: String, systemPrompt: String?, to provider: any CHAIProvider) async throws -> AsyncThrowingStream<String, Error> {
         try checkProviderUnlocked(provider)
         let composedSystem = await composedSystemPrompt(systemPrompt)
         return try await provider.stream(prompt: prompt, systemPrompt: composedSystem)
@@ -381,6 +525,12 @@ public final class CHAIManager: ObservableObject {
         guard let provider = activeProvider else {
             throw CHAIError.noProvider
         }
+        let imageProvider = try visionProvider(for: provider, storedChoice: activeProviderID)
+        return try await sendWithVision(prompt: prompt, imageData: imageData, to: imageProvider)
+    }
+
+    /// Shared dispatch for the global and per-feature vision overloads.
+    func sendWithVision(prompt: String, imageData: Data, to provider: any CHAIProvider) async throws -> String {
         try checkProviderUnlocked(provider)
         guard provider.supportsVision else {
             throw CHAIError.visionNotSupported
@@ -390,8 +540,8 @@ public final class CHAIManager: ObservableObject {
         // provider's output to the prompt itself when set, with a small
         // header so the model knows what's data vs question.
         let composedPromptForVision: String
-        if let provider = contextProvider {
-            let context = await provider.buildContext()
+        if let contextProvider {
+            let context = await contextProvider.buildContext()
             if !context.isEmpty {
                 composedPromptForVision = """
                 User data:
@@ -459,6 +609,10 @@ public final class CHAIManager: ObservableObject {
     /// reports `hasUnlockedProviders == false`. Returns silently in every
     /// other case (including: gate not registered, provider not gated,
     /// already unlocked).
+    ///
+    /// 2.18.0: `send` / `stream` / `sendWithVision` resolve a locked choice
+    /// to an unlocked fallback first, so this throws only when no unlocked
+    /// provider can serve the request.
     public func checkProviderUnlocked(_ provider: any CHAIProvider) throws {
         guard isLocked(providerID: provider.id) else { return }
         guard let gate = CHIAPGateRegistry.shared else { return }

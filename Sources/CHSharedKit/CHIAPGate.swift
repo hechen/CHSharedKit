@@ -95,6 +95,25 @@ public extension CHIAPGate {
 /// Setting `shared` to `nil` disables gating entirely (the picker hides the
 /// banner and treats all providers as unlocked, regardless of
 /// `gatedProviderIDs`).
+///
+/// 2.18.0: registering a gate also subscribes `CHAIManager.shared` to it, so
+/// an entitlement flip (purchase, restore, refund, revocation) re-renders
+/// every view observing the manager and moves requests between the user's
+/// provider and its Apple Intelligence fallback without host wiring.
 public enum CHIAPGateRegistry {
-    nonisolated(unsafe) public static var shared: (any CHIAPGate)?
+    nonisolated(unsafe) public static var shared: (any CHIAPGate)? {
+        didSet { gateDidChange() }
+    }
+
+    private static func gateDidChange() {
+        // Hosts register from `App.init` on the main thread; keep that path
+        // synchronous so the first render already observes the gate.
+        if Thread.isMainThread {
+            MainActor.assumeIsolated { CHAIManager.shared.observeIAPGate(shared) }
+        } else {
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { CHAIManager.shared.observeIAPGate(shared) }
+            }
+        }
+    }
 }

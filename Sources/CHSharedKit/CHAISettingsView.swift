@@ -43,6 +43,12 @@ public struct CHAISettingsView: View {
                     Text(CHAIActiveProviderLabel.text(for: aiManager))
                         .foregroundStyle(.secondary)
                 }
+                // 2.18.0: a locked choice runs on its fallback until unlocked.
+                if let notice = aiManager.activeProviderLockedFallbackNotice {
+                    Label(notice, systemImage: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section(String(localized: "Choose Provider", bundle: .module)) {

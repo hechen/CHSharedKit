@@ -293,6 +293,10 @@ Test Connection now sits in the provider's own section, is disabled when there i
 
 On macOS, `CHAIProviderPickerView` is a grouped `Form` like the rest of Mac Settings, and the provider is chosen from a single Provider pop-up menu. That replaces the iOS-style lists of icon rows, which drew as tinted push buttons on the Mac. The layout on iOS is unchanged, except that a selected cloud provider with no key now says so on its row.
 
+### Locked providers fall back to Apple Intelligence (2.18.0)
+
+When the saved provider is locked (the unlock was never bought, or was refunded or revoked), requests run on Apple Intelligence if it is available, otherwise on another unlocked provider, never on another locked one. `effectiveActiveProviderID`, `activeProvider`, per-feature overrides and `send`/`stream`/`sendWithVision` all follow the same rule. The saved choice and its API key are kept, so a restore or re-purchase resumes the user's provider on the next request. The pickers select the provider in use and explain it ("OpenAI is locked. Apple Intelligence is used until you unlock."); `activeProviderLockedFallbackNotice` exposes that line for custom UI. Registering a gate now also re-renders every view observing `CHAIManager` when the entitlement changes. See [docs/IAP_GATING.md](docs/IAP_GATING.md#runtime-gating).
+
 ### Purchase ownership and restore (2.16.0)
 
 Once the unlock is owned, `CHAIProviderPickerView` shows a `CHAIProviderOwnershipCard` at the top of the picker instead of hiding the purchase entirely. It states the ownership and carries Restore Purchases as a full-size bordered button. Restore no longer appears as a caption-size link in the Cloud APIs footer.

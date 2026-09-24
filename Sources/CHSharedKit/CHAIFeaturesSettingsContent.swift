@@ -97,6 +97,9 @@ public struct CHAIFeaturesSettingsContent: View {
 /// row itself, to keep the row tap target unambiguous.
 public struct CHAIFeatureRow: View {
     let feature: CHAIFeature
+    /// 2.18.0: re-render when a purchase, restore or refund changes the
+    /// provider a locked override resolves to.
+    @ObservedObject private var manager = CHAIManager.shared
 
     public init(feature: CHAIFeature) {
         self.feature = feature
@@ -147,6 +150,8 @@ public struct CHAIFeatureDetailView: View {
     let feature: CHAIFeature
 
     @State private var refreshTick: Int = 0
+    /// 2.18.0: see ``CHAIFeatureRow``.
+    @ObservedObject private var manager = CHAIManager.shared
 
     public init(feature: CHAIFeature) {
         self.feature = feature
@@ -282,6 +287,11 @@ public struct CHAIFeatureDetailView: View {
     private var providerFooter: String {
         let resolved = CHAIFeatureProviderResolver.providerID(for: feature.id)
         let name = CHAIManager.shared.provider(id: resolved)?.displayName ?? resolved
+        // 2.18.0: a locked override runs on its fallback until unlocked.
+        if let override = currentOverrideProviderID,
+           let notice = CHAIManager.shared.lockedFallbackNotice(storedChoice: override, resolvedProviderID: resolved) {
+            return notice
+        }
         if currentOverrideProviderID == nil {
             return String(localized: "Following the default provider (\(name)).", bundle: .module)
         }
