@@ -39,13 +39,13 @@ public struct CHAISettingsView: View {
             // the user sees at a glance what the app will use before
             // scrolling through the picker.
             Section {
-                LabeledContent("Active Provider") {
+                LabeledContent(String(localized: "Active Provider", bundle: .module)) {
                     Text(CHAIActiveProviderLabel.text(for: aiManager))
                         .foregroundStyle(.secondary)
                 }
             }
 
-            Section("Choose Provider") {
+            Section(String(localized: "Choose Provider", bundle: .module)) {
                 // Apple Intelligence — only when the current provider
                 // filter opts it in (it's part of `.onDeviceOnly` and
                 // `.all`, the two common cases).
@@ -53,7 +53,7 @@ public struct CHAISettingsView: View {
                     providerRow(
                         CHAppleIntelligenceProvider.providerID,
                         name: "Apple Intelligence",
-                        badge: "Free",
+                        badge: String(localized: "Free", bundle: .module),
                         badgeColor: .green,
                         available: aiManager.isAppleIntelligenceAvailable,
                         unavailableReason: CHAppleIntelligenceProvider.unavailableReason
@@ -74,7 +74,7 @@ public struct CHAISettingsView: View {
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
-                        Text("On-device, free, private. No data leaves your device.")
+                        Text(String(localized: "On-device, free, private. No data leaves your device.", bundle: .module))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -95,7 +95,7 @@ public struct CHAISettingsView: View {
                                 #endif
                                 .autocorrectionDisabled()
                         } else {
-                            SecureField("API Key", text: $openaiKey)
+                            SecureField(String(localized: "API Key", bundle: .module), text: $openaiKey)
                                 .textContentType(.password)
                         }
                         Button { showingAPIKey.toggle() } label: {
@@ -106,7 +106,7 @@ public struct CHAISettingsView: View {
                     }
                     .onSubmit { CHOpenAIProvider.apiKey = openaiKey }
                     
-                    Picker("Model", selection: $openaiModel) {
+                    Picker(String(localized: "Model", bundle: .module), selection: $openaiModel) {
                         ForEach(CHOpenAIProvider.availableModels) { model in
                             Text(model.name).tag(model.id)
                         }
@@ -117,12 +117,12 @@ public struct CHAISettingsView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 4) {
-                            Text("Get your API key at")
+                            Text(String(localized: "Get your API key at", bundle: .module))
                             if let url = URL(string: "https://platform.openai.com/api-keys") {
                                 Link("platform.openai.com", destination: url)
                             }
                         }
-                        Text("Your API key is stored securely in the device Keychain.")
+                        Text(String(localized: "Your API key is stored securely in the device Keychain.", bundle: .module))
                     }
                 }
             }
@@ -139,7 +139,7 @@ public struct CHAISettingsView: View {
                                 #endif
                                 .autocorrectionDisabled()
                         } else {
-                            SecureField("API Key", text: $claudeKey)
+                            SecureField(String(localized: "API Key", bundle: .module), text: $claudeKey)
                                 .textContentType(.password)
                         }
                         Button { showingAPIKey.toggle() } label: {
@@ -150,7 +150,7 @@ public struct CHAISettingsView: View {
                     }
                     .onSubmit { CHClaudeProvider.apiKey = claudeKey }
                     
-                    Picker("Model", selection: $claudeModel) {
+                    Picker(String(localized: "Model", bundle: .module), selection: $claudeModel) {
                         ForEach(CHClaudeProvider.availableModels) { model in
                             Text(model.name).tag(model.id)
                         }
@@ -161,12 +161,12 @@ public struct CHAISettingsView: View {
                 } footer: {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 4) {
-                            Text("Get your API key at")
+                            Text(String(localized: "Get your API key at", bundle: .module))
                             if let url = URL(string: "https://console.anthropic.com/settings/keys") {
                                 Link("console.anthropic.com", destination: url)
                             }
                         }
-                        Text("Your API key is stored securely in the device Keychain.")
+                        Text(String(localized: "Your API key is stored securely in the device Keychain.", bundle: .module))
                     }
                 }
             }
@@ -180,7 +180,7 @@ public struct CHAISettingsView: View {
         if selectedProvider == CHCustomEndpointProvider.providerID {
                 Section {
                     HStack {
-                        Text("Base URL")
+                        Text(String(localized: "Base URL", bundle: .module))
                         Spacer()
                         TextField("http://localhost:11434/v1", text: $customURL)
                             .multilineTextAlignment(.trailing)
@@ -193,7 +193,7 @@ public struct CHAISettingsView: View {
                     }
                     
                     HStack {
-                        Text("Model")
+                        Text(String(localized: "Model", bundle: .module))
                         Spacer()
                         TextField("llava", text: $customModel)
                             .multilineTextAlignment(.trailing)
@@ -206,13 +206,13 @@ public struct CHAISettingsView: View {
                     
                     HStack {
                         if showingAPIKey {
-                            TextField("API Key (optional)", text: $customKey)
+                            TextField(String(localized: "API Key (optional)", bundle: .module), text: $customKey)
                                 #if os(iOS)
                                 .textInputAutocapitalization(.never)
                                 #endif
                                 .autocorrectionDisabled()
                         } else {
-                            SecureField("API Key (optional)", text: $customKey)
+                            SecureField(String(localized: "API Key (optional)", bundle: .module), text: $customKey)
                         }
                         Button { showingAPIKey.toggle() } label: {
                             Image(systemName: showingAPIKey ? "eye.slash" : "eye")
@@ -222,9 +222,9 @@ public struct CHAISettingsView: View {
                     }
                     .onSubmit { CHCustomEndpointProvider.apiKey = customKey.isEmpty ? nil : customKey }
                 } header: {
-                    Text("Custom Endpoint")
+                    Text(String(localized: "Custom Endpoint", bundle: .module))
                 } footer: {
-                    Text("OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.")
+                    Text(String(localized: "OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.", bundle: .module))
                 }
             }
             
@@ -236,7 +236,7 @@ public struct CHAISettingsView: View {
                         validateCurrentProvider()
                     } label: {
                         HStack {
-                            Text("Test Connection")
+                            Text(String(localized: "Test Connection", bundle: .module))
                             Spacer()
                             if isValidating {
                                 ProgressView()
@@ -254,14 +254,14 @@ public struct CHAISettingsView: View {
                 }
             }
         }
-        .navigationTitle("AI Provider")
+        .navigationTitle(String(localized: "AI Provider", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .scrollDismissesKeyboard(.interactively)
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(String(localized: "Done", bundle: .module)) {
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
             }
@@ -329,9 +329,9 @@ public struct CHAISettingsView: View {
         Task {
             do {
                 let ok = try await aiManager.validateProvider(selectedProvider)
-                validationResult = ok ? "✓ Connected successfully" : "✗ Connection failed"
+                validationResult = ok ? String(localized: "✓ Connected successfully", bundle: .module) : String(localized: "✗ Connection failed", bundle: .module)
             } catch {
-                validationResult = "✗ \(error.localizedDescription)"
+                validationResult = String(localized: "✗ \(error.localizedDescription)", bundle: .module)
             }
             isValidating = false
         }

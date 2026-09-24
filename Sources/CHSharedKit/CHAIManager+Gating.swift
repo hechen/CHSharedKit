@@ -86,7 +86,7 @@ public extension CHAIManager {
     /// banner subtitle. Falls back to a static map of the kit's well-known
     /// providers when the id isn't currently registered (e.g. the on-device
     /// provider before any model is installed). This is what makes the
-    /// banner correctly include "On-Device AI" in its subtitle even when no
+    /// banner correctly include String(localized: "On-Device AI", bundle: .module) in its subtitle even when no
     /// model has been downloaded yet.
     func displayName(forProviderID id: String) -> String {
         if let registered = allProviders.first(where: { $0.id == id }) {
@@ -95,10 +95,10 @@ public extension CHAIManager {
         // Fallback for kit-known IDs whose providers aren't currently
         // registered (e.g. on-device-llm before a model is installed).
         switch id {
-        case "on-device-llm": return "On-Device AI"
+        case "on-device-llm": return String(localized: "On-Device AI", bundle: .module)
         case CHOpenAIProvider.providerID: return "OpenAI"
         case CHClaudeProvider.providerID: return "Claude (Anthropic)"
-        case CHCustomEndpointProvider.providerID: return "Custom Endpoint"
+        case CHCustomEndpointProvider.providerID: return String(localized: "Custom Endpoint", bundle: .module)
         case CHAppleIntelligenceProvider.providerID: return "Apple Intelligence"
         default: return id
         }

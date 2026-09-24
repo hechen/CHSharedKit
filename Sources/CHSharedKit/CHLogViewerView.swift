@@ -36,16 +36,16 @@ public struct CHLogViewerView: View {
             }
         }
         .searchable(text: $search, prompt: "Search logs")
-        .navigationTitle("Logs")
+        .navigationTitle(String(localized: "Logs", bundle: .module))
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Copy All") {
+                    Button(String(localized: "Copy All", bundle: .module)) {
 #if canImport(UIKit)
                         UIPasteboard.general.string = logger.exportText()
 #endif
                     }
-                    Button("Clear", role: .destructive) { logger.clear() }
+                    Button(String(localized: "Clear", bundle: .module), role: .destructive) { logger.clear() }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }

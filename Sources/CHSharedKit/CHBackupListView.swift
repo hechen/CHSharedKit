@@ -22,9 +22,9 @@ public struct CHBackupListView: View {
                     HStack(spacing: 12) {
                         ProgressView()
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Loading backups from iCloud Drive…")
+                            Text(String(localized: "Loading backups from iCloud Drive…", bundle: .module))
                                 .font(.subheadline)
-                            Text("This may take a moment if files are still syncing.")
+                            Text(String(localized: "This may take a moment if files are still syncing.", bundle: .module))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -33,9 +33,9 @@ public struct CHBackupListView: View {
                 }
             } else if loader.backups.isEmpty {
                 ContentUnavailableView(
-                    "No Backups",
+                    String(localized: "No Backups", bundle: .module),
                     systemImage: "doc.badge.clock",
-                    description: Text("Enable auto-backup to automatically save your data.")
+                    description: Text(String(localized: "Enable auto-backup to automatically save your data.", bundle: .module))
                 )
             } else {
                 ForEach(loader.backups) { backup in
@@ -53,13 +53,13 @@ public struct CHBackupListView: View {
                             backupToDelete = backup
                             showingDeleteConfirmation = true
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label(String(localized: "Delete", bundle: .module), systemImage: "trash")
                         }
                     }
                 }
             }
         }
-        .navigationTitle("Backups")
+        .navigationTitle(String(localized: "Backups", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -74,19 +74,19 @@ public struct CHBackupListView: View {
             }
         }
         .confirmationDialog(
-            "Delete Backup?",
+            String(localized: "Delete Backup?", bundle: .module),
             isPresented: $showingDeleteConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Delete", role: .destructive) {
+            Button(String(localized: "Delete", bundle: .module), role: .destructive) {
                 if let backup = backupToDelete {
                     deleteBackup(backup)
                 }
             }
-            Button("Cancel", role: .cancel) {}
+            Button(String(localized: "Cancel", bundle: .module), role: .cancel) {}
         } message: {
             if let backup = backupToDelete {
-                Text("This will permanently delete \"\(backup.displayName)\".")
+                Text(String(localized: "This will permanently delete \"\(backup.displayName)\".", bundle: .module))
             }
         }
     }
@@ -306,7 +306,7 @@ struct BackupFileInfo: Identifiable {
     }
 
     var formattedDate: String {
-        guard let date = creationDate else { return "Unknown date" }
+        guard let date = creationDate else { return String(localized: "Unknown date", bundle: .module) }
         return date.formatted(date: .abbreviated, time: .shortened)
     }
 }

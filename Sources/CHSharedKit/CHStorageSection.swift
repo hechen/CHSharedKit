@@ -18,23 +18,23 @@ public enum CHBackupFrequency: String, CaseIterable, Sendable {
 
     public var label: String {
         switch self {
-        case .daily:   return "Daily"
-        case .weekly:  return "Weekly"
-        case .monthly: return "Monthly"
-        case .manual:  return "Manual only"
+        case .daily:   return String(localized: "Daily", bundle: .module)
+        case .weekly:  return String(localized: "Weekly", bundle: .module)
+        case .monthly: return String(localized: "Monthly", bundle: .module)
+        case .manual:  return String(localized: "Manual only", bundle: .module)
         }
     }
 
     public var footerText: String {
         switch self {
         case .daily:
-            return "Backs up automatically each day on first foreground."
+            return String(localized: "Backs up automatically each day on first foreground.", bundle: .module)
         case .weekly:
-            return "Backs up automatically each week on first foreground."
+            return String(localized: "Backs up automatically each week on first foreground.", bundle: .module)
         case .monthly:
-            return "Backs up automatically each month on first foreground."
+            return String(localized: "Backs up automatically each month on first foreground.", bundle: .module)
         case .manual:
-            return "Auto-backup is off. Use Back Up Now to trigger manually."
+            return String(localized: "Auto-backup is off. Use Back Up Now to trigger manually.", bundle: .module)
         }
     }
 
@@ -154,8 +154,8 @@ public struct CHStorageSection: View {
         ) { result in
             Task { await handleImportPicked(result) }
         }
-        .alert("Backup", isPresented: $showResult) {
-            Button("OK") {}
+        .alert(String(localized: "Backup", bundle: .module), isPresented: $showResult) {
+            Button(String(localized: "OK", bundle: .module)) {}
         } message: {
             Text(resultMessage ?? "Done")
         }
@@ -190,11 +190,11 @@ public struct CHStorageSection: View {
                     Text(freq.label).tag(freq)
                 }
             } label: {
-                Label("Frequency", systemImage: "calendar")
+                Label(String(localized: "Frequency", bundle: .module), systemImage: "calendar")
             }
             .pickerStyle(.menu)
         } header: {
-            Text("Schedule")
+            Text(String(localized: "Schedule", bundle: .module))
         } footer: {
             Text(frequency.footerText)
         }
@@ -204,7 +204,7 @@ public struct CHStorageSection: View {
     private var backupSection: some View {
         Section {
             HStack {
-                Label("Auto-Backup", systemImage: "clock.arrow.2.circlepath")
+                Label(String(localized: "Auto-Backup", bundle: .module), systemImage: "clock.arrow.2.circlepath")
                 Spacer()
                 Toggle("", isOn: $autoBackupEnabled)
                     .labelsHidden()
@@ -215,14 +215,14 @@ public struct CHStorageSection: View {
 
             if autoBackupEnabled {
                 HStack {
-                    Text("Last Backup").foregroundStyle(.secondary)
+                    Text(String(localized: "Last Backup", bundle: .module)).foregroundStyle(.secondary)
                     Spacer()
                     if let last = CHBackupStorage.lastAutoBackupDate(appName: config.appName) {
                         Text(last.formatted(.relative(presentation: .named)))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Never")
+                        Text(String(localized: "Never", bundle: .module))
                             .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
@@ -232,12 +232,12 @@ public struct CHStorageSection: View {
                     NavigationLink {
                         CHBackupListView(config: config)
                     } label: {
-                        Text("\(backupCount) backup\(backupCount == 1 ? "" : "s") stored")
+                        Text(String(localized: "\(backupCount) backups stored", bundle: .module))
                             .foregroundStyle(.secondary)
                     }
                 }
 
-                Stepper("Keep \(maxBackups) backups", value: $maxBackups, in: 1...30)
+                Stepper(String(localized: "Keep \(maxBackups) backups", bundle: .module), value: $maxBackups, in: 1...30)
                     .onChange(of: maxBackups) { _, newValue in
                         CHBackupStorage.setMaxAutoBackups(newValue, appName: config.appName)
                         CHBackupStorage.pruneOldBackups(
@@ -252,7 +252,7 @@ public struct CHStorageSection: View {
                 Button {
                     Task { await runBackupNow() }
                 } label: {
-                    Label("Back Up Now", systemImage: "icloud.and.arrow.up")
+                    Label(String(localized: "Back Up Now", bundle: .module), systemImage: "icloud.and.arrow.up")
                 }
             }
 
@@ -260,7 +260,7 @@ public struct CHStorageSection: View {
                 Task { await runExport() }
             } label: {
                 HStack {
-                    Label("Export Backup", systemImage: "arrow.down.doc")
+                    Label(String(localized: "Export Backup", bundle: .module), systemImage: "arrow.down.doc")
                     Spacer()
                     if isExporting {
                         ProgressView().scaleEffect(0.8)
@@ -273,7 +273,7 @@ public struct CHStorageSection: View {
                 showImportFilePicker = true
             } label: {
                 HStack {
-                    Label("Import Backup", systemImage: "arrow.up.doc")
+                    Label(String(localized: "Import Backup", bundle: .module), systemImage: "arrow.up.doc")
                     Spacer()
                     if isImporting {
                         ProgressView().scaleEffect(0.8)
@@ -282,13 +282,13 @@ public struct CHStorageSection: View {
             }
             .disabled(isImporting)
         } header: {
-            Text("Backup")
+            Text(String(localized: "Backup", bundle: .module))
         } footer: {
             if autoBackupEnabled {
                 if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
-                    Text("Backups are saved to iCloud Drive and sync across all your devices.")
+                    Text(String(localized: "Backups are saved to iCloud Drive and sync across all your devices.", bundle: .module))
                 } else {
-                    Text("Backups are saved locally. Enable iCloud Drive for cross-device sync.")
+                    Text(String(localized: "Backups are saved locally. Enable iCloud Drive for cross-device sync.", bundle: .module))
                 }
             }
         }
@@ -301,15 +301,15 @@ public struct CHStorageSection: View {
             Button {
                 revealBackupFolderInFiles()
             } label: {
-                Label("Reveal in Files…", systemImage: "folder")
+                Label(String(localized: "Reveal in Files…", bundle: .module), systemImage: "folder")
             }
         } header: {
-            Text("Storage")
+            Text(String(localized: "Storage", bundle: .module))
         } footer: {
             if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
-                Text("Backups are stored in iCloud Drive → \(config.appName) → Backups when iCloud is available, otherwise on this device only.")
+                Text(String(localized: "Backups are stored in iCloud Drive → \(config.appName) → Backups when iCloud is available, otherwise on this device only.", bundle: .module))
             } else {
-                Text("Backups are stored on this device. Enable iCloud Drive in Settings to sync them across your devices.")
+                Text(String(localized: "Backups are stored on this device. Enable iCloud Drive in Settings to sync them across your devices.", bundle: .module))
             }
         }
         #endif
@@ -344,7 +344,7 @@ public struct CHStorageSection: View {
             )
             refreshBackupCount()
         } catch {
-            resultMessage = "Backup failed. \(error.localizedDescription)"
+            resultMessage = String(localized: "Backup failed. \(error.localizedDescription)", bundle: .module)
             showResult = true
         }
     }
@@ -361,7 +361,7 @@ public struct CHStorageSection: View {
             )
             shareableBackup = ShareableBackup(url: url)
         } catch {
-            resultMessage = "Export failed. \(error.localizedDescription)"
+            resultMessage = String(localized: "Export failed. \(error.localizedDescription)", bundle: .module)
             showResult = true
         }
     }
@@ -376,12 +376,12 @@ public struct CHStorageSection: View {
             let data = try Data(contentsOf: url)
             let imported = try await decoder(data)
             resultMessage = imported > 0
-                ? "Imported \(imported) record\(imported == 1 ? "" : "s")."
-                : "Backup imported."
+                ? String(localized: "Imported \(imported) records.", bundle: .module)
+                : String(localized: "Backup imported.", bundle: .module)
             showResult = true
             refreshBackupCount()
         } catch {
-            resultMessage = "Import failed. \(error.localizedDescription)"
+            resultMessage = String(localized: "Import failed. \(error.localizedDescription)", bundle: .module)
             showResult = true
         }
     }

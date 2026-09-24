@@ -31,12 +31,12 @@ enum OfflineModelInstallationError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .invalidRelease: "This model has no supported, pinned release manifest. Refresh the model catalog and try again."
-        case .invalidPath(let path): "The model manifest contains an invalid file path: \(path)."
-        case .invalidResponse(let status): "The model download failed (HTTP \(status))."
-        case .verificationFailed(let path): "The downloaded model file failed verification: \(path). Your installed model was kept."
-        case .incompleteSnapshot: "The model snapshot is incomplete. Download it again before selecting it."
-        case .runtimeValidationTimedOut: "The model did not finish its local compatibility check in time. Your installed model was kept."
+        case .invalidRelease: String(localized: "This model has no supported, pinned release manifest. Refresh the model catalog and try again.", bundle: .module)
+        case .invalidPath(let path): String(localized: "The model manifest contains an invalid file path: \(path).", bundle: .module)
+        case .invalidResponse(let status): String(localized: "The model download failed (HTTP \(status)).", bundle: .module)
+        case .verificationFailed(let path): String(localized: "The downloaded model file failed verification: \(path). Your installed model was kept.", bundle: .module)
+        case .incompleteSnapshot: String(localized: "The model snapshot is incomplete. Download it again before selecting it.", bundle: .module)
+        case .runtimeValidationTimedOut: String(localized: "The model did not finish its local compatibility check in time. Your installed model was kept.", bundle: .module)
         }
     }
 }

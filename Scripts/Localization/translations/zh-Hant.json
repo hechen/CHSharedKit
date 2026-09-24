@@ -1,0 +1,20 @@
+{
+  "Unlock AI providers": "解鎖 AI 供應商",
+  "Apple Intelligence is included without this unlock": "Apple Intelligence 無需此項解鎖",
+  "Restore": "恢復購買",
+  "Processing…": "處理中…",
+  "Loading…": "載入中…",
+  "Unlock for %@": "以 %@ 解鎖",
+  "Unlock": "解鎖",
+  "Private offline LLMs — no cloud, no rate limits": "私密的本機大模型 — 無雲端，無次數限制",
+  "Bring your own keys for cloud providers — you control the cost": "自帶雲端 API 金鑰 — 您掌控成本",
+  "%@ · Unlocked": "%@ · 已解鎖",
+  "AI providers unlocked": "AI 供應商已解鎖",
+  "All AI providers are available.": "所有 AI 供應商皆可使用。",
+  "Restore Purchases": "恢復購買",
+  "Checks this Apple Account for previous purchases": "重新檢查此 Apple 帳號的購買記錄",
+  "Purchases restored.": "已恢復購買。",
+  "Your purchase is confirmed. Nothing needed restoring.": "購買已確認，無需恢復。",
+  "No previous purchase was found for this Apple Account.": "此 Apple 帳號沒有可恢復的購買。",
+  "New messages": "新訊息"
+}

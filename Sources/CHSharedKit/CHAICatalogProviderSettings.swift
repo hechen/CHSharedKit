@@ -38,7 +38,7 @@ public struct CHAICatalogProviderSettings: View {
     public var body: some View {
         CHAIProviderCredentialSection(
             providerName: provider.displayName,
-            keyPlaceholder: "Paste API key",
+            keyPlaceholder: String(localized: "Paste API key", bundle: .module),
             apiKey: $key,
             billingAccountName: provider.displayName,
             endpointHost: provider.baseURL.host(),
@@ -47,7 +47,7 @@ public struct CHAICatalogProviderSettings: View {
             connectionTest: connectionTest,
             onTestConnection: onTestConnection
         ) {
-            Picker("Model", selection: $model) {
+            Picker(String(localized: "Model", bundle: .module), selection: $model) {
                 ForEach(provider.definition.models) { model in
                     Text(model.name).tag(model.id)
                 }

@@ -109,17 +109,17 @@ public enum CHAIError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .noProvider: return "No AI provider configured"
-        case .noAPIKey: return "API key not set. Go to Settings → AI Provider to add your key."
-        case .invalidResponse: return "Could not parse AI response"
-        case .networkError(let e): return "Network error: \(e.localizedDescription)"
-        case .rateLimited: return "Rate limited. Please try again in a moment."
-        case .invalidKey: return "Invalid API key. Please check your key in Settings."
-        case .visionNotSupported: return "This provider does not support vision/image inputs"
+        case .noProvider: return String(localized: "No AI provider configured", bundle: .module)
+        case .noAPIKey: return String(localized: "API key not set. Go to Settings → AI Provider to add your key.", bundle: .module)
+        case .invalidResponse: return String(localized: "Could not parse AI response", bundle: .module)
+        case .networkError(let e): return String(localized: "Network error: \(e.localizedDescription)", bundle: .module)
+        case .rateLimited: return String(localized: "Rate limited. Please try again in a moment.", bundle: .module)
+        case .invalidKey: return String(localized: "Invalid API key. Please check your key in Settings.", bundle: .module)
+        case .visionNotSupported: return String(localized: "This provider does not support vision/image inputs", bundle: .module)
         case .appleIntelligenceUnavailable: return CHAppleIntelligenceProvider.unavailableErrorDescription
         case .modelLoadFailed(let msg): return msg
-        case .unsupportedPlatform: return "On-device AI is not supported on this platform."
-        case .providerLocked(let name): return "\(name) requires a one-time purchase. Open Settings → AI Provider to unlock."
+        case .unsupportedPlatform: return String(localized: "On-device AI is not supported on this platform.", bundle: .module)
+        case .providerLocked(let name): return String(localized: "\(name) requires a one-time purchase. Open Settings → AI Provider to unlock.", bundle: .module)
         }
     }
 }

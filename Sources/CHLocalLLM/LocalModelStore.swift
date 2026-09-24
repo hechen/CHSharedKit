@@ -682,7 +682,7 @@ public final class LocalModelStore {
             persistCustomModels()
         }
         if result.fileCleanupFailed {
-            downloadState = .failed("The model was removed from your installed models, but some files could not be deleted.")
+            downloadState = .failed(String(localized: "The model was removed from your installed models, but some files could not be deleted.", bundle: .module))
         }
     }
 

@@ -200,16 +200,16 @@ public final class CHOfflineModelCatalog: ObservableObject {
 
     nonisolated public static func compatibilityIssue(for model: LocalModelInfo) -> String? {
         #if targetEnvironment(simulator) || targetEnvironment(macCatalyst) || arch(x86_64)
-        return "On-device models require a supported Apple Silicon device."
+        return String(localized: "On-device models require a supported Apple Silicon device.", bundle: .module)
         #else
         guard let release = model.release else {
             return LocalModelCatalog.isVisionCapable(model.id)
-                ? "This model requires image-model support." : nil
+                ? String(localized: "This model requires image-model support.", bundle: .module) : nil
         }
-        if release.status == "retired" { return "This model is no longer offered for download." }
-        if release.minimumRuntimeVersion > runtimeVersion { return "Update the app to use this model." }
+        if release.status == "retired" { return String(localized: "This model is no longer offered for download.", bundle: .module) }
+        if release.minimumRuntimeVersion > runtimeVersion { return String(localized: "Update the app to use this model.", bundle: .module) }
         if release.runtime != "mlx-text" || !supportedModelTypes.contains(release.modelType) {
-            return "This model isn't supported by this version of the app."
+            return String(localized: "This model isn't supported by this version of the app.", bundle: .module)
         }
         return nil
         #endif

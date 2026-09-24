@@ -132,7 +132,7 @@ public final class CHLocalVLMProvider: @unchecked Sendable {
             atPath: url.appendingPathComponent("config.json").path
         ) else {
             throw CHAIError.modelLoadFailed(
-                "Model snapshot for \(info.displayName) is missing or incomplete. Re-download from Settings → AI Provider."
+                String(localized: "Model snapshot for \(info.displayName) is missing or incomplete. Re-download from Settings → AI Provider.", bundle: .module)
             )
         }
 
@@ -159,11 +159,11 @@ public final class CHLocalVLMProvider: @unchecked Sendable {
             let lowered = (error as NSError).localizedDescription.lowercased()
             if lowered.contains("memory") || lowered.contains("alloc") {
                 throw CHAIError.modelLoadFailed(
-                    "Insufficient memory — close other apps and try again."
+                    String(localized: "Insufficient memory — close other apps and try again.", bundle: .module)
                 )
             }
             throw CHAIError.modelLoadFailed(
-                "Could not load \(info.displayName): \(error.localizedDescription)"
+                String(localized: "Could not load \(info.displayName): \(error.localizedDescription)", bundle: .module)
             )
         }
     }
@@ -173,7 +173,7 @@ public final class CHLocalVLMProvider: @unchecked Sendable {
 
 extension CHLocalVLMProvider: CHAIProvider {
     public var id: String { Self.providerID }
-    public var displayName: String { "On-Device Vision" }
+    public var displayName: String { String(localized: "On-Device Vision", bundle: .module) }
     public var supportsVision: Bool { true }
 
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {

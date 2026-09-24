@@ -130,18 +130,10 @@ public struct CHAIChatScrollView<Message: CHAIChatMessage, Bubble: View>: View {
         .buttonStyle(.plain)
     }
 
-    /// Localized "↓ New messages" copy. Same locale-keyed pattern as the
-    /// IAP banner — no .xcstrings catalog yet.
     private static var localizedNewMessages: String {
-        let code = Locale.current.language.languageCode?.identifier ?? "en"
-        switch code {
-        case "zh":
-            let script = Locale.current.language.script?.identifier
-            return script == "Hant" ? "新訊息" : "新消息"
-        case "ja": return "新着メッセージ"
-        default: return "New messages"
-        }
+        String(localized: "New messages", bundle: .module)
     }
+
 }
 
 // MARK: - Convenience init using CHAIChatBubble as the default bubble renderer

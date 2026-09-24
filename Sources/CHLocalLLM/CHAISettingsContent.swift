@@ -63,7 +63,7 @@ public struct CHAIProviderPickerView: View {
         }
         .themedListBackground()
         .themedNavigationBar()
-        .navigationTitle("AI Provider")
+        .navigationTitle(String(localized: "AI Provider", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -72,7 +72,7 @@ public struct CHAIProviderPickerView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(String(localized: "Done", bundle: .module)) {
                     UIApplication.shared.sendAction(
                         #selector(UIResponder.resignFirstResponder),
                         to: nil, from: nil, for: nil)
@@ -115,7 +115,7 @@ public struct CHAISettingsSheet: View {
     }
 
     public var body: some View {
-        CHSettingsSheet("AI Provider", onDismiss: onDismiss) {
+        CHSettingsSheet("AI Provider", bundle: .module, onDismiss: onDismiss) {
             CHAIProviderPickerView(appIdentifier: appIdentifier)
         }
     }
@@ -246,7 +246,7 @@ public struct CHAISettingsContent: View {
         // menu shows the choice itself.
         withSettingsLifecycle(
             Section {
-                LabeledContent("Current Provider") {
+                LabeledContent(String(localized: "Current Provider", bundle: .module)) {
                     Text(CHAIActiveProviderLabel.text(for: aiManager))
                         .foregroundStyle(.secondary)
                 }
@@ -338,7 +338,7 @@ public struct CHAISettingsContent: View {
                 icon: "apple.intelligence",
                 iconColor: .blue,
                 name: "Apple Intelligence",
-                badge: "Free",
+                badge: String(localized: "Free", bundle: .module),
                 badgeColor: .green,
                 subtitle: aiManager.isAppleIntelligenceAvailable
                     ? CHAppleIntelligenceProvider.availabilitySubtitle
@@ -348,12 +348,12 @@ public struct CHAISettingsContent: View {
             )
 
         } header: {
-            Text("On This Device")
+            Text(String(localized: "On This Device", bundle: .module))
         } footer: {
             if showsDownloadableModels {
-                Text("Apple Intelligence and downloaded models keep requests on this device.")
+                Text(String(localized: "Apple Intelligence and downloaded models keep requests on this device.", bundle: .module))
             } else {
-                Text("Apple Intelligence keeps requests on this device.")
+                Text(String(localized: "Apple Intelligence keeps requests on this device.", bundle: .module))
             }
         }
 
@@ -367,14 +367,14 @@ public struct CHAISettingsContent: View {
                 cloudProviderRow(id: provider.id, name: provider.name)
             }
         } header: {
-            Text("Cloud APIs")
+            Text(String(localized: "Cloud APIs", bundle: .module))
         } footer: {
             // 2.16.0: Restore moved to the ownership card at the top. It sat
             // here as a caption-size link from 2.6.0, filed under an
             // explanation of API keys it had nothing to do with.
             // 2.17.0: named every service and wraps. It listed only OpenAI
             // and Anthropic, above a Grok row, and truncated on the Mac.
-            Text("Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.")
+            Text(String(localized: "Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.", bundle: .module))
                 .fixedSize(horizontal: false, vertical: true)
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
@@ -393,7 +393,7 @@ public struct CHAISettingsContent: View {
             Section {
                 HStack {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    Text("On-device, free, private. No data leaves your device.")
+                    Text(String(localized: "On-device, free, private. No data leaves your device.", bundle: .module))
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
             } header: {
@@ -438,7 +438,7 @@ public struct CHAISettingsContent: View {
                 // `.onChange { CHOpenAIProvider.model = val }`
                 // writeback — that was the source of the same-pass
                 // staleness in the OpenAI row.
-                Picker("Model", selection: $openaiModel) {
+                Picker(String(localized: "Model", bundle: .module), selection: $openaiModel) {
                     ForEach(CHOpenAIProvider.availableModels) { model in
                         Text(model.name).tag(model.id)
                     }
@@ -466,7 +466,7 @@ public struct CHAISettingsContent: View {
             ) {
                 // 2.9.6: same fix as the OpenAI Picker — $claudeModel
                 // writes directly via `@AppStorage`.
-                Picker("Model", selection: $claudeModel) {
+                Picker(String(localized: "Model", bundle: .module), selection: $claudeModel) {
                     ForEach(CHClaudeProvider.availableModels) { model in
                         Text(model.name).tag(model.id)
                     }
@@ -493,30 +493,30 @@ public struct CHAISettingsContent: View {
         if selectedProvider == CHCustomEndpointProvider.providerID {
             Section {
                 #if os(iOS)
-                LabeledContent("Base URL") {
+                LabeledContent(String(localized: "Base URL", bundle: .module)) {
                     TextField("http://localhost:11434/v1", text: $customURL)
                         .multilineTextAlignment(.trailing)
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .autocorrectionDisabled()
                 }
-                LabeledContent("Model") {
-                    TextField("llama3", text: $customModel)
+                LabeledContent(String(localized: "Model", bundle: .module)) {
+                    TextField(String(localized: "llama3", bundle: .module), text: $customModel)
                         .multilineTextAlignment(.trailing)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                 }
                 #else
-                LabeledContent("Base URL") {
-                    TextField(text: $customURL, prompt: Text("http://localhost:11434/v1")) { Text("Base URL") }
+                LabeledContent(String(localized: "Base URL", bundle: .module)) {
+                    TextField(text: $customURL, prompt: Text("http://localhost:11434/v1")) { Text(String(localized: "Base URL", bundle: .module)) }
                         .labelsHidden()
                         .textFieldStyle(.roundedBorder)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: 340)
                         .autocorrectionDisabled()
                 }
-                LabeledContent("Model") {
-                    TextField(text: $customModel, prompt: Text("llama3")) { Text("Model") }
+                LabeledContent(String(localized: "Model", bundle: .module)) {
+                    TextField(text: $customModel, prompt: Text(String(localized: "llama3", bundle: .module))) { Text(String(localized: "Model", bundle: .module)) }
                         .labelsHidden()
                         .textFieldStyle(.roundedBorder)
                         .multilineTextAlignment(.leading)
@@ -524,8 +524,8 @@ public struct CHAISettingsContent: View {
                         .autocorrectionDisabled()
                 }
                 #endif
-                LabeledContent("API Key") {
-                    keyField("Optional", key: $customKey)
+                LabeledContent(String(localized: "API Key", bundle: .module)) {
+                    keyField(String(localized: "Optional", bundle: .module), key: $customKey)
                 }
                 CHAIConnectionTestRow(
                     state: connectionTest,
@@ -533,9 +533,9 @@ public struct CHAISettingsContent: View {
                     action: testConnection
                 )
             } header: {
-                Text("Custom Endpoint")
+                Text(String(localized: "Custom Endpoint", bundle: .module))
             } footer: {
-                Text("OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.")
+                Text(String(localized: "OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.", bundle: .module))
             }
             .onChange(of: customURL) { _, val in
                 CHCustomEndpointProvider.baseURL = val
@@ -596,20 +596,20 @@ public struct CHAISettingsContent: View {
             $0.id == CHCustomEndpointProvider.providerID
         }
         Section {
-            Picker("Provider", selection: Binding(
+            Picker(String(localized: "Provider", bundle: .module), selection: Binding(
                 get: { selectedProvider },
                 set: { selectMacProvider($0) }
             )) {
-                Section("On This Device") {
+                Section(String(localized: "On This Device", bundle: .module)) {
                     macMenuItem(CHAppleIntelligenceProvider.providerID,
                                 name: "Apple Intelligence", icon: "apple.intelligence")
                         .disabled(!aiManager.isAppleIntelligenceAvailable)
                     if showsDownloadableModels {
-                        macMenuItem(CHLocalLLMProvider.providerID, name: "On-Device AI", icon: "cpu")
+                        macMenuItem(CHLocalLLMProvider.providerID, name: String(localized: "On-Device AI", bundle: .module), icon: "cpu")
                     }
                 }
                 if !cloudProviders.isEmpty {
-                    Section("Cloud") {
+                    Section(String(localized: "Cloud", bundle: .module)) {
                         ForEach(cloudProviders, id: \.id) { provider in
                             macMenuItem(provider.id, name: provider.name,
                                         icon: cloudProviderMeta(provider.id).icon)
@@ -617,16 +617,16 @@ public struct CHAISettingsContent: View {
                     }
                 }
                 if offersCustomEndpoint {
-                    Section("Advanced") {
+                    Section(String(localized: "Advanced", bundle: .module)) {
                         macMenuItem(CHCustomEndpointProvider.providerID,
-                                    name: "Custom Endpoint", icon: "server.rack")
+                                    name: String(localized: "Custom Endpoint", bundle: .module), icon: "server.rack")
                     }
                 }
             }
             .pickerStyle(.menu)
 
             if aiManager.isLocked(providerID: selectedProvider) {
-                Label("Locked — unlock above to use this provider", systemImage: "lock.fill")
+                Label(String(localized: "Locked — unlock above to use this provider", bundle: .module), systemImage: "lock.fill")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -638,7 +638,7 @@ public struct CHAISettingsContent: View {
 
     private func macMenuItem(_ id: String, name: String, icon: String) -> some View {
         let isLocked = aiManager.isLocked(providerID: id)
-        return Label(isLocked ? "\(name) (Locked)" : name, systemImage: icon)
+        return Label(isLocked ? String(localized: "\(name) (Locked)", bundle: .module) : name, systemImage: icon)
             .tag(id)
     }
 
@@ -661,13 +661,13 @@ public struct CHAISettingsContent: View {
     private var macProviderFooter: String {
         switch selectedProvider {
         case CHAppleIntelligenceProvider.providerID:
-            return "Apple Intelligence runs on this Mac. It is free, and requests never leave the device."
+            return String(localized: "Apple Intelligence runs on this Mac. It is free, and requests never leave the device.", bundle: .module)
         case CHLocalLLMProvider.providerID:
-            return "Runs a downloaded model entirely on this Mac, even offline."
+            return String(localized: "Runs a downloaded model entirely on this Mac, even offline.", bundle: .module)
         case CHCustomEndpointProvider.providerID:
-            return "Connect an OpenAI-compatible service that you operate or trust."
+            return String(localized: "Connect an OpenAI-compatible service that you operate or trust.", bundle: .module)
         default:
-            return "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage."
+            return String(localized: "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.", bundle: .module)
         }
     }
     #endif
@@ -712,7 +712,7 @@ public struct CHAISettingsContent: View {
                 VStack(alignment: .leading, spacing: 2) {
                     // 2.7.0: same lock-alignment polish as cloud rows.
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("On-Device AI")
+                        Text(String(localized: "On-Device AI", bundle: .module))
                             .font(.body)
                             .opacity(isLocked && !isActiveLocked ? 0.6 : 1.0)
                         if isLocked {
@@ -721,15 +721,15 @@ public struct CHAISettingsContent: View {
                                 .imageScale(.small)
                                 .foregroundStyle(.indigo)
                         }
-                        badge("Private", color: .indigo)
-                        badge("Offline", color: .orange)
+                        badge(String(localized: "Private", bundle: .module), color: .indigo)
+                        badge(String(localized: "Offline", bundle: .module), color: .orange)
                     }
                     if isActiveLocked {
-                        Text("Locked — purchase required")
+                        Text(String(localized: "Locked — purchase required", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.indigo)
                     } else {
-                        Text(activeModel.map { $0.displayName } ?? "Runs fully offline · No API key")
+                        Text(activeModel.map { $0.displayName } ?? String(localized: "Runs fully offline · No API key", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .opacity(isLocked ? 0.6 : 1.0)
@@ -758,25 +758,25 @@ public struct CHAISettingsContent: View {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(model.displayName).font(.subheadline.weight(.medium))
-                        Text("Active · Runs offline on this device")
+                        Text(String(localized: "Active · Runs offline on this device", bundle: .module))
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Button("Change Model") { modelPickerSource = .detail }
+                Button(String(localized: "Change Model", bundle: .module)) { modelPickerSource = .detail }
                     .foregroundStyle(.tint)
             } else if modelStore?.activeDownloadModelID != nil {
                 LocalModelDownloadView()
             } else {
                 HStack {
                     Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text("No model downloaded yet")
+                    Text(String(localized: "No model downloaded yet", bundle: .module))
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
-                Button("Download a Model") { modelPickerSource = .detail }
+                Button(String(localized: "Download a Model", bundle: .module)) { modelPickerSource = .detail }
                     .foregroundStyle(.tint)
             }
         } header: {
-            Text("On-Device")
+            Text(String(localized: "On-Device", bundle: .module))
         }
         // List rows are lazy. Present from the section containing the action,
         // so an offscreen provider row cannot defer the sheet until a scroll.
@@ -826,7 +826,7 @@ public struct CHAISettingsContent: View {
             // 2.17.0: the selected provider cannot answer without a key; say
             // so on its row instead of only in the grey subtitle.
             warning: selectedProvider == id && meta.needsAPIKey
-                ? "Needs an API key — add it below"
+                ? String(localized: "Needs an API key — add it below", bundle: .module)
                 : nil
         )
     }
@@ -872,7 +872,7 @@ public struct CHAISettingsContent: View {
         case CHCustomEndpointProvider.providerID:
             let model = customModel.trimmingCharacters(in: .whitespacesAndNewlines)
             // The key is optional for a self-hosted endpoint.
-            return ("server.rack", .gray, model.isEmpty ? "OpenAI-compatible API" : "\(model) · OpenAI-compatible API", false)
+            return ("server.rack", .gray, model.isEmpty ? String(localized: "OpenAI-compatible API", bundle: .module) : String(localized: "\(model) · OpenAI-compatible API", bundle: .module), false)
         default:
             if let provider = aiManager.provider(id: id) as? CHAICatalogProvider {
                 let hasAPIKey = provider.apiKey != nil
@@ -894,7 +894,7 @@ public struct CHAISettingsContent: View {
     }
 
     private func connectionSubtitle(model: String, hasAPIKey: Bool) -> String {
-        "\(model) · \(hasAPIKey ? "API key saved" : "Add API key")"
+        hasAPIKey ? String(localized: "\(model) · API key saved", bundle: .module) : String(localized: "\(model) · Add API key", bundle: .module)
     }
 
     /// 2.9.5: shared subtitle composer for cloud-provider rows. When
@@ -904,7 +904,7 @@ public struct CHAISettingsContent: View {
     /// first-time setup.
     private func modelSubtitle(current: String?, recommendedFallback: String) -> String {
         if let current { return current }
-        return "Recommended: \(recommendedFallback)"
+        return String(localized: "Recommended: \(recommendedFallback)", bundle: .module)
     }
 
     private func providerRow(
@@ -963,7 +963,7 @@ public struct CHAISettingsContent: View {
                         }
                     }
                     if isActiveLocked {
-                        Text("Locked — purchase required")
+                        Text(String(localized: "Locked — purchase required", bundle: .module))
                             .font(.caption)
                             .foregroundStyle(.indigo)
                     } else if let reason = unavailableReason, !available {
@@ -1052,7 +1052,7 @@ public struct CHAISettingsContent: View {
         do {
             try await gate.startPurchase()
         } catch {
-            purchaseError = "Purchase failed: \(error.localizedDescription)"
+            purchaseError = String(localized: "Purchase failed: \(error.localizedDescription)", bundle: .module)
         }
         refreshUnlockState()
     }
@@ -1070,7 +1070,7 @@ public struct CHAISettingsContent: View {
             refreshUnlockState()
             restoreOutcome = .after(wasUnlocked: wasUnlocked, isUnlocked: gate.hasUnlockedProviders)
         } catch {
-            purchaseError = "Restore failed: \(error.localizedDescription)"
+            purchaseError = String(localized: "Restore failed: \(error.localizedDescription)", bundle: .module)
             refreshUnlockState()
         }
     }
@@ -1102,14 +1102,14 @@ public struct CHAISettingsContent: View {
     private func keyField(_ placeholder: String, key: Binding<String>) -> some View {
         HStack {
             if showingAPIKey {
-                TextField(text: key, prompt: Text(placeholder)) { Text("API Key") }
+                TextField(text: key, prompt: Text(placeholder)) { Text(String(localized: "API Key", bundle: .module)) }
                     .textContentType(.password)
                     #if os(iOS)
                     .textInputAutocapitalization(.never)
                     #endif
                     .autocorrectionDisabled()
             } else {
-                SecureField(text: key, prompt: Text(placeholder)) { Text("API Key") }
+                SecureField(text: key, prompt: Text(placeholder)) { Text(String(localized: "API Key", bundle: .module)) }
                     .textContentType(.password)
             }
             Button { showingAPIKey.toggle() } label: {
@@ -1146,7 +1146,7 @@ public struct CHAISettingsContent: View {
             let result: CHAIConnectionTestState.Result
             do {
                 let ok = try await aiManager.validateProvider(providerID)
-                result = ok ? .connected : .failed("Connection failed")
+                result = ok ? .connected : .failed(String(localized: "Connection failed", bundle: .module))
             } catch {
                 result = .failed(error.localizedDescription)
             }

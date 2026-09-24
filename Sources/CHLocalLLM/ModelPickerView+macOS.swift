@@ -107,7 +107,7 @@ public struct ModelPickerView: View {
             }
 
             if !installedModels.isEmpty {
-                Section("Installed Models") {
+                Section(String(localized: "Installed Models", bundle: .module)) {
                     ForEach(installedModels, id: \.id) { model in
                         modelRow(model, isTopRecommendation: false)
                     }
@@ -115,7 +115,7 @@ public struct ModelPickerView: View {
             }
 
             if !recommendedModels.isEmpty {
-                Section("Recommended for \(appIdentifier.displayName)") {
+                Section(String(localized: "Recommended for \(appIdentifier.displayName)", bundle: .module)) {
                     ForEach(Array(recommendedModels.enumerated()), id: \.element.id) { index, model in
                         modelRow(model, isTopRecommendation: index == 0)
                     }
@@ -123,7 +123,7 @@ public struct ModelPickerView: View {
             }
 
             if !otherCatalogModels.isEmpty {
-                Section("Available Models") {
+                Section(String(localized: "Available Models", bundle: .module)) {
                     ForEach(otherCatalogModels, id: \.id) { model in
                         modelRow(model, isTopRecommendation: false)
                     }
@@ -131,7 +131,7 @@ public struct ModelPickerView: View {
             }
 
             if !customModelInfos.isEmpty {
-                Section("Custom Models") {
+                Section(String(localized: "Custom Models", bundle: .module)) {
                     ForEach(customModelInfos, id: \.id) { model in
                         modelRow(model, isTopRecommendation: false)
                     }
@@ -147,9 +147,9 @@ public struct ModelPickerView: View {
                             .font(.title3)
                             .foregroundStyle(.indigo)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Add Custom Model")
+                            Text(String(localized: "Add Custom Model", bundle: .module))
                                 .font(.body.weight(.medium))
-                            Text("Add a Hugging Face MLX model")
+                            Text(String(localized: "Add a Hugging Face MLX model", bundle: .module))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -161,12 +161,12 @@ public struct ModelPickerView: View {
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Choose a Model")
+        .navigationTitle(String(localized: "Choose a Model", bundle: .module))
         .task { await catalog.refreshIfNeeded() }
         .toolbar {
             if let onDismiss {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { onDismiss() }
+                    Button(String(localized: "Done", bundle: .module)) { onDismiss() }
                         .keyboardShortcut(.defaultAction)
                 }
             }
@@ -204,28 +204,28 @@ public struct ModelPickerView: View {
             HStack {
                 if catalog.isRefreshing {
                     ProgressView().controlSize(.small)
-                    Text("Checking for model updates…")
+                    Text(String(localized: "Checking for model updates…", bundle: .module))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button("Refresh Models", systemImage: "arrow.clockwise") {
+                Button(String(localized: "Refresh Models", bundle: .module), systemImage: "arrow.clockwise") {
                     Task { await catalog.refresh() }
                 }
                 .disabled(catalog.isRefreshing)
             }
             if catalog.lastRefreshError != nil {
-                Text("Couldn’t refresh the model list. Your saved list and installed models are still available.")
+                Text(String(localized: "Couldn’t refresh the model list. Your saved list and installed models are still available.", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             }
             if case .failed(let reason) = store.downloadState {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("Model action failed", systemImage: "exclamationmark.triangle")
+                    Label(String(localized: "Model action failed", bundle: .module), systemImage: "exclamationmark.triangle")
                         .font(.caption.weight(.semibold))
                     Text(reason).font(.caption)
                 }
                 .foregroundStyle(.orange)
             }
-            Text("Refreshing checks availability. Model downloads start only when you choose them.")
+            Text(String(localized: "Refreshing checks availability. Model downloads start only when you choose them.", bundle: .module))
                 .font(.caption).foregroundStyle(.secondary)
         }
     }
@@ -299,9 +299,9 @@ private struct MacModelRow: View {
             return nil
         } catch {
             if LocalModelCatalog.isVisionCapable(installed.id) {
-                return "This is an image model. Choose a text model for this app."
+                return String(localized: "This is an image model. Choose a text model for this app.", bundle: .module)
             }
-            return "Your installed copy isn’t supported by this version of the app. You can remove it to free space."
+            return String(localized: "Your installed copy isn’t supported by this version of the app. You can remove it to free space.", bundle: .module)
         }
     }
     private var hasUpdate: Bool { store.updateAvailable(for: model) }
@@ -355,7 +355,7 @@ private struct MacModelRow: View {
             }
             if !model.isCustom {
                 Text(displayModel.release == nil
-                     ? "Not yet evaluated for \(appIdentifier.displayName)"
+                     ? String(localized: "Not yet evaluated for \(appIdentifier.displayName)", bundle: .module)
                      : displayModel.taskHint(for: appIdentifier))
                     .font(.caption)
                     .foregroundStyle(.indigo)
@@ -378,25 +378,25 @@ private struct MacModelRow: View {
                         sizeCategoryChip
                     }
                     if isActive {
-                        Label("Active", systemImage: "checkmark.circle.fill")
+                        Label(String(localized: "Active", bundle: .module), systemImage: "checkmark.circle.fill")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.green)
                     }
                 }
-                Text(model.isCustom ? "Added from Hugging Face" : displayModel.description)
+                Text(model.isCustom ? String(localized: "Added from Hugging Face", bundle: .module) : displayModel.description)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             if isTopRecommendation {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text("Recommended")
+                    Text(String(localized: "Recommended", bundle: .module))
                         .font(.caption2.weight(.bold))
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(Color.yellow.opacity(0.2))
                         .foregroundStyle(.brown)
                         .clipShape(Capsule())
-                    Text("for \(appIdentifier.displayName)")
+                    Text(String(localized: "for \(appIdentifier.displayName)", bundle: .module))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -410,7 +410,7 @@ private struct MacModelRow: View {
             if !model.isCustom { licenseChip }
             compatibilityChip
             Spacer()
-            Text(displayModel.sizeBytes > 0 ? formattedSize(displayModel.sizeBytes) : "Size unknown")
+            Text(displayModel.sizeBytes > 0 ? formattedSize(displayModel.sizeBytes) : String(localized: "Size unknown", bundle: .module))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.secondary)
         }
@@ -443,7 +443,7 @@ private struct MacModelRow: View {
     private var languagesLabel: String {
         let n = displayModel.languages.count
         if n <= 3 { return displayModel.languages.joined(separator: " · ") }
-        return "\(n) languages"
+        return String(localized: "\(n) languages", bundle: .module)
     }
 
     @ViewBuilder
@@ -497,10 +497,10 @@ private struct MacModelRow: View {
     @ViewBuilder
     private var compatibilityChip: some View {
         let (label, color): (String, Color) = {
-            if installedUseIssue != nil || (!isInstalled && downloadIssue != nil) { return ("Not supported", .red) }
-            if deviceRAM_GB >= displayModel.minRAM_GB { return ("Meets memory estimate", .green) }
-            if isBorderline { return ("May run slowly", .yellow) }
-            return ("Not supported", .red)
+            if installedUseIssue != nil || (!isInstalled && downloadIssue != nil) { return (String(localized: "Not supported", bundle: .module), .red) }
+            if deviceRAM_GB >= displayModel.minRAM_GB { return (String(localized: "Meets memory estimate", bundle: .module), .green) }
+            if isBorderline { return (String(localized: "May run slowly", bundle: .module), .yellow) }
+            return (String(localized: "Not supported", bundle: .module), .red)
         }()
         Text(label)
             .font(.caption2.weight(.semibold))
@@ -515,7 +515,7 @@ private struct MacModelRow: View {
     @ViewBuilder
     private var releaseStatus: some View {
         if model.isCustom {
-            Text("Custom model · Not evaluated for \(appIdentifier.displayName)")
+            Text(String(localized: "Custom model · Not evaluated for \(appIdentifier.displayName)", bundle: .module))
                 .font(.caption).foregroundStyle(.secondary)
         }
         if let installedUseIssue {
@@ -525,23 +525,23 @@ private struct MacModelRow: View {
         if isRetiredOrRemoved {
             if isInstalled {
                 Text(installedUseIssue == nil
-                     ? "No longer offered for download. You can keep using your installed copy."
-                     : "No longer offered for download. Its files are still stored on this device.")
+                     ? String(localized: "No longer offered for download. You can keep using your installed copy.", bundle: .module)
+                     : String(localized: "No longer offered for download. Its files are still stored on this device.", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Text("No longer listed. You can let this download finish or cancel it.")
+                Text(String(localized: "No longer listed. You can let this download finish or cancel it.", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
         if hasUpdate {
             if let downloadIssue {
-                Text("A newer version is available, but it cannot run in this app. \(downloadIssue)")
+                Text(String(localized: "A newer version is available, but it cannot run in this app. \(downloadIssue)", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             } else if deviceRAM_GB < model.minRAM_GB - 1 {
-                Text("A newer version is available, but it needs more memory than this device has.")
+                Text(String(localized: "A newer version is available, but it needs more memory than this device has.", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             } else {
-                Text("Update available. Your installed copy is kept until the update finishes.")
+                Text(String(localized: "Update available. Your installed copy is kept until the update finishes.", bundle: .module))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -550,11 +550,11 @@ private struct MacModelRow: View {
     @ViewBuilder
     private var updateButton: some View {
         if hasUpdate {
-            Button("Update", systemImage: "arrow.down.circle") { onUpdateTapped() }
+            Button(String(localized: "Update", bundle: .module), systemImage: "arrow.down.circle") { onUpdateTapped() }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .disabled(anyDownloadActive || downloadIssue != nil || deviceRAM_GB < model.minRAM_GB - 1)
-                .accessibilityLabel("Update \(displayModel.displayName)")
+                .accessibilityLabel(String(localized: "Update \(displayModel.displayName)", bundle: .module))
         }
     }
 
@@ -562,11 +562,11 @@ private struct MacModelRow: View {
     private var removeCustomEntryButton: some View {
         if model.isCustom {
             Button(role: .destructive) { onRemove() } label: {
-                Label("Remove", systemImage: "trash")
+                Label(String(localized: "Remove", bundle: .module), systemImage: "trash")
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .accessibilityLabel("Remove \(displayModel.displayName)")
+            .accessibilityLabel(String(localized: "Remove \(displayModel.displayName)", bundle: .module))
         }
     }
 
@@ -576,7 +576,7 @@ private struct MacModelRow: View {
         case .notCompatible:
             HStack {
                 Spacer()
-                Text(downloadIssue ?? "This model needs more memory than this device has.").font(.caption).foregroundStyle(.tertiary)
+                Text(downloadIssue ?? String(localized: "This model needs more memory than this device has.", bundle: .module)).font(.caption).foregroundStyle(.tertiary)
                 removeCustomEntryButton
             }
         case .notInstalled(let canStart):
@@ -585,7 +585,7 @@ private struct MacModelRow: View {
                 Button {
                     onSelectTapped()
                 } label: {
-                    Label("Use", systemImage: "checkmark.circle")
+                    Label(String(localized: "Use", bundle: .module), systemImage: "checkmark.circle")
                         .frame(minWidth: 70)
                 }
                 .buttonStyle(.borderedProminent).controlSize(.small)
@@ -600,21 +600,21 @@ private struct MacModelRow: View {
         case .installing:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text(isInstalled ? "Installing update…" : "Installing…")
+                Text(isInstalled ? String(localized: "Installing update…", bundle: .module) : "Installing…")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Button("Cancel") { onCancelDownload() }
+                Button(String(localized: "Cancel", bundle: .module)) { onCancelDownload() }
                     .buttonStyle(.bordered).controlSize(.small)
             }
         case .pendingActive:
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text("Selected — finishing setup…").font(.caption).foregroundStyle(.secondary)
+                Text(String(localized: "Selected — finishing setup…", bundle: .module)).font(.caption).foregroundStyle(.secondary)
                 Spacer()
             }
         case .installed:
             HStack {
-                Label("Installed", systemImage: "internaldrive")
+                Label(String(localized: "Installed", bundle: .module), systemImage: "internaldrive")
                     .font(.caption.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -622,7 +622,7 @@ private struct MacModelRow: View {
                 Button {
                     onSelectTapped()
                 } label: {
-                    Label("Use", systemImage: "checkmark.circle")
+                    Label(String(localized: "Use", bundle: .module), systemImage: "checkmark.circle")
                         .frame(minWidth: 70)
                 }
                 .buttonStyle(.borderedProminent).controlSize(.small)
@@ -631,7 +631,7 @@ private struct MacModelRow: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered).controlSize(.small)
-                .help("Delete this model from disk")
+                .help(String(localized: "Delete this model from disk", bundle: .module))
             }
         case .active:
             HStack {
@@ -642,7 +642,7 @@ private struct MacModelRow: View {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.bordered).controlSize(.small)
-                .help("Delete this model from disk")
+                .help(String(localized: "Delete this model from disk", bundle: .module))
             }
         }
     }
@@ -656,7 +656,7 @@ private struct MacModelRow: View {
             ProgressView(value: progress).tint(stalled ? .orange : .indigo)
             HStack(spacing: 8) {
                 if stalled {
-                    Label("Stalled — \(Int(progress * 100))% complete", systemImage: "exclamationmark.triangle.fill")
+                    Label(String(localized: "Stalled — \(Int(progress * 100))% complete", bundle: .module), systemImage: "exclamationmark.triangle.fill")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.orange)
                 } else {
@@ -666,10 +666,10 @@ private struct MacModelRow: View {
                 }
                 Spacer()
                 if stalled {
-                    Button("Retry") { onRetryDownload() }
+                    Button(String(localized: "Retry", bundle: .module)) { onRetryDownload() }
                         .buttonStyle(.borderedProminent).controlSize(.small).tint(.orange)
                 }
-                Button("Cancel") { onCancelDownload() }
+                Button(String(localized: "Cancel", bundle: .module)) { onCancelDownload() }
                     .buttonStyle(.bordered).controlSize(.small)
             }
         }
@@ -684,10 +684,10 @@ private struct MacModelRow: View {
         if let speed, speed > 0 {
             parts.append(Self.byteFormatter.string(fromByteCount: Int64(speed)) + "/s")
         } else {
-            parts.append("calculating speed…")
+            parts.append(String(localized: "calculating speed…", bundle: .module))
         }
         if let eta {
-            parts.append("ETA \(Self.formatETA(eta))")
+            parts.append(String(localized: "ETA \(Self.formatETA(eta))", bundle: .module))
         }
         return parts.joined(separator: " · ")
     }
@@ -696,7 +696,7 @@ private struct MacModelRow: View {
     private var inUsePill: some View {
         HStack(spacing: 4) {
             Image(systemName: "checkmark.circle.fill")
-            Text("In Use")
+            Text(String(localized: "In Use", bundle: .module))
         }
         .font(.caption.weight(.semibold))
         .padding(.horizontal, 10).padding(.vertical, 5)
@@ -715,10 +715,10 @@ private struct MacModelRow: View {
 
     private static func formatETA(_ seconds: TimeInterval) -> String {
         let s = Int(seconds.rounded())
-        if s < 60 { return "\(s)s" }
+        if s < 60 { return String(localized: "\(s)s", bundle: .module) }
         let m = s / 60
         let r = s % 60
-        return r == 0 ? "\(m)m" : "\(m)m \(r)s"
+        return r == 0 ? "\(m)m" : String(localized: "\(m)m \(r)s", bundle: .module)
     }
 
     private func formattedSize(_ bytes: Int64) -> String {
@@ -814,38 +814,38 @@ private struct MacAddCustomModelSheet: View {
                         fetchError = nil
                     }
             } header: {
-                Text("Hugging Face Model Repository")
+                Text(String(localized: "Hugging Face Model Repository", bundle: .module))
             } footer: {
                 if let error = fetchError {
                     Text(error).foregroundStyle(.red)
                 } else if let size = fetchedSize {
-                    Text(size > 0 ? "Repository found · Approx. \(formattedSize(size))" : "Repository found. Download size unavailable.").foregroundStyle(.secondary)
+                    Text(size > 0 ? String(localized: "Repository found · Approx. \(formattedSize(size))", bundle: .module) : String(localized: "Repository found. Download size unavailable.", bundle: .module)).foregroundStyle(.secondary)
                 } else {
-                    Text("Use an MLX-format text model. Custom models aren’t evaluated for this app.")
+                    Text(String(localized: "Use an MLX-format text model. Custom models aren’t evaluated for this app.", bundle: .module))
                         .foregroundStyle(.secondary)
                 }
             }
 
             Section {
-                Button(isFetching ? "Checking…" : "Check Repository") {
+                Button(isFetching ? "Checking…" : String(localized: "Check Repository", bundle: .module)) {
                     Task { await checkURL() }
                 }
                 .disabled(!urlIsValid || isFetching)
             }
 
-            Section("Model Name") {
-                TextField("e.g. My Custom 7B", text: $modelName)
+            Section(String(localized: "Model Name", bundle: .module)) {
+                TextField(String(localized: "e.g. My Custom 7B", bundle: .module), text: $modelName)
             }
         }
         .formStyle(.grouped)
-        .navigationTitle("Add Custom Model")
+        .navigationTitle(String(localized: "Add Custom Model", bundle: .module))
         .frame(minWidth: 480, minHeight: 460)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") { dismiss() }
+                Button(String(localized: "Cancel", bundle: .module)) { dismiss() }
             }
             ToolbarItem(placement: .confirmationAction) {
-                Button("Add and Download") {
+                Button(String(localized: "Add and Download", bundle: .module)) {
                     guard let url = URL(string: urlText),
                           let size = fetchedSize else { return }
                     let entry = CustomModelEntry(
@@ -894,7 +894,7 @@ private struct MacAddCustomModelSheet: View {
             let (data, response) = try await URLSession.shared.data(for: request)
             guard checkGeneration == generation, urlText == checkedText else { return }
             guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                fetchError = "This repository isn’t available. Use a public model repository."
+                fetchError = String(localized: "This repository isn’t available. Use a public model repository.", bundle: .module)
                 return
             }
             let metadata = try JSONDecoder().decode(RepositoryMetadata.self, from: data)
@@ -903,14 +903,14 @@ private struct MacAddCustomModelSheet: View {
             }
             guard files.contains(where: { $0.rfilename == "config.json" }),
                   files.contains(where: { $0.rfilename.hasSuffix(".safetensors") }) else {
-                fetchError = "This repository doesn’t contain the files needed for an MLX model."
+                fetchError = String(localized: "This repository doesn’t contain the files needed for an MLX model.", bundle: .module)
                 return
             }
             var total: Int64 = 0
             for file in files {
                 let sum = total.addingReportingOverflow(max(0, file.size ?? file.lfs?.size ?? 0))
                 guard !sum.overflow else {
-                    fetchError = "Couldn’t read the model’s download size."
+                    fetchError = String(localized: "Couldn’t read the model’s download size.", bundle: .module)
                     return
                 }
                 total = sum.partialValue
@@ -921,7 +921,7 @@ private struct MacAddCustomModelSheet: View {
             }
         } catch {
             guard checkGeneration == generation, urlText == checkedText else { return }
-            fetchError = "Couldn’t check this repository. Check your connection and try again."
+            fetchError = String(localized: "Couldn’t check this repository. Check your connection and try again.", bundle: .module)
         }
     }
 
@@ -943,16 +943,16 @@ private struct MacLlamaAcknowledgmentSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             Label(model.licenseDisplayName, systemImage: "checkmark.shield.fill")
                 .font(.title3.bold())
-            Text("\(model.displayName) is provided under this license. Review its terms before downloading.")
+            Text(String(localized: "\(model.displayName) is provided under this license. Review its terms before downloading.", bundle: .module))
                 .foregroundStyle(.secondary)
-            Link("Read License Terms", destination: ModelLicenseAcknowledgment.termsURL(for: model))
-            Text("Once downloaded, the model runs on your device.")
+            Link(String(localized: "Read License Terms", bundle: .module), destination: ModelLicenseAcknowledgment.termsURL(for: model))
+            Text(String(localized: "Once downloaded, the model runs on your device.", bundle: .module))
                 .font(.caption).foregroundStyle(.secondary)
             Spacer()
             HStack {
                 Spacer()
-                Button("Cancel") { onCancel() }
-                Button("I Accept") {
+                Button(String(localized: "Cancel", bundle: .module)) { onCancel() }
+                Button(String(localized: "I Accept", bundle: .module)) {
                     ModelLicenseAcknowledgment.record(for: model)
                     onAcknowledge()
                 }

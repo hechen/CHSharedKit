@@ -112,22 +112,22 @@ public struct CHSyncHealthView: View {
                     row(for: entry)
                 }
                 if sortedEntries.isEmpty {
-                    Text("No sync activity yet this session.")
+                    Text(String(localized: "No sync activity yet this session.", bundle: .module))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             } header: {
-                Text("Activity")
+                Text(String(localized: "Activity", bundle: .module))
             } footer: {
-                Text("Per-source last write, external update, and sync round-trip. Resets when the app relaunches.")
+                Text(String(localized: "Per-source last write, external update, and sync round-trip. Resets when the app relaunches.", bundle: .module))
             }
 
             if registry.conflictCount > 0 {
-                Section("Conflicts") {
+                Section(String(localized: "Conflicts", bundle: .module)) {
                     HStack {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
-                        Text("\(registry.conflictCount) discarded write\(registry.conflictCount == 1 ? "" : "s")")
+                        Text(String(localized: "\(registry.conflictCount) discarded writes", bundle: .module))
                     }
                     .font(.subheadline)
                 }
@@ -142,16 +142,16 @@ public struct CHSyncHealthView: View {
                     }
                 } label: {
                     Label(
-                        resyncFlash ? "Resync requested" : "Force resync",
+                        resyncFlash ? String(localized: "Resync requested", bundle: .module) : String(localized: "Force resync", bundle: .module),
                         systemImage: resyncFlash ? "checkmark.circle.fill" : "arrow.triangle.2.circlepath"
                     )
                 }
                 .disabled(resyncFlash)
             } footer: {
-                Text("Asks every sync primitive to push local state to iCloud and pull whatever's pending. Apple's daemon decides when to actually run the round-trip.")
+                Text(String(localized: "Asks every sync primitive to push local state to iCloud and pull whatever's pending. Apple's daemon decides when to actually run the round-trip.", bundle: .module))
             }
         }
-        .navigationTitle("Sync Health")
+        .navigationTitle(String(localized: "Sync Health", bundle: .module))
         #if os(iOS) || os(visionOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -174,9 +174,9 @@ public struct CHSyncHealthView: View {
             Text(entry.source)
                 .font(.subheadline.weight(.medium))
             HStack(spacing: 12) {
-                stamp(label: "Wrote", date: entry.lastLocalWrite)
-                stamp(label: "Pulled", date: entry.lastExternalUpdate)
-                stamp(label: "Synced", date: entry.lastSync)
+                stamp(label: String(localized: "Wrote", bundle: .module), date: entry.lastLocalWrite)
+                stamp(label: String(localized: "Pulled", bundle: .module), date: entry.lastExternalUpdate)
+                stamp(label: String(localized: "Synced", bundle: .module), date: entry.lastSync)
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -195,10 +195,10 @@ public struct CHSyncHealthView: View {
 
     private func relative(_ date: Date) -> String {
         let interval = Date().timeIntervalSince(date)
-        if interval < 1 { return "just now" }
-        if interval < 60 { return "\(Int(interval))s ago" }
-        if interval < 3600 { return "\(Int(interval / 60))m ago" }
-        if interval < 86_400 { return "\(Int(interval / 3600))h ago" }
+        if interval < 1 { return String(localized: "just now", bundle: .module) }
+        if interval < 60 { return String(localized: "\(Int(interval))s ago", bundle: .module) }
+        if interval < 3600 { return String(localized: "\(Int(interval / 60))m ago", bundle: .module) }
+        if interval < 86_400 { return String(localized: "\(Int(interval / 3600))h ago", bundle: .module) }
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short

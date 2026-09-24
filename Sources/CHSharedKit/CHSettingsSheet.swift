@@ -43,6 +43,8 @@ public enum CHSettingsPresentationSizing: Sendable {
 public struct CHSettingsSheet<Content: View>: View {
     private let title: LocalizedStringKey
     private let doneButtonTitle: LocalizedStringKey
+    private let titleBundle: Bundle?
+    private let doneButtonBundle: Bundle?
     private let onDismiss: (() -> Void)?
     private let content: Content
 
@@ -51,27 +53,42 @@ public struct CHSettingsSheet<Content: View>: View {
 
     public init(
         _ title: LocalizedStringKey,
-        doneButtonTitle: LocalizedStringKey = "Done",
+        doneButtonTitle: LocalizedStringKey,
+        bundle: Bundle? = nil,
+        doneButtonBundle: Bundle? = nil,
         onDismiss: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.title = title
         self.doneButtonTitle = doneButtonTitle
+        self.titleBundle = bundle
+        self.doneButtonBundle = doneButtonBundle
         self.onDismiss = onDismiss
         self.content = content()
+    }
+
+    /// Uses package copy for Done while resolving a caller title in its host bundle.
+    public init(
+        _ title: LocalizedStringKey,
+        bundle: Bundle? = nil,
+        onDismiss: (() -> Void)? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.init(title, doneButtonTitle: "Done", bundle: bundle,
+                  doneButtonBundle: .module, onDismiss: onDismiss, content: content)
     }
 
     public var body: some View {
         NavigationStack {
             content
-                .navigationTitle(title)
+                .navigationTitle(Text(title, bundle: titleBundle))
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
                 #endif
                 #if !os(macOS)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(doneButtonTitle, action: finish)
+                        Button(action: finish) { Text(doneButtonTitle, bundle: doneButtonBundle) }
                             .fontWeight(.semibold)
                             .accessibilityIdentifier("ch-settings-sheet-done")
                     }
@@ -82,7 +99,7 @@ public struct CHSettingsSheet<Content: View>: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             HStack {
                 Spacer()
-                Button(doneButtonTitle, action: finish)
+                Button(action: finish) { Text(doneButtonTitle, bundle: doneButtonBundle) }
                     .buttonStyle(.bordered)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier("ch-settings-sheet-done")

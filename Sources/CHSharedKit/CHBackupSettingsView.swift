@@ -164,7 +164,7 @@ public struct CHBackupSettingsView: View {
         Section {
             // Auto-Backup Toggle
             HStack {
-                Label("Auto-Backup", systemImage: "clock.arrow.2.circlepath")
+                Label(String(localized: "Auto-Backup", bundle: .module), systemImage: "clock.arrow.2.circlepath")
                 Spacer()
                 Toggle("", isOn: $autoBackupEnabled)
                     .labelsHidden()
@@ -176,7 +176,7 @@ public struct CHBackupSettingsView: View {
             if autoBackupEnabled {
                 // Last Backup Date
                 HStack {
-                    Text("Last Backup")
+                    Text(String(localized: "Last Backup", bundle: .module))
                         .foregroundStyle(.secondary)
                     Spacer()
                     if let last = CHBackupStorage.lastAutoBackupDate(appName: config.appName) {
@@ -184,7 +184,7 @@ public struct CHBackupSettingsView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     } else {
-                        Text("Never")
+                        Text(String(localized: "Never", bundle: .module))
                             .font(.subheadline)
                             .foregroundStyle(.tertiary)
                     }
@@ -196,7 +196,7 @@ public struct CHBackupSettingsView: View {
                         CHBackupListView(config: config)
                     } label: {
                         HStack {
-                            Text("\(backupCount) backup\(backupCount == 1 ? "" : "s") stored")
+                            Text(String(localized: "\(backupCount) backup\(backupCount == 1 ? "" : "s") stored", bundle: .module))
                                 .foregroundStyle(.secondary)
                             Spacer()
                         }
@@ -204,7 +204,7 @@ public struct CHBackupSettingsView: View {
                 }
                 
                 // Max Backups Stepper
-                Stepper("Keep \(maxBackups) backups", value: $maxBackups, in: 1...30)
+                Stepper(String(localized: "Keep \(maxBackups) backups", bundle: .module), value: $maxBackups, in: 1...30)
                     .onChange(of: maxBackups) { _, newValue in
                         CHBackupStorage.setMaxAutoBackups(newValue, appName: config.appName)
                         CHBackupStorage.pruneOldBackups(
@@ -223,14 +223,14 @@ public struct CHBackupSettingsView: View {
                         refreshBackupCount()
                     }
                 } label: {
-                    Label("Back Up Now", systemImage: "icloud.and.arrow.up")
+                    Label(String(localized: "Back Up Now", bundle: .module), systemImage: "icloud.and.arrow.up")
                 }
             }
             
             // Export Backup Button
             Button(action: onExport) {
                 HStack {
-                    Label("Export Backup", systemImage: "arrow.down.doc")
+                    Label(String(localized: "Export Backup", bundle: .module), systemImage: "arrow.down.doc")
                     Spacer()
                     if isExporting {
                         ProgressView().scaleEffect(0.8)
@@ -242,7 +242,7 @@ public struct CHBackupSettingsView: View {
             // Import Backup Button
             Button(action: onImportTapped) {
                 HStack {
-                    Label("Import Backup", systemImage: "arrow.up.doc")
+                    Label(String(localized: "Import Backup", bundle: .module), systemImage: "arrow.up.doc")
                     Spacer()
                     if isImporting {
                         ProgressView().scaleEffect(0.8)
@@ -252,13 +252,13 @@ public struct CHBackupSettingsView: View {
             .disabled(isImporting)
             
         } header: {
-            Text("Backup")
+            Text(String(localized: "Backup", bundle: .module))
         } footer: {
             if autoBackupEnabled {
                 if CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId) {
-                    Text("Backups are saved to iCloud Drive and sync across all your devices.")
+                    Text(String(localized: "Backups are saved to iCloud Drive and sync across all your devices.", bundle: .module))
                 } else {
-                    Text("Backups are saved locally. Enable iCloud Drive for cross-device sync.")
+                    Text(String(localized: "Backups are saved locally. Enable iCloud Drive for cross-device sync.", bundle: .module))
                 }
             }
         }

@@ -226,14 +226,14 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         guard fm.fileExists(atPath: url.path) else {
             print("[CHLocalLLM] performLoad ERROR: directory missing at \(url.path)")
             throw CHAIError.modelLoadFailed(
-                "Model files for \(info.displayName) are missing. Re-download from Settings → AI Provider."
+                String(localized: "Model files for \(info.displayName) are missing. Re-download from Settings → AI Provider.", bundle: .module)
             )
         }
         let configURL = url.appendingPathComponent("config.json")
         guard fm.fileExists(atPath: configURL.path) else {
             print("[CHLocalLLM] performLoad ERROR: config.json missing at \(configURL.path)")
             throw CHAIError.modelLoadFailed(
-                "Model snapshot for \(info.displayName) is incomplete (missing config.json). Re-download to fix."
+                String(localized: "Model snapshot for \(info.displayName) is incomplete (missing config.json). Re-download to fix.", bundle: .module)
             )
         }
         // Surface every file the snapshot has — when Chen's report says
@@ -283,11 +283,11 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
             let lowered = nserror.localizedDescription.lowercased()
             if lowered.contains("memory") || lowered.contains("alloc") {
                 throw CHAIError.modelLoadFailed(
-                    "Insufficient memory — close other apps and try again."
+                    String(localized: "Insufficient memory — close other apps and try again.", bundle: .module)
                 )
             }
             throw CHAIError.modelLoadFailed(
-                "Could not load \(info.displayName): \(error.localizedDescription)"
+                String(localized: "Could not load \(info.displayName): \(error.localizedDescription)", bundle: .module)
             )
         }
     }
@@ -382,7 +382,7 @@ extension CHLocalLLMProvider: CHAIProvider {
     /// observable source of truth for "which on-device model is currently
     /// selected". Embedding the model name here caused the 2.4.4 stale-cell
     /// bug — see CHAIManager's 2.4.5 notes.
-    public var displayName: String { "On-Device AI" }
+    public var displayName: String { String(localized: "On-Device AI", bundle: .module) }
     public var supportsVision: Bool { false }
     /// 2.10.0: most local MLX models in the catalog are text-only.
     /// VLM models exist (`CHLocalVLMProvider` is the dedicated path)

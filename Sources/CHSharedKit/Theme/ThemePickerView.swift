@@ -18,7 +18,7 @@ public struct ThemePickerView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Pick a palette — it syncs across all your devices and apps.")
+                Text(String(localized: "Pick a palette — it syncs across all your devices and apps.", bundle: .module))
                     .font(.subheadline)
                     .foregroundStyle(currentTheme.textSecondary)
                     .padding(.horizontal, 20)
@@ -47,7 +47,7 @@ public struct ThemePickerView: View {
             }
         }
         .background(currentTheme.background.ignoresSafeArea())
-        .navigationTitle("Theme")
+        .navigationTitle(String(localized: "Theme", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

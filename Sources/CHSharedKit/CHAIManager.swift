@@ -512,20 +512,20 @@ public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
     }
 
     public static var availabilitySubtitle: String {
-        "On-device · \(minimumOSRequirement)"
+        String(localized: "On-device · \(minimumOSRequirement)", bundle: .module)
     }
 
     public static var unavailableReason: String {
-        "Requires \(minimumOSRequirement)"
+        String(localized: "Requires \(minimumOSRequirement)", bundle: .module)
     }
 
     static var unavailableErrorDescription: String {
         #if os(macOS)
-        "Apple Intelligence requires macOS 26 or later"
+        String(localized: "Apple Intelligence requires macOS 26 or later", bundle: .module)
         #elseif os(visionOS)
-        "Apple Intelligence requires visionOS 26 or later"
+        String(localized: "Apple Intelligence requires visionOS 26 or later", bundle: .module)
         #else
-        "Apple Intelligence requires iOS 26 or later"
+        String(localized: "Apple Intelligence requires iOS 26 or later", bundle: .module)
         #endif
     }
     

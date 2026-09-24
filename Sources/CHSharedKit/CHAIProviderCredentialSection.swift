@@ -86,7 +86,7 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
 
     public var body: some View {
         Section {
-            LabeledContent("API Key") {
+            LabeledContent(String(localized: "API Key", bundle: .module)) {
                 HStack(spacing: 6) {
                     keyInput
                     Button {
@@ -96,8 +96,8 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .help(isRevealed ? "Hide API key" : "Show API key")
-                    .accessibilityLabel(isRevealed ? "Hide API key" : "Show API key")
+                    .help(isRevealed ? String(localized: "Hide API key", bundle: .module) : String(localized: "Show API key", bundle: .module))
+                    .accessibilityLabel(isRevealed ? String(localized: "Hide API key", bundle: .module) : String(localized: "Show API key", bundle: .module))
                 }
             }
 
@@ -125,9 +125,9 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
             // The placeholder goes in `prompt`: a grouped macOS Form draws a
             // field's title as a label beside it, outside the empty box.
             if isRevealed {
-                TextField(text: $apiKey, prompt: Text(keyPlaceholder)) { Text("API Key") }
+                TextField(text: $apiKey, prompt: Text(keyPlaceholder)) { Text(String(localized: "API Key", bundle: .module)) }
             } else {
-                SecureField(text: $apiKey, prompt: Text(keyPlaceholder)) { Text("API Key") }
+                SecureField(text: $apiKey, prompt: Text(keyPlaceholder)) { Text(String(localized: "API Key", bundle: .module)) }
             }
         }
         .labelsHidden()
@@ -143,7 +143,7 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
         .multilineTextAlignment(.leading)
         .frame(maxWidth: 340)
         #endif
-        .accessibilityLabel("\(providerName) API key")
+        .accessibilityLabel(String(localized: "\(providerName) API key", bundle: .module))
     }
 
     // MARK: - Footer
@@ -156,13 +156,13 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
                 HStack(spacing: 14) {
                     if let apiKeyURL {
                         Link(destination: apiKeyURL) {
-                            Label("Get an API key", systemImage: "arrow.up.right")
+                            Label(String(localized: "Get an API key", bundle: .module), systemImage: "arrow.up.right")
                                 .labelStyle(TrailingIconLabelStyle())
                         }
                     }
                     if let privacyPolicyURL {
                         Link(destination: privacyPolicyURL) {
-                            Label("Privacy policy", systemImage: "arrow.up.right")
+                            Label(String(localized: "Privacy policy", bundle: .module), systemImage: "arrow.up.right")
                                 .labelStyle(TrailingIconLabelStyle())
                         }
                     }
@@ -176,11 +176,10 @@ public struct CHAIProviderCredentialSection<ModelPicker: View>: View {
     }
 
     private var detailText: String {
-        var text = "Your key is stored in the Keychain"
         if let endpointHost, !endpointHost.isEmpty {
-            text += " and requests go directly to \(endpointHost)"
+            return String(localized: "Your key is stored in the Keychain and requests go directly to \(endpointHost). Usage is billed to your \(billingAccountName) account.", bundle: .module)
         }
-        return text + ". Usage is billed to your \(billingAccountName) account."
+        return String(localized: "Your key is stored in the Keychain. Usage is billed to your \(billingAccountName) account.", bundle: .module)
     }
 }
 
@@ -204,7 +203,7 @@ public struct CHAIConnectionTestRow: View {
         #if os(macOS)
         // A labelled row with a trailing push button, as System Settings
         // lays out an action beside its status.
-        LabeledContent("Connection") {
+        LabeledContent(String(localized: "Connection", bundle: .module)) {
             HStack(spacing: 8) {
                 if state.isTesting {
                     ProgressView().controlSize(.small)
@@ -233,10 +232,10 @@ public struct CHAIConnectionTestRow: View {
     }
 
     private func testButton(title: LocalizedStringKey) -> some View {
-        Button(title, action: action)
+        Button(action: action) { Text(title, bundle: .module) }
             // A second run while one is in flight would race the first result.
             .disabled(!canTest || state.isTesting)
-            .accessibilityLabel("Test Connection")
+            .accessibilityLabel(String(localized: "Test Connection", bundle: .module))
     }
 
     @ViewBuilder
@@ -244,7 +243,7 @@ public struct CHAIConnectionTestRow: View {
         switch result {
         case .connected:
             Label {
-                Text("Connected")
+                Text(String(localized: "Connected", bundle: .module))
             } icon: {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
             }

@@ -20,7 +20,7 @@ public struct CHAIFeaturesSettingsSheet: View {
     }
 
     public var body: some View {
-        CHSettingsSheet("AI Features", onDismiss: onDismiss) {
+        CHSettingsSheet("AI Features", bundle: .module, onDismiss: onDismiss) {
             CHAIFeaturesSettingsContent(
                 appName: appName,
                 displaySection: displaySection
@@ -39,7 +39,7 @@ public struct CHAIUsageSheet: View {
     }
 
     public var body: some View {
-        CHSettingsSheet("AI Usage", onDismiss: onDismiss) {
+        CHSettingsSheet("AI Usage", bundle: .module, onDismiss: onDismiss) {
             CHAIUsageView()
         }
     }
