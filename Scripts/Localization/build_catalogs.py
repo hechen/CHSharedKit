@@ -67,7 +67,7 @@ def main():
     for module, module_keys in manifest['modules'].items():
         strings = {}
         for key in module_keys:
-            entry = {'extractionState': 'manual', 'localizations': {}}
+            entry = {'extractionState': 'manual', 'generatesSymbol': False, 'localizations': {}}
             if key in manifest['invariantKeys']:
                 entry['shouldTranslate'] = False
             for locale, mapping in maps.items():

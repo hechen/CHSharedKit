@@ -3,6 +3,7 @@
   "strings": {
     "%@ (Locked)": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -62,6 +63,7 @@
     },
     "%@ is provided under this license. Review its terms before downloading.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -121,6 +123,7 @@
     },
     "%@ is ready for offline use.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -180,6 +183,7 @@
     },
     "%@ · API key saved": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -239,6 +243,7 @@
     },
     "%@ · Add API key": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -298,6 +303,7 @@
     },
     "%@ · OpenAI-compatible API": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -357,6 +363,7 @@
     },
     "%@ · Unlocked": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -422,6 +429,7 @@
     },
     "%@/s": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -481,6 +489,7 @@
     },
     "%lld languages": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "variations": {
@@ -654,6 +663,7 @@
     },
     "%lld%%": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -714,6 +724,7 @@
     },
     "%lldm %llds": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -773,6 +784,7 @@
     },
     "%llds": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -832,6 +844,7 @@
     },
     "A newer version is available, but it cannot run in this app. %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -891,6 +904,7 @@
     },
     "A newer version is available, but it needs more memory than this device has.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -950,6 +964,7 @@
     },
     "AI Provider": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1009,6 +1024,7 @@
     },
     "AI for Quick Add and daily insights now runs on your iPhone — no network needed. Photo meal scanning still uses cloud AI by default. To run photos on-device too, download the vision model in Settings → AI Provider → On-Device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1068,6 +1084,7 @@
     },
     "AI providers unlocked": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1133,6 +1150,7 @@
     },
     "API Key": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1192,6 +1210,7 @@
     },
     "Active": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1251,6 +1270,7 @@
     },
     "Active · Runs offline on this device": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1310,6 +1330,7 @@
     },
     "Add Custom Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1369,6 +1390,7 @@
     },
     "Add a Hugging Face MLX model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1428,6 +1450,7 @@
     },
     "Add and Download": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1487,6 +1510,7 @@
     },
     "Added from Hugging Face": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1546,6 +1570,7 @@
     },
     "Advanced": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1605,6 +1630,7 @@
     },
     "All AI providers are available.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1670,6 +1696,7 @@
     },
     "Apple Intelligence": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1730,6 +1757,7 @@
     },
     "Apple Intelligence and downloaded models keep requests on this device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1789,6 +1817,7 @@
     },
     "Apple Intelligence is included without this unlock": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1854,6 +1883,7 @@
     },
     "Apple Intelligence keeps requests on this device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1913,6 +1943,7 @@
     },
     "Apple Intelligence runs on this Mac. It is free, and requests never leave the device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -1972,6 +2003,7 @@
     },
     "Available Models": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2031,6 +2063,7 @@
     },
     "Base URL": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2090,6 +2123,7 @@
     },
     "Bring your own keys for cloud providers — you control the cost": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2155,6 +2189,7 @@
     },
     "Cancel": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2214,6 +2249,7 @@
     },
     "Change Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2273,6 +2309,7 @@
     },
     "Check Repository": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2332,6 +2369,7 @@
     },
     "Checking for model updates…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2391,6 +2429,7 @@
     },
     "Checks this Apple Account for previous purchases": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2456,6 +2495,7 @@
     },
     "Choose a Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2515,6 +2555,7 @@
     },
     "Closet can now categorize items, detect brands, and suggest outfits privately on your device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2574,6 +2615,7 @@
     },
     "Cloud": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2633,6 +2675,7 @@
     },
     "Cloud APIs": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2692,6 +2735,7 @@
     },
     "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2751,6 +2795,7 @@
     },
     "Connect an OpenAI-compatible service that you operate or trust.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2810,6 +2855,7 @@
     },
     "Connection failed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2869,6 +2915,7 @@
     },
     "Copy": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2928,6 +2975,7 @@
     },
     "Could not load %@: %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -2987,6 +3035,7 @@
     },
     "Couldn’t check this repository. Check your connection and try again.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3046,6 +3095,7 @@
     },
     "Couldn’t read the model’s download size.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3105,6 +3155,7 @@
     },
     "Couldn’t refresh the model list. Your saved list and installed models are still available.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3164,6 +3215,7 @@
     },
     "Current Provider": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3223,6 +3275,7 @@
     },
     "Custom Endpoint": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3282,6 +3335,7 @@
     },
     "Custom Models": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3341,6 +3395,7 @@
     },
     "Custom model · Not evaluated for %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3400,6 +3455,7 @@
     },
     "Delete this model from disk": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3459,6 +3515,7 @@
     },
     "Discard": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3518,6 +3575,7 @@
     },
     "Distill can now summarize articles without a network.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3577,6 +3635,7 @@
     },
     "Done": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3636,6 +3695,7 @@
     },
     "Download %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3695,6 +3755,7 @@
     },
     "Download Failed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3754,6 +3815,7 @@
     },
     "Download Model (%@)": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3813,6 +3875,7 @@
     },
     "Download Paused": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3872,6 +3935,7 @@
     },
     "Download a Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3931,6 +3995,7 @@
     },
     "Download a small AI model once. After that, Closet categorizes items and suggests outfits with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -3990,6 +4055,7 @@
     },
     "Download a small AI model once. After that, Distill summarizes articles with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4049,6 +4115,7 @@
     },
     "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4108,6 +4175,7 @@
     },
     "Download a small AI model once. After that, LiftCoach suggests workouts, gives form tips, detects plateaus, and writes your weekly training summaries with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4167,6 +4235,7 @@
     },
     "Download a small AI model once. After that, SpendWisely categorizes transactions and analyzes your spending with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4226,6 +4295,7 @@
     },
     "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4285,6 +4355,7 @@
     },
     "Download stalled": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4344,6 +4415,7 @@
     },
     "Downloading %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4403,6 +4475,7 @@
     },
     "ETA %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4462,6 +4535,7 @@
     },
     "Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4521,6 +4595,7 @@
     },
     "Free": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4580,6 +4655,7 @@
     },
     "Hugging Face Model Repository": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4639,6 +4715,7 @@
     },
     "I Accept": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4698,6 +4775,7 @@
     },
     "In Use": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4757,6 +4835,7 @@
     },
     "Installed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4816,6 +4895,7 @@
     },
     "Installed Models": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4875,6 +4955,7 @@
     },
     "Installing update…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4934,6 +5015,7 @@
     },
     "Installing…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -4993,6 +5075,7 @@
     },
     "Insufficient memory — close other apps and try again.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5052,6 +5135,7 @@
     },
     "LiftCoach can now suggest workouts, detect plateaus, and write training summaries privately on your device. Your workout data never leaves this iPhone.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5111,6 +5195,7 @@
     },
     "Loading…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5176,6 +5261,7 @@
     },
     "Locked — purchase required": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5235,6 +5321,7 @@
     },
     "Locked — unlock above to use this provider": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5294,6 +5381,7 @@
     },
     "May run slowly": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5353,6 +5441,7 @@
     },
     "Meets memory estimate": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5412,6 +5501,7 @@
     },
     "Metal-accelerated on iPhone 16": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5471,6 +5561,7 @@
     },
     "Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5530,6 +5621,7 @@
     },
     "Model Installed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5589,6 +5681,7 @@
     },
     "Model License": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5648,6 +5741,7 @@
     },
     "Model Name": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5707,6 +5801,7 @@
     },
     "Model action failed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5766,6 +5861,7 @@
     },
     "Model files for %@ are missing. Re-download from Settings → AI Provider.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5825,6 +5921,7 @@
     },
     "Model snapshot for %@ is incomplete (missing config.json). Re-download to fix.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5884,6 +5981,7 @@
     },
     "Model snapshot for %@ is missing or incomplete. Re-download from Settings → AI Provider.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -5943,6 +6041,7 @@
     },
     "Moving model to local storage": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6002,6 +6101,7 @@
     },
     "Needs an API key — add it below": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6061,6 +6161,7 @@
     },
     "New messages": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6126,6 +6227,7 @@
     },
     "No API key or account needed": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6185,6 +6287,7 @@
     },
     "No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6244,6 +6347,7 @@
     },
     "No longer listed. You can let this download finish or cancel it.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6303,6 +6407,7 @@
     },
     "No longer offered for download. Its files are still stored on this device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6362,6 +6467,7 @@
     },
     "No longer offered for download. You can keep using your installed copy.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6421,6 +6527,7 @@
     },
     "No model downloaded yet": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6480,6 +6587,7 @@
     },
     "No previous purchase was found for this Apple Account.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6545,6 +6653,7 @@
     },
     "Not Now": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6604,6 +6713,7 @@
     },
     "Not supported": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6663,6 +6773,7 @@
     },
     "Not yet evaluated for %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6722,6 +6833,7 @@
     },
     "Offline": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6781,6 +6893,7 @@
     },
     "On This Device": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6840,6 +6953,7 @@
     },
     "On-Device": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6899,6 +7013,7 @@
     },
     "On-Device AI": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -6958,6 +7073,7 @@
     },
     "On-Device Vision": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7017,6 +7133,7 @@
     },
     "On-device AI ready": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7076,6 +7193,7 @@
     },
     "On-device models require a supported Apple Silicon device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7135,6 +7253,7 @@
     },
     "On-device, free, private. No data leaves your device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7194,6 +7313,7 @@
     },
     "Once downloaded, the model runs on your device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7253,6 +7373,7 @@
     },
     "OpenAI-compatible API": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7312,6 +7433,7 @@
     },
     "OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7371,6 +7493,7 @@
     },
     "Optional": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7430,6 +7553,7 @@
     },
     "Private": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7489,6 +7613,7 @@
     },
     "Private offline LLMs — no cloud, no rate limits": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7554,6 +7679,7 @@
     },
     "Processing…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7619,6 +7745,7 @@
     },
     "Provider": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7678,6 +7805,7 @@
     },
     "Purchase failed: %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7737,6 +7865,7 @@
     },
     "Purchases restored.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7802,6 +7931,7 @@
     },
     "Read License Terms": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7861,6 +7991,7 @@
     },
     "Ready to Download": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7920,6 +8051,7 @@
     },
     "Recommended": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -7979,6 +8111,7 @@
     },
     "Recommended for %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8038,6 +8171,7 @@
     },
     "Recommended: %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8097,6 +8231,7 @@
     },
     "Refresh Models": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8156,6 +8291,7 @@
     },
     "Refreshing checks availability. Model downloads start only when you choose them.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8215,6 +8351,7 @@
     },
     "Remove": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8274,6 +8411,7 @@
     },
     "Remove %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8333,6 +8471,7 @@
     },
     "Remove Model": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8392,6 +8531,7 @@
     },
     "Repository found · Approx. %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8451,6 +8591,7 @@
     },
     "Repository found. Download size unavailable.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8510,6 +8651,7 @@
     },
     "Requires Wi-Fi or cellular. Download once; model persists on device.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8569,6 +8711,7 @@
     },
     "Restore": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8634,6 +8777,7 @@
     },
     "Restore Purchases": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8699,6 +8843,7 @@
     },
     "Restore failed: %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8758,6 +8903,7 @@
     },
     "Resume": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8817,6 +8963,7 @@
     },
     "Retry": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8876,6 +9023,7 @@
     },
     "Runs a downloaded model entirely on this Mac, even offline.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8935,6 +9083,7 @@
     },
     "Runs fully offline · No API key": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -8994,6 +9143,7 @@
     },
     "Selected — finishing setup…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9053,6 +9203,7 @@
     },
     "Size unknown": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9112,6 +9263,7 @@
     },
     "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9171,6 +9323,7 @@
     },
     "Stalled — %lld%% complete": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9230,6 +9383,7 @@
     },
     "Storage: %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9289,6 +9443,7 @@
     },
     "The downloaded model file failed verification: %@. Your installed model was kept.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9348,6 +9503,7 @@
     },
     "The model did not finish its local compatibility check in time. Your installed model was kept.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9407,6 +9563,7 @@
     },
     "The model download failed (HTTP %lld).": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9466,6 +9623,7 @@
     },
     "The model manifest contains an invalid file path: %@.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9525,6 +9683,7 @@
     },
     "The model snapshot is incomplete. Download it again before selecting it.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9584,6 +9743,7 @@
     },
     "The model was removed from your installed models, but some files could not be deleted.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9643,6 +9803,7 @@
     },
     "This is an image model. Choose a text model for this app.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9702,6 +9863,7 @@
     },
     "This model has no supported, pinned release manifest. Refresh the model catalog and try again.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9761,6 +9923,7 @@
     },
     "This model is no longer offered for download.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9820,6 +9983,7 @@
     },
     "This model isn't supported by this version of the app.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9879,6 +10043,7 @@
     },
     "This model needs more memory than this device has.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9938,6 +10103,7 @@
     },
     "This model requires image-model support.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9997,6 +10163,7 @@
     },
     "This repository doesn’t contain the files needed for an MLX model.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10056,6 +10223,7 @@
     },
     "This repository isn’t available. Use a public model repository.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10115,6 +10283,7 @@
     },
     "TrainInsight can now generate your daily readiness advice privately on your iPhone.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10174,6 +10343,7 @@
     },
     "Try Again": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10233,6 +10403,7 @@
     },
     "Unlock": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10298,6 +10469,7 @@
     },
     "Unlock AI providers": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10363,6 +10535,7 @@
     },
     "Unlock for %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10428,6 +10601,7 @@
     },
     "Update": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10487,6 +10661,7 @@
     },
     "Update %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10546,6 +10721,7 @@
     },
     "Update available. Your installed copy is kept until the update finishes.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10605,6 +10781,7 @@
     },
     "Update the app to use this model.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10664,6 +10841,7 @@
     },
     "Use": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10723,6 +10901,7 @@
     },
     "Use an MLX-format text model. Custom models aren’t evaluated for this app.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10782,6 +10961,7 @@
     },
     "Works fully offline": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10841,6 +11021,7 @@
     },
     "Your installed copy isn’t supported by this version of the app. You can remove it to free space.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10900,6 +11081,7 @@
     },
     "Your purchase is confirmed. Nothing needed restoring.": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -10965,6 +11147,7 @@
     },
     "Your text never leaves the device": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11024,6 +11207,7 @@
     },
     "calculating speed…": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11083,6 +11267,7 @@
     },
     "e.g. My Custom 7B": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11142,6 +11327,7 @@
     },
     "for %@": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11201,6 +11387,7 @@
     },
     "http://localhost:11434/v1": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11261,6 +11448,7 @@
     },
     "https://huggingface.co/mlx-community/model-name": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11321,6 +11509,7 @@
     },
     "llama3": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
@@ -11381,6 +11570,7 @@
     },
     "•": {
       "extractionState": "manual",
+      "generatesSymbol": false,
       "localizations": {
         "en": {
           "stringUnit": {
