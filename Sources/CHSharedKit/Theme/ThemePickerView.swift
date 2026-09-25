@@ -10,15 +10,23 @@ public struct ThemePickerView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 14)]
+    private let caption: LocalizedStringKey
 
-    public init(manager: ThemeManager = .shared) {
+    /// - Parameter caption: the line above the grid. The default promises
+    ///   cross-device sync; apps that keep the theme on the device should
+    ///   pass their own.
+    public init(
+        manager: ThemeManager = .shared,
+        caption: LocalizedStringKey = "Pick a palette — it syncs across all your devices and apps."
+    ) {
         self.manager = manager
+        self.caption = caption
     }
 
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Pick a palette — it syncs across all your devices and apps.")
+                Text(caption)
                     .font(.subheadline)
                     .foregroundStyle(currentTheme.textSecondary)
                     .padding(.horizontal, 20)

@@ -122,6 +122,20 @@ ThemePickerView()  // grid picker, drop-in settings screen
 
 Themes that set `associatedIconName` (Midnight, Ocean, Sunset, Forest, Paper, Aurora, Monochrome) automatically swap the app icon when selected. Register the corresponding `CFBundleAlternateIcons` entries in the host app (e.g. `AppIcon-Midnight`).
 
+### App palettes (2.18.0)
+
+An app with its own visual identity can replace the shared palette:
+
+```swift
+init() {
+    // Before anything touches ThemeManager.shared.
+    ThemePalette.useAppThemes([.myHouse, .myNoir])
+    ThemePalette.useSharedThemes() // restores the shared palette (tests)
+}
+```
+
+`ThemePalette.all`, `theme(for:)` and `ThemePickerView` then use the app's list. The first theme is the fallback for any id the app does not offer, including one chosen in another app and synced through iCloud. Reuse a shared id (`default`, `midnight`, …) where a theme plays the same role, so a synced choice lands on its counterpart; a theme with id `default` and a `nil` `associatedIconName` keeps the primary app icon. `ThemePickerView(caption:)` replaces the "syncs across all your devices and apps" line for apps that keep the theme on the device.
+
 ---
 
 ## Themed View Modifiers

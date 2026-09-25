@@ -86,3 +86,58 @@ private final class FakeThemeKeyValueStore: ThemeKeyValueStore {
         return true
     }
 }
+
+// App palettes are process-wide, so these run inside the serialized suite
+// above rather than in parallel with it.
+extension ThemeManagerSyncTests {
+    private func appTheme(_ id: String, name: String) -> Theme {
+        let base = Theme.editorial
+        return Theme(
+            id: id, name: name, description: "", symbol: base.symbol,
+            associatedIconName: nil,
+            accent: base.accent, accentSecondary: base.accentSecondary,
+            background: base.background, backgroundElevated: base.backgroundElevated,
+            card: base.card, cardElevated: base.cardElevated,
+            textPrimary: base.textPrimary, textSecondary: base.textSecondary,
+            textTertiary: base.textTertiary, divider: base.divider,
+            success: base.success, warning: base.warning, error: base.error,
+            gradientStart: base.gradientStart, gradientEnd: base.gradientEnd
+        )
+    }
+
+    @Test("App themes replace the shared palette and the first is the fallback")
+    func appThemesReplacePalette() {
+        defer { ThemePalette.useSharedThemes() }
+        ThemePalette.useAppThemes([appTheme("default", name: "House"), appTheme("midnight", name: "Noir")])
+
+        #expect(ThemePalette.all.map(\.id) == ["default", "midnight"])
+        #expect(ThemePalette.theme(for: "midnight").name == "Noir")
+        #expect(ThemePalette.theme(for: "default").name == "House")
+        #expect(ThemePalette.theme(for: "ocean").name == "House")
+        #expect(ThemePalette.theme(for: nil).name == "House")
+    }
+
+    @Test("A manager resolves stored ids through the app palette")
+    func managerUsesAppThemes() throws {
+        defer { ThemePalette.useSharedThemes() }
+        ThemePalette.useAppThemes([appTheme("default", name: "House"), appTheme("midnight", name: "Noir")])
+        let defaults = try #require(UserDefaults(suiteName: "AppThemePaletteTests.\(UUID().uuidString)"))
+        defaults.set("aurora", forKey: ThemeManager.kvsKey)
+
+        let manager = ThemeManager(
+            cloud: FakeThemeKeyValueStore(values: [:]),
+            localDefaults: defaults,
+            isCloudSyncEnabled: { false }
+        )
+        #expect(manager.currentTheme.name == "House")
+        manager.apply(themeId: "midnight", animated: false)
+        #expect(manager.currentTheme.name == "Noir")
+    }
+
+    @Test("Without app themes the shared palette is unchanged")
+    func sharedPaletteByDefault() {
+        ThemePalette.useSharedThemes()
+        #expect(ThemePalette.all == ThemePalette.shared)
+        #expect(ThemePalette.theme(for: "unknown").id == "default")
+    }
+}

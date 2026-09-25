@@ -4,8 +4,12 @@ import SwiftUI
 /// palette so users can carry their preferred theme across apps via iCloud KVS.
 public enum ThemePalette {
 
-    /// All themes in display order.
-    public static let all: [Theme] = [
+    /// Themes the app offers, in display order: the shared palette unless the
+    /// app installed its own with `useAppThemes(_:)`.
+    public static var all: [Theme] { appThemes ?? shared }
+
+    /// The shared palette, in display order.
+    public static let shared: [Theme] = [
         .default,
         .editorial,
         .boutique,
@@ -18,12 +22,37 @@ public enum ThemePalette {
         .monochrome
     ]
 
-    /// Look up a theme by id. Falls back to `.default` if unknown so a
-    /// removed theme can never leave the app in a broken state.
+    /// Look up a theme by id. Falls back to the first theme in `all` (the
+    /// shared `.default` unless the app installed its own themes) so a
+    /// removed or foreign theme can never leave the app in a broken state.
     public static func theme(for id: String?) -> Theme {
-        guard let id else { return .default }
-        return all.first(where: { $0.id == id }) ?? .default
+        let themes = all
+        let fallback = themes.first ?? .default
+        guard let id else { return fallback }
+        return themes.first(where: { $0.id == id }) ?? fallback
     }
+
+    /// Replace the shared palette with the app's own themes, so an app with
+    /// its own visual identity is not dressed in another app's colors.
+    ///
+    /// Call once at launch, before anything touches `ThemeManager.shared`.
+    /// The first theme is the fallback for ids the app does not offer, such
+    /// as a theme chosen in another app and synced through iCloud. Reuse the
+    /// shared ids ("default", "midnight", …) where a theme plays the same
+    /// role, so a synced choice still lands on its counterpart.
+    public static func useAppThemes(_ themes: [Theme]) {
+        precondition(!themes.isEmpty, "An app palette needs at least one theme")
+        precondition(Set(themes.map(\.id)).count == themes.count, "Theme ids must be unique")
+        appThemes = themes
+    }
+
+    /// Restore the shared palette. Intended for tests.
+    public static func useSharedThemes() {
+        appThemes = nil
+    }
+
+    // Written once at launch before any reader runs, then only read.
+    nonisolated(unsafe) private static var appThemes: [Theme]?
 }
 
 // Tiny helper for terser palette literals.
