@@ -196,6 +196,13 @@ public struct CHAISettingsContent: View {
     // 2.6.0 IAP gating — picker mirrors the registered gate's published state
     // and routes locked-row taps to the banner instead of the activate path.
     @State private var unlockState: UnlockState = .none
+
+    /// Whether the host's provider filter offers cloud providers at all.
+    /// `CHAIRegionPolicy` removes them on a restricted storefront; then the
+    /// unlock banner and the Cloud APIs section have nothing to sell.
+    private var offersCloudProviders: Bool {
+        aiManager.availableProvidersFilter.contains(.cloudProviders)
+    }
     @State private var pulseTrigger: Int = 0
     @State private var purchaseError: String?
     // 2.16.0: restore reports what it achieved, not only failures.
@@ -259,7 +266,9 @@ public struct CHAISettingsContent: View {
         // Tapping a locked provider row pulses this banner via `pulseTrigger`
         // so the user's eye gets drawn to the unlock path instead of a
         // mysterious "tap does nothing" failure.
-        if case .locked(let priceLabel) = unlockState {
+        // 2.19.4: nothing to unlock where the policy hides cloud providers
+        // (a restricted storefront): no banner, no ownership card.
+        if offersCloudProviders, case .locked(let priceLabel) = unlockState {
             Section {
                 CHAIProviderUnlockBanner(
                     priceLabel: priceLabel,
@@ -277,7 +286,7 @@ public struct CHAISettingsContent: View {
                 .listRowBackground(Color.clear)
             }
             .transition(.opacity.combined(with: .move(edge: .top)))
-        } else if case .purchasing = unlockState {
+        } else if offersCloudProviders, case .purchasing = unlockState {
             Section {
                 CHAIProviderUnlockBanner(
                     priceLabel: nil,
@@ -291,7 +300,7 @@ public struct CHAISettingsContent: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
                 .listRowBackground(Color.clear)
             }
-        } else if case .unlocked = unlockState {
+        } else if offersCloudProviders, case .unlocked = unlockState {
             // 2.16.0: acknowledge the purchase and keep Restore reachable at
             // full size, instead of a caption link in the Cloud APIs footer.
             Section {
@@ -357,27 +366,30 @@ public struct CHAISettingsContent: View {
             }
         }
 
-        Section {
-            // Cloud providers. On macOS, Custom Endpoint moves to Advanced.
-            // A host can hide it on other platforms via disabledProviderIDs.
-            ForEach(
-                aiManager.availableProviders.filter { appearsInCloudAPIs($0.id) },
-                id: \.id
-            ) { provider in
-                cloudProviderRow(id: provider.id, name: provider.name)
+        // 2.19.4: the whole section goes where cloud providers are not offered.
+        if offersCloudProviders {
+            Section {
+                // Cloud providers. On macOS, Custom Endpoint moves to Advanced.
+                // A host can hide it on other platforms via disabledProviderIDs.
+                ForEach(
+                    aiManager.availableProviders.filter { appearsInCloudAPIs($0.id) },
+                    id: \.id
+                ) { provider in
+                    cloudProviderRow(id: provider.id, name: provider.name)
+                }
+            } header: {
+                Text("Cloud APIs")
+            } footer: {
+                // 2.16.0: Restore moved to the ownership card at the top. It sat
+                // here as a caption-size link from 2.6.0, filed under an
+                // explanation of API keys it had nothing to do with.
+                // 2.17.0: named every service and wraps. It listed only OpenAI
+                // and Anthropic, above a Grok row, and truncated on the Mac.
+                Text("Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.")
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } header: {
-            Text("Cloud APIs")
-        } footer: {
-            // 2.16.0: Restore moved to the ownership card at the top. It sat
-            // here as a caption-size link from 2.6.0, filed under an
-            // explanation of API keys it had nothing to do with.
-            // 2.17.0: named every service and wraps. It listed only OpenAI
-            // and Anthropic, above a Grok row, and truncated on the Mac.
-            Text("Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.")
-                .fixedSize(horizontal: false, vertical: true)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: unlockState)
 
         #endif
 
