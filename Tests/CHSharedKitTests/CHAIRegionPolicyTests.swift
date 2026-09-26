@@ -36,6 +36,8 @@ final class CHAIRegionPolicyTests: XCTestCase {
         XCTAssertEqual(policy.mode, .appleIntelligenceOnly)
         policy.appleIntelligenceOverride = false
         XCTAssertEqual(policy.mode, .off)
+        XCTAssertEqual(CHAIRegionPolicy.currentMode, .off, "The nonisolated snapshot follows apply()")
+        XCTAssertFalse(CHAIRegionPolicy.currentlyShowsAIFeatures)
         policy.appleIntelligenceOverride = nil
         XCTAssertEqual(policy.mode, .off)
         XCTAssertNil(UserDefaults.standard.object(forKey: CHAIRegionPolicy.appleIntelligenceOverrideKey))
@@ -43,6 +45,7 @@ final class CHAIRegionPolicyTests: XCTestCase {
         policy.storefrontOverride = nil
         policy.baseProviderFilter = .onDeviceOnly
         XCTAssertEqual(policy.mode, .full)
+        XCTAssertTrue(CHAIRegionPolicy.currentlyShowsAIFeatures)
         XCTAssertEqual(policy.providerFilter, .onDeviceOnly, "An on-device-only app stays on-device-only")
         policy.baseProviderFilter = .all
     }

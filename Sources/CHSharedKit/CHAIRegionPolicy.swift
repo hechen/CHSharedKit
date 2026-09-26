@@ -91,6 +91,8 @@ public final class CHAIRegionPolicy: ObservableObject {
         if defaults.object(forKey: Self.appleIntelligenceOverrideKey) != nil {
             appleIntelligenceOverride = defaults.bool(forKey: Self.appleIntelligenceOverrideKey)
         }
+        let mode = mode
+        Self.currentModeLock.withLock { Self._currentMode = mode }
     }
 
     // MARK: Reading the policy
@@ -116,6 +118,16 @@ public final class CHAIRegionPolicy: ObservableObject {
     /// False only in `.off`: then no AI entry point, setting, purchase or
     /// copy should be shown.
     public var showsAIFeatures: Bool { mode != .off }
+
+    /// The mode as of the last `apply()`, readable off the main actor for
+    /// feature gates that run inside background work. `.full` until the
+    /// policy is first created.
+    nonisolated public static var currentMode: Mode {
+        currentModeLock.withLock { _currentMode }
+    }
+    nonisolated public static var currentlyShowsAIFeatures: Bool { currentMode != .off }
+    nonisolated private static let currentModeLock = NSLock()
+    nonisolated(unsafe) private static var _currentMode: Mode = .full
 
     /// True only in `.full`: cloud providers and their unlock can be shown.
     public var allowsCloudProviders: Bool { mode == .full }
@@ -154,6 +166,8 @@ public final class CHAIRegionPolicy: ObservableObject {
     /// offer. Published so views re-read `mode`.
     public func apply() {
         objectWillChange.send()
+        let mode = mode
+        Self.currentModeLock.withLock { Self._currentMode = mode }
         let manager = CHAIManager.shared
         manager.availableProvidersFilter = providerFilter
         if !allowsCloudProviders,
