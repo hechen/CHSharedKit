@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "revision": 1,
+  "revision": 2,
   "models": [
     {
       "chatTemplate": "chatML",
@@ -904,6 +904,123 @@
           },
           "spendwisely": {
             "score": 9,
+            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "traininsight": {
+            "score": 9,
+            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          }
+        }
+      }
+    },
+    {
+      "chatTemplate": "chatML",
+      "description": "Alibaba Qwen3 1.7B · MLX 4-bit · Fast, multilingual, thinking mode off by default",
+      "displayName": "Qwen3 1.7B",
+      "downloadURL": "https://huggingface.co/mlx-community/Qwen3-1.7B-4bit",
+      "id": "qwen3-1.7b-q4",
+      "isCustom": false,
+      "languages": [
+        "English",
+        "Chinese",
+        "Japanese",
+        "Korean",
+        "German",
+        "French",
+        "Spanish",
+        "Portuguese",
+        "Italian"
+      ],
+      "license": "Apache 2.0",
+      "minRAM_GB": 4,
+      "quality": "Balanced",
+      "quantization": "MLX-4bit",
+      "requiresAcknowledgment": false,
+      "sizeBytes": 984013244,
+      "strengths": [
+        "Newer than Qwen 2.5",
+        "119 languages",
+        "MLX 4-bit"
+      ],
+      "release": {
+        "repoID": "mlx-community/Qwen3-1.7B-4bit",
+        "revision": "3b1b1768f8f8cf8351c712464f906e86c2b8269e",
+        "runtime": "mlx-text",
+        "modelType": "qwen3",
+        "minimumRuntimeVersion": 1,
+        "status": "active",
+        "files": [
+          {
+            "path": "added_tokens.json",
+            "sizeBytes": 707,
+            "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"
+          },
+          {
+            "path": "config.json",
+            "sizeBytes": 937,
+            "sha256": "507a6701220524eb8b283425bf0856a9ae4f21f4052e563896ddd668994b1dc7"
+          },
+          {
+            "path": "merges.txt",
+            "sizeBytes": 1671853,
+            "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+          },
+          {
+            "path": "model.safetensors",
+            "sizeBytes": 968080210,
+            "sha256": "0e86d9677e519323849eac1bc272caae88567a481ff188c431f70be543d9995f"
+          },
+          {
+            "path": "model.safetensors.index.json",
+            "sizeBytes": 49731,
+            "sha256": "1e3058d4ba4b04e4de35b74467725cbef90ff022198404218e48f21adc9cfa15"
+          },
+          {
+            "path": "special_tokens_map.json",
+            "sizeBytes": 613,
+            "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+          },
+          {
+            "path": "tokenizer.json",
+            "sizeBytes": 11422654,
+            "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+          },
+          {
+            "path": "tokenizer_config.json",
+            "sizeBytes": 9706,
+            "sha256": "253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0"
+          },
+          {
+            "path": "vocab.json",
+            "sizeBytes": 2776833,
+            "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+          }
+        ],
+        "recommendations": {
+          "closet": {
+            "score": 14,
+            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "distill": {
+            "score": 8,
+            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "eatwisely": {
+            "score": 12,
+            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "verification": "unverified"
+          },
+          "liftcoach": {
+            "score": 9,
+            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "verification": "unverified"
+          },
+          "spendwisely": {
+            "score": 14,
             "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
             "verification": "unverified"
           },

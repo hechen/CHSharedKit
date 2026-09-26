@@ -846,7 +846,8 @@ struct LocalModelCatalogMLXTests {
 
     @Test("Default model is an active pinned candidate rather than the retired research model")
     func defaultIsActivePinnedCandidate() {
-        #expect(LocalModelCatalog.default.id == "qwen2.5-1.5b-q4km")
+        #expect(LocalModelCatalog.default.id == LocalModelCatalog.defaultID)
+        #expect(LocalModelCatalog.defaultID == "qwen3-1.7b-q4")
         #expect(LocalModelCatalog.default.release?.status == "active")
         #expect(LocalModelCatalog.default.release?.revision.count == 40)
     }

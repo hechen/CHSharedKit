@@ -573,10 +573,17 @@ public enum LocalModelCatalog {
     /// Validated bundled/cached/remote metadata; refreshing never downloads weights.
     public static var all: [LocalModelInfo] { CHOfflineModelCatalog.snapshot.models }
 
-    /// Keep the default resolvable even when a later manifest retires an entry.
+    /// The model "On-Device AI" downloads first: Qwen3 1.7B (catalog
+    /// revision 2, 2026-09-26), then the previous default Qwen 2.5 1.5B where
+    /// only an older manifest is available, then any compatible entry. Kept
+    /// resolvable even when a later manifest retires an entry.
+    public static let defaultID = "qwen3-1.7b-q4"
+
     public static var `default`: LocalModelInfo {
-        all.first { $0.id == qwen2_5_1_5B.id && CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil }
-            ?? all.first { CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil }
+        let compatible = all.filter { CHOfflineModelCatalog.compatibilityIssue(for: $0) == nil }
+        return compatible.first { $0.id == defaultID }
+            ?? compatible.first { $0.id == qwen2_5_1_5B.id }
+            ?? compatible.first
             ?? qwen2_5_1_5B
     }
 
