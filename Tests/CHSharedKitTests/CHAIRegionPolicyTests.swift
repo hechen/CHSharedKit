@@ -30,6 +30,16 @@ final class CHAIRegionPolicyTests: XCTestCase {
         XCTAssertEqual(policy.mode, .off)
         XCTAssertFalse(policy.showsAIFeatures)
 
+        // The Apple Intelligence override wins over the real state, and
+        // clearing it returns to the real state.
+        policy.appleIntelligenceOverride = true
+        XCTAssertEqual(policy.mode, .appleIntelligenceOnly)
+        policy.appleIntelligenceOverride = false
+        XCTAssertEqual(policy.mode, .off)
+        policy.appleIntelligenceOverride = nil
+        XCTAssertEqual(policy.mode, .off)
+        XCTAssertNil(UserDefaults.standard.object(forKey: CHAIRegionPolicy.appleIntelligenceOverrideKey))
+
         policy.storefrontOverride = nil
         policy.baseProviderFilter = .onDeviceOnly
         XCTAssertEqual(policy.mode, .full)

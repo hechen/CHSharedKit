@@ -58,13 +58,39 @@ public final class CHAIRegionPolicy: ObservableObject {
     }
     public static let overrideDefaultsKey = "ch.ai.storefrontOverride"
 
+    /// Pretend Apple Intelligence is (un)available, to check the `.off`
+    /// layout on a device that has it and the `.appleIntelligenceOnly`
+    /// layout on one that does not. Persisted; nil uses the real state.
+    /// A UI test passes `-ch.ai.appleIntelligenceOverride NO`.
+    @Published public var appleIntelligenceOverride: Bool? {
+        didSet {
+            if let appleIntelligenceOverride {
+                UserDefaults.standard.set(appleIntelligenceOverride, forKey: Self.appleIntelligenceOverrideKey)
+            } else {
+                UserDefaults.standard.removeObject(forKey: Self.appleIntelligenceOverrideKey)
+            }
+            apply()
+        }
+    }
+    public static let appleIntelligenceOverrideKey = "ch.ai.appleIntelligenceOverride"
+
     /// Whether Apple Intelligence is available on this device. Read from
     /// `CHAIManager` unless a test injects a value.
     public var appleIntelligenceAvailability: () -> Bool = { CHAIManager.shared.isAppleIntelligenceAvailable }
 
+    /// Apple Intelligence availability as the policy sees it: the override
+    /// when set, otherwise the real state.
+    public var isAppleIntelligenceAvailable: Bool {
+        appleIntelligenceOverride ?? appleIntelligenceAvailability()
+    }
+
     private init() {
-        let stored = UserDefaults.standard.string(forKey: Self.overrideDefaultsKey)
+        let defaults = UserDefaults.standard
+        let stored = defaults.string(forKey: Self.overrideDefaultsKey)
         storefrontOverride = stored?.isEmpty == false ? stored : nil
+        if defaults.object(forKey: Self.appleIntelligenceOverrideKey) != nil {
+            appleIntelligenceOverride = defaults.bool(forKey: Self.appleIntelligenceOverrideKey)
+        }
     }
 
     // MARK: Reading the policy
@@ -83,7 +109,7 @@ public final class CHAIRegionPolicy: ObservableObject {
         Self.mode(
             storefront: effectiveStorefront,
             restricted: restrictedStorefronts,
-            appleIntelligenceAvailable: appleIntelligenceAvailability()
+            appleIntelligenceAvailable: isAppleIntelligenceAvailable
         )
     }
 
@@ -133,7 +159,7 @@ public final class CHAIRegionPolicy: ObservableObject {
         if !allowsCloudProviders,
            let active = manager.activeProvider,
            active.category.contains(.cloudProviders) {
-            manager.activeProviderID = manager.isAppleIntelligenceAvailable
+            manager.activeProviderID = isAppleIntelligenceAvailable
                 ? CHAppleIntelligenceProvider.providerID
                 : ""
         }
