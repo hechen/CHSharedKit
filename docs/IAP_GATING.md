@@ -76,7 +76,9 @@ final class YourIAPManager: CHIAPGate {
                 if case .verified(let txn) = update, txn.productID == self.productID {
                     await txn.finish()
                     await MainActor.run {
-                        self.hasUnlockedProviders = true
+                        // Refunds and revocations arrive here too, with a
+                        // revocation date. Never unlock on a revoked update.
+                        self.hasUnlockedProviders = txn.revocationDate == nil
                     }
                 }
             }
@@ -84,6 +86,11 @@ final class YourIAPManager: CHIAPGate {
     }
 }
 ```
+
+Also call `refreshTransactionState()` when the app returns to the
+foreground (`scenePhase == .active`), and skip entitlements whose
+`revocationDate` is set, so a refund processed while the app was closed
+re-locks on the next launch or foreground.
 
 ## Wire into your App
 
@@ -120,22 +127,53 @@ struct YourApp: App {
 3. **Tap-pulses-banner** — tapping a locked row scrolls the user's eye to
    the banner via a brief scale-pulse animation, instead of silently doing
    nothing.
-4. **Active-locked treatment** — if the active provider is locked (e.g. the
-   user picked OpenAI before opting into gating, then the app updated), the
-   row shows a checkmark + lock icon + "Locked — purchase required"
-   subtitle so the path forward is obvious.
+4. **Locked choice falls back (2.18.0)** — if the user's saved provider is
+   locked (never bought, refunded, revoked, or picked before gating), the
+   picker selects the provider actually in use, normally Apple
+   Intelligence, and says why: "OpenAI is locked. Apple Intelligence is
+   used until you unlock." The Mac shows it under the Provider menu, iOS
+   under Current Provider. Only when nothing unlocked can stand in does the
+   locked row keep its checkmark, lock icon and "Locked — purchase
+   required" subtitle.
 5. **Spring animation** on the banner-to-Restore-link collapse after
    purchase succeeds. The Restore link stays in the section footer so users
    on a fresh install can recover their purchase.
 
 ## Runtime gating
 
-`CHAIManager.send` / `stream` / `sendWithVision` check
-`checkProviderUnlocked(provider)` before dispatch and throw
-`CHAIError.providerLocked(displayName: "OpenAI")` when the active provider
-is gated and the user is locked. Surface that error message directly in
-your UI — it includes the provider name and the actionable next step
-("Open Settings → AI Provider to unlock").
+No request ever reaches a locked provider. As of 2.18.0 a locked saved
+choice is resolved like a disabled one instead of failing every request:
+
+1. Apple Intelligence, when it is available on the device.
+2. Otherwise another enabled, unlocked provider (OpenAI, Claude, then the
+   rest in ID order). Never another locked one.
+3. Otherwise the locked choice itself, and `send` / `stream` /
+   `sendWithVision` throw `CHAIError.providerLocked(displayName: "OpenAI")`.
+
+`effectiveActiveProviderID`, `activeProvider`, the per-feature resolver and
+all three dispatch methods share this rule, so what the picker shows is what
+requests use. `activeProviderID`, per-feature overrides and API keys are
+never rewritten: when the gate reports the unlock again (restore,
+re-purchase, Ask to Buy approval), the next request goes to the user's
+provider with no migration.
+
+Image requests need a vision-capable stand-in. Apple Intelligence is
+text-only, so `sendWithVision` uses an unlocked vision provider when one
+exists and otherwise throws `.providerLocked`, which tells the user what to
+do, rather than `.visionNotSupported`.
+
+A per-feature override that is locked falls back to the global provider
+(itself resolved as above) and resumes after unlock. The per-feature
+overloads no longer write `activeProviderID` while a request is in flight.
+
+Registering a gate (`CHIAPGateRegistry.shared = gate`) subscribes
+`CHAIManager.shared` to it: every entitlement flip fires the manager's
+`objectWillChange`, so `CHAIActiveProviderLabel`, the pickers and any view
+observing the manager re-render. Gates may publish from any thread.
+
+When `.providerLocked` does reach your UI, surface its message directly —
+it includes the provider name and the actionable next step ("Open
+Settings → AI Provider to unlock").
 
 ```swift
 do {
@@ -156,15 +194,24 @@ do {
 | `CHAIManager.isGatingActive: Bool` | same | true when banner should show |
 | `CHAIManager.isLocked(providerID:) -> Bool` | same | per-provider lock check |
 | `CHAIManager.checkProviderUnlocked(_:) throws` | `CHSharedKit/CHAIManager.swift` | called pre-dispatch |
+| `CHAIManager.effectiveProviderID(forStoredChoice:)` | `CHSharedKit/CHAIManager.swift` | 2.18.0: disabled/locked fallback for any saved choice |
+| `CHAIManager.activeProviderLockedFallbackNotice` | `CHSharedKit/CHAIManager+Gating.swift` | 2.18.0: localized "X is locked. Y is used until you unlock." or `nil` |
+| `CHAIManager.lockedFallbackNotice(storedChoice:resolvedProviderID:)` | same | 2.18.0: same notice for a per-feature override |
+| `CHAIFeatureProviderResolver.storedOverride(for:)` | `CHSharedKit/CHAIFeatureProviderResolver.swift` | 2.18.0: the saved override, ignoring locks |
 | `CHAIError.providerLocked(displayName:)` | `CHSharedKit/CHAIProvider.swift` | new case |
 | `CHAIProviderUnlockBanner` | `CHLocalLLM/CHAIProviderUnlockBanner.swift` | reusable banner view |
 
 ## Edge cases handled
 
-- **Active provider becomes locked mid-session** (app upgrades to enable
-  gating with a previously-active provider in the gated set): UI surfaces
-  the lock state on the row; `send`/`stream`/`sendWithVision` throw
-  `.providerLocked` so the consumer app handles it gracefully.
+- **Saved provider becomes locked** (refund, revocation, or an app update
+  that enables gating): requests move to Apple Intelligence (or another
+  unlocked provider) at once, the picker says so, and the saved choice and
+  key stay put for a restore. With no unlocked stand-in,
+  `send`/`stream`/`sendWithVision` throw `.providerLocked` and the row
+  shows the lock, as before 2.18.0.
+- **Launch before entitlements load**: a gate that starts locked and
+  unlocks once `Transaction.currentEntitlements` is read serves the first
+  requests from Apple Intelligence rather than failing them.
 - **Price label not yet loaded** (StoreKit `Product.products(for:)` still
   in flight): banner button label reads "Loading…" and is disabled.
 - **Purchase failure** (cancel, network error, StoreKit rejection):

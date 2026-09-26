@@ -12,29 +12,29 @@ public struct CHAIUsageView: View {
     public var body: some View {
         List {
             // Overview cards
-            Section("Overview") {
+            Section(String(localized: "Overview", bundle: .module)) {
                 HStack {
-                    StatTile(title: "Today", value: "\(tracker.todayRequests)", subtitle: formatCost(tracker.todayCost), color: theme.accent)
-                    StatTile(title: "This Month", value: formatCost(tracker.thisMonthCost), subtitle: "\(tracker.requestHistory.count) requests", color: theme.accentSecondary)
-                    StatTile(title: "All Time", value: formatCost(tracker.totalEstimatedCost), subtitle: "\(tracker.totalRequests) requests", color: theme.textPrimary)
+                    StatTile(title: String(localized: "Today", bundle: .module), value: "\(tracker.todayRequests)", subtitle: formatCost(tracker.todayCost), color: theme.accent)
+                    StatTile(title: String(localized: "This Month", bundle: .module), value: formatCost(tracker.thisMonthCost), subtitle: String(localized: "\(tracker.requestHistory.count) requests", bundle: .module), color: theme.accentSecondary)
+                    StatTile(title: String(localized: "All Time", bundle: .module), value: formatCost(tracker.totalEstimatedCost), subtitle: String(localized: "\(tracker.totalRequests) requests", bundle: .module), color: theme.textPrimary)
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             }
 
             // Token breakdown
-            Section("Token Usage") {
-                TokenRow(label: "Input Tokens", count: tracker.totalInputTokens, icon: "arrow.up.circle", color: theme.accent)
-                TokenRow(label: "Output Tokens", count: tracker.totalOutputTokens, icon: "arrow.down.circle", color: theme.accentSecondary)
+            Section(String(localized: "Token Usage", bundle: .module)) {
+                TokenRow(label: String(localized: "Input Tokens", bundle: .module), count: tracker.totalInputTokens, icon: "arrow.up.circle", color: theme.accent)
+                TokenRow(label: String(localized: "Output Tokens", bundle: .module), count: tracker.totalOutputTokens, icon: "arrow.down.circle", color: theme.accentSecondary)
                 if tracker.totalImageTokens > 0 {
-                    TokenRow(label: "Image Tokens", count: tracker.totalImageTokens, icon: "photo.circle", color: theme.warning)
+                    TokenRow(label: String(localized: "Image Tokens", bundle: .module), count: tracker.totalImageTokens, icon: "photo.circle", color: theme.warning)
                 }
-                TokenRow(label: "Total Tokens", count: tracker.totalTokens, icon: "sum", color: theme.textPrimary)
+                TokenRow(label: String(localized: "Total Tokens", bundle: .module), count: tracker.totalTokens, icon: "sum", color: theme.textPrimary)
             }
 
             // Recent requests
             if !tracker.requestHistory.isEmpty {
-                Section("Recent Requests") {
+                Section(String(localized: "Recent Requests", bundle: .module)) {
                     ForEach(tracker.requestHistory.prefix(20)) { log in
                         HStack {
                             VStack(alignment: .leading, spacing: 3) {
@@ -51,7 +51,7 @@ public struct CHAIUsageView: View {
                                     Text(log.model)
                                         .font(.caption)
                                         .foregroundStyle(theme.textSecondary)
-                                    Text("\(log.inputTokens + log.outputTokens) tokens")
+                                    Text(String(localized: "\(log.inputTokens + log.outputTokens) tokens", bundle: .module))
                                         .font(.caption)
                                         .foregroundStyle(theme.textTertiary)
                                 }
@@ -75,7 +75,7 @@ public struct CHAIUsageView: View {
 
             // Pricing reference
             Section {
-                NavigationLink("Model Pricing Reference") {
+                NavigationLink(String(localized: "Model Pricing Reference", bundle: .module)) {
                     CHAIPricingView()
                 }
             }
@@ -85,26 +85,25 @@ public struct CHAIUsageView: View {
                 Button(role: .destructive) {
                     showResetConfirmation = true
                 } label: {
-                    Label("Reset Usage Stats", systemImage: "trash")
+                    Label(String(localized: "Reset Usage Stats", bundle: .module), systemImage: "trash")
                 }
             }
         }
         .tint(theme.accent)
         .themedListBackground()
         .themedNavigationBar()
-        .navigationTitle("AI Usage")
+        .navigationTitle(String(localized: "AI Usage", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-        .confirmationDialog("Reset all usage stats?", isPresented: $showResetConfirmation) {
-            Button("Reset", role: .destructive) { tracker.resetStats() }
+        .confirmationDialog(String(localized: "Reset all usage stats?", bundle: .module), isPresented: $showResetConfirmation) {
+            Button(String(localized: "Reset", bundle: .module), role: .destructive) { tracker.resetStats() }
         }
     }
 
     private func formatCost(_ cost: Double) -> String {
-        if cost < 0.01 { return String(format: "$%.4f", cost) }
-        else if cost < 1 { return String(format: "$%.3f", cost) }
-        else { return String(format: "$%.2f", cost) }
+        let digits = cost < 0.01 ? 4 : cost < 1 ? 3 : 2
+        return cost.formatted(.currency(code: "USD").precision(.fractionLength(digits)))
     }
 }
 
@@ -189,17 +188,17 @@ public struct CHAIPricingView: View {
 
             Section("Apple Intelligence") {
                 HStack {
-                    Text("On-device")
+                    Text(String(localized: "On-device", bundle: .module))
                         .font(.subheadline.bold())
                     Spacer()
-                    Text("Free")
+                    Text(String(localized: "Free", bundle: .module))
                         .font(.subheadline)
                         .foregroundStyle(theme.success)
                 }
             }
 
             Section {
-                Text("Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.")
+                Text(String(localized: "Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(theme.textSecondary)
             }
@@ -207,7 +206,7 @@ public struct CHAIPricingView: View {
         .tint(theme.accent)
         .themedListBackground()
         .themedNavigationBar()
-        .navigationTitle("Pricing")
+        .navigationTitle(String(localized: "Pricing", bundle: .module))
         .task { await modelCatalog.refreshIfNeeded() }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -232,11 +231,11 @@ struct PricingRow: View {
                 .font(.subheadline.bold())
             HStack(spacing: 16) {
                 HStack(spacing: 4) {
-                    Text("In:").font(.caption).foregroundStyle(theme.textSecondary)
+                    Text(String(localized: "In:", bundle: .module)).font(.caption).foregroundStyle(theme.textSecondary)
                     Text(String(format: "$%.2f/1M", input)).font(.caption.monospacedDigit())
                 }
                 HStack(spacing: 4) {
-                    Text("Out:").font(.caption).foregroundStyle(theme.textSecondary)
+                    Text(String(localized: "Out:", bundle: .module)).font(.caption).foregroundStyle(theme.textSecondary)
                     Text(String(format: "$%.2f/1M", output)).font(.caption.monospacedDigit())
                 }
             }

@@ -62,7 +62,7 @@ struct CHSettingsSheetContractTests {
 
         #expect(source.contains("CHSettingsRow.value("))
         #expect(source.contains("icon: \"sparkles\""))
-        #expect(source.contains("title: \"Default Provider\""))
+        #expect(source.contains("title: String(localized: \"Default Provider\", bundle: .module)"))
         #expect(!source.contains("HStack {\n                        Text(\"Default Provider\")"))
     }
 

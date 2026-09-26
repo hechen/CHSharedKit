@@ -32,7 +32,7 @@ public struct OnDeviceLLMOnboardingView: View {
 
             // Title + description
             VStack(spacing: 8) {
-                Text("On-Device AI")
+                Text(String(localized: "On-Device AI", bundle: .module))
                     .font(.title2.weight(.bold))
 
                 Text(appIdentifier.onboardingBlurb)
@@ -43,10 +43,10 @@ public struct OnDeviceLLMOnboardingView: View {
 
             // Feature list
             VStack(alignment: .leading, spacing: 12) {
-                featureRow(icon: "wifi.slash", text: "Works fully offline")
-                featureRow(icon: "key.slash", text: "No API key or account needed")
-                featureRow(icon: "lock.shield", text: "Your text never leaves the device")
-                featureRow(icon: "bolt.fill", text: "Metal-accelerated on iPhone 16")
+                featureRow(icon: "wifi.slash", text: String(localized: "Works fully offline", bundle: .module))
+                featureRow(icon: "key.slash", text: String(localized: "No API key or account needed", bundle: .module))
+                featureRow(icon: "lock.shield", text: String(localized: "Your text never leaves the device", bundle: .module))
+                featureRow(icon: "bolt.fill", text: String(localized: "Metal-accelerated on iPhone 16", bundle: .module))
             }
             .padding(.horizontal, 8)
 
@@ -72,7 +72,7 @@ public struct OnDeviceLLMOnboardingView: View {
                 .background(Color(.systemGray6))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text("Requires Wi-Fi or cellular. Download once; model persists on device.")
+                Text(String(localized: "Requires Wi-Fi or cellular. Download once; model persists on device.", bundle: .module))
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .multilineTextAlignment(.center)
@@ -81,14 +81,14 @@ public struct OnDeviceLLMOnboardingView: View {
             // CTA
             VStack(spacing: 10) {
                 Button(action: onDownload) {
-                    Label("Download Model (\(formattedSize(model.sizeBytes)))", systemImage: "arrow.down.circle.fill")
+                    Label(String(localized: "Download Model (\(formattedSize(model.sizeBytes)))", bundle: .module), systemImage: "arrow.down.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
 
                 if let onDismiss {
-                    Button("Not Now", action: onDismiss)
+                    Button(String(localized: "Not Now", bundle: .module), action: onDismiss)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

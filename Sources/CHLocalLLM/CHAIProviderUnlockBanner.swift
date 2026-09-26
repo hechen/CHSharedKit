@@ -211,108 +211,46 @@ public struct CHAIProviderUnlockBanner: View {
         return Self.localizedLoading
     }
 
-    // MARK: - 2.6.1 Localization
-    //
-    // Lightweight Locale-keyed strings — no .xcstrings catalog or
-    // `defaultLocalization` Package change needed. Covers the four target
-    // locales Chen named (en / zh-Hans / zh-Hant / ja). Adding more later
-    // is a matter of expanding the switch.
-
-    private enum Lang { case en, zhHans, zhHant, ja }
-    private static var lang: Lang {
-        let code = Locale.current.language.languageCode?.identifier ?? "en"
-        switch code {
-        case "zh":
-            let script = Locale.current.language.script?.identifier
-            return script == "Hant" ? .zhHant : .zhHans
-        case "ja": return .ja
-        default: return .en
-        }
-    }
+    // Package catalogs follow the app language, independently of region.
 
     static var localizedTitle: String {
-        switch lang {
-        case .zhHans: return "解锁 AI 提供商"
-        case .zhHant: return "解鎖 AI 供應商"
-        case .ja:     return "AI プロバイダーを解放"
-        case .en:     return "Unlock AI providers"
-        }
+        return String(localized: "Unlock AI providers", bundle: .module)
     }
 
     static var localizedAlwaysFreeCaption: String {
-        switch lang {
-        case .zhHans: return "Apple Intelligence 无需此项解锁"
-        case .zhHant: return "Apple Intelligence 無需此項解鎖"
-        case .ja:     return "Apple Intelligence はこの購入なしで利用できます"
-        case .en:     return "Apple Intelligence is included without this unlock"
-        }
+        return String(localized: "Apple Intelligence is included without this unlock", bundle: .module)
     }
 
     static var localizedRestore: String {
-        switch lang {
-        case .zhHans: return "恢复购买"
-        case .zhHant: return "恢復購買"
-        case .ja:     return "復元"
-        case .en:     return "Restore"
-        }
+        return String(localized: "Restore", bundle: .module)
     }
 
     static var localizedProcessing: String {
-        switch lang {
-        case .zhHans: return "处理中…"
-        case .zhHant: return "處理中…"
-        case .ja:     return "処理中…"
-        case .en:     return "Processing…"
-        }
+        return String(localized: "Processing…", bundle: .module)
     }
 
     static var localizedLoading: String {
-        switch lang {
-        case .zhHans: return "加载中…"
-        case .zhHant: return "載入中…"
-        case .ja:     return "読み込み中…"
-        case .en:     return "Loading…"
-        }
+        return String(localized: "Loading…", bundle: .module)
     }
 
     static func localizedUnlockFor(price: String) -> String {
-        switch lang {
-        case .zhHans: return "以 \(price) 解锁"
-        case .zhHant: return "以 \(price) 解鎖"
-        case .ja:     return "\(price) で解放"
-        case .en:     return "Unlock for \(price)"
-        }
+        return String(localized: "Unlock for \(price)", bundle: .module)
     }
 
     /// 2.7.0: fallback CTA when the price hasn't arrived yet but we don't
     /// want to keep showing "Loading…" past 1 s. StoreKit resolves the
     /// price inside its purchase sheet anyway.
     static var localizedUnlockNoPrice: String {
-        switch lang {
-        case .zhHans: return "解锁"
-        case .zhHant: return "解鎖"
-        case .ja:     return "解放"
-        case .en:     return "Unlock"
-        }
+        return String(localized: "Unlock", bundle: .module)
     }
 
     /// 2.7.0: "Private offline LLMs — no cloud, no rate limits"
     static var localizedPrivacyBullet: String {
-        switch lang {
-        case .zhHans: return "私密的本地大模型 — 无云端，无次数限制"
-        case .zhHant: return "私密的本機大模型 — 無雲端，無次數限制"
-        case .ja:     return "プライベートなオンデバイス LLM — クラウドなし、回数制限なし"
-        case .en:     return "Private offline LLMs — no cloud, no rate limits"
-        }
+        return String(localized: "Private offline LLMs — no cloud, no rate limits", bundle: .module)
     }
 
     /// 2.7.0: "Bring your own keys for cloud providers — you control the cost"
     static var localizedBYOKBullet: String {
-        switch lang {
-        case .zhHans: return "自带云端 API 密钥 — 您掌控成本"
-        case .zhHant: return "自帶雲端 API 金鑰 — 您掌控成本"
-        case .ja:     return "自分のクラウド API キーを使用 — コストを自分で管理"
-        case .en:     return "Bring your own keys for cloud providers — you control the cost"
-        }
+        return String(localized: "Bring your own keys for cloud providers — you control the cost", bundle: .module)
     }
 }

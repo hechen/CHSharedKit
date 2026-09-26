@@ -38,7 +38,7 @@ public struct LocalModelDownloadView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.indigo)
 
-            Text("Ready to Download")
+            Text(String(localized: "Ready to Download", bundle: .module))
                 .font(.headline)
 
             Text(model.description)
@@ -49,7 +49,7 @@ public struct LocalModelDownloadView: View {
             Button {
                 store.downloadModel(model)
             } label: {
-                Label("Download \(formattedSize(model.sizeBytes))", systemImage: "arrow.down.circle.fill")
+                Label(String(localized: "Download \(formattedSize(model.sizeBytes))", bundle: .module), systemImage: "arrow.down.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -69,11 +69,11 @@ public struct LocalModelDownloadView: View {
                 .foregroundStyle(stalled ? .orange : .indigo)
                 .symbolEffect(.bounce, value: progress)
 
-            Text(stalled ? "Download stalled" : "Downloading \(model.displayName)")
+            Text(stalled ? String(localized: "Download stalled", bundle: .module) : String(localized: "Downloading \(model.displayName)", bundle: .module))
                 .font(.headline)
 
             if stalled {
-                Text("No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.")
+                Text(String(localized: "No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.", bundle: .module))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -88,7 +88,7 @@ public struct LocalModelDownloadView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(Int(progress * 100))%")
+                Text(String(localized: "\(Int(progress * 100))%", bundle: .module))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(stalled ? .orange : .indigo)
                 Spacer()
@@ -98,7 +98,7 @@ public struct LocalModelDownloadView: View {
             }
 
             if let speed = store.currentDownloadSpeedBytesPerSecond, speed > 0, !stalled {
-                Text("\(formattedSize(Int64(speed)))/s")
+                Text(String(localized: "\(formattedSize(Int64(speed)))/s", bundle: .module))
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
             }
@@ -108,7 +108,7 @@ public struct LocalModelDownloadView: View {
                     Button {
                         store.retryDownload(model)
                     } label: {
-                        Label("Retry", systemImage: "arrow.clockwise")
+                        Label(String(localized: "Retry", bundle: .module), systemImage: "arrow.clockwise")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
@@ -118,7 +118,7 @@ public struct LocalModelDownloadView: View {
                 Button(role: .destructive) {
                     store.cancelDownload()
                 } label: {
-                    Label("Cancel", systemImage: "xmark.circle")
+                    Label(String(localized: "Cancel", bundle: .module), systemImage: "xmark.circle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -132,10 +132,10 @@ public struct LocalModelDownloadView: View {
             ProgressView()
                 .scaleEffect(1.5)
 
-            Text("Installing…")
+            Text(String(localized: "Installing…", bundle: .module))
                 .font(.headline)
 
-            Text("Moving model to local storage")
+            Text(String(localized: "Moving model to local storage", bundle: .module))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -147,10 +147,10 @@ public struct LocalModelDownloadView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.green)
 
-            Text("Model Installed")
+            Text(String(localized: "Model Installed", bundle: .module))
                 .font(.headline)
 
-            Text("\(model.displayName) is ready for offline use.")
+            Text(String(localized: "\(model.displayName) is ready for offline use.", bundle: .module))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -165,7 +165,7 @@ public struct LocalModelDownloadView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.red)
 
-            Text("Download Failed")
+            Text(String(localized: "Download Failed", bundle: .module))
                 .font(.headline)
 
             Text(message)
@@ -176,7 +176,7 @@ public struct LocalModelDownloadView: View {
             Button {
                 store.resetDownloadState()
             } label: {
-                Label("Try Again", systemImage: "arrow.clockwise")
+                Label(String(localized: "Try Again", bundle: .module), systemImage: "arrow.clockwise")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -190,14 +190,14 @@ public struct LocalModelDownloadView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
 
-            Text("Download Paused")
+            Text(String(localized: "Download Paused", bundle: .module))
                 .font(.headline)
 
             if case .paused(let resumeData) = store.downloadState {
                 Button {
                     store.resumeDownload(model: model, resumeData: resumeData)
                 } label: {
-                    Label("Resume", systemImage: "play.circle.fill")
+                    Label(String(localized: "Resume", bundle: .module), systemImage: "play.circle.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -207,7 +207,7 @@ public struct LocalModelDownloadView: View {
             Button(role: .destructive) {
                 store.resetDownloadState()
             } label: {
-                Label("Discard", systemImage: "trash")
+                Label(String(localized: "Discard", bundle: .module), systemImage: "trash")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -219,7 +219,7 @@ public struct LocalModelDownloadView: View {
 
     private var storageRow: some View {
         HStack {
-            Label("Storage: \(formattedSize(store.totalStorageUsed))", systemImage: "internaldrive")
+            Label(String(localized: "Storage: \(formattedSize(store.totalStorageUsed))", bundle: .module), systemImage: "internaldrive")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -227,7 +227,7 @@ public struct LocalModelDownloadView: View {
                 store.deleteModel(model)
                 store.resetDownloadState()
             } label: {
-                Text("Remove Model")
+                Text(String(localized: "Remove Model", bundle: .module))
                     .font(.caption)
             }
             .buttonStyle(.bordered)

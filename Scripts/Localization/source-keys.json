@@ -1,0 +1,5473 @@
+{
+  "modules": {
+    "CHSharedKit": [
+      "",
+      "%@ %@",
+      "%@ API key",
+      "%@ model updated",
+      "%@ requires a one-time purchase. Open Settings → AI Provider to unlock.",
+      "%@ —",
+      "%lld backups stored",
+      "%lld discarded writes",
+      "%lld requests",
+      "%lld tokens",
+      "%lldh ago",
+      "%lldm ago",
+      "%llds ago",
+      "AI Features",
+      "AI Provider",
+      "AI Usage",
+      "AI models updated",
+      "AI-Powered Features",
+      "API Key",
+      "API Key (optional)",
+      "API key not set. Go to Settings → AI Provider to add your key.",
+      "Active Provider",
+      "Activity",
+      "All Time",
+      "Anthropic Claude",
+      "Apple Intelligence",
+      "Apple Intelligence requires iOS 26 or later",
+      "Apple Intelligence requires macOS 26 or later",
+      "Apple Intelligence requires visionOS 26 or later",
+      "Asks every sync primitive to push local state to iCloud and pull whatever's pending. Apple's daemon decides when to actually run the round-trip.",
+      "Auto-Backup",
+      "Auto-backup is off. Use Back Up Now to trigger manually.",
+      "Back Up Now",
+      "Backs up automatically each day on first foreground.",
+      "Backs up automatically each month on first foreground.",
+      "Backs up automatically each week on first foreground.",
+      "Backup",
+      "Backup failed. %@",
+      "Backup imported.",
+      "Backups",
+      "Backups are saved locally. Enable iCloud Drive for cross-device sync.",
+      "Backups are saved to iCloud Drive and sync across all your devices.",
+      "Backups are stored in iCloud Drive → %@ → Backups when iCloud is available, otherwise on this device only.",
+      "Backups are stored on this device. Enable iCloud Drive in Settings to sync them across your devices.",
+      "Base URL",
+      "Cancel",
+      "Change anytime in Settings → AI.",
+      "Choose Provider",
+      "Clear",
+      "Conflicts",
+      "Connected",
+      "Connection",
+      "Copy All",
+      "Could not parse AI response",
+      "Custom Endpoint",
+      "Daily",
+      "Default",
+      "Default (%@)",
+      "Default Provider",
+      "Default · %@",
+      "Delete",
+      "Delete Backup?",
+      "Done",
+      "Each feature can use its own AI provider. Tap a feature to override the default.",
+      "Embed `CHAIProviderPickerView(appIdentifier:)` from CHLocalLLM in this NavigationStack to switch the default provider.",
+      "Enable auto-backup to automatically save your data.",
+      "Enabled",
+      "Export Backup",
+      "Export failed. %@",
+      "Following the default provider (%@).",
+      "Force resync",
+      "Free",
+      "Frequency",
+      "Get an API key",
+      "Get your API key at",
+      "Hide API key",
+      "Image Tokens",
+      "Import Backup",
+      "Import failed. %@",
+      "Imported %lld records.",
+      "In:",
+      "Input Tokens",
+      "Invalid API key. Please check your key in Settings.",
+      "Keep %lld backups",
+      "Last Backup",
+      "Loading backups from iCloud Drive…",
+      "Logs",
+      "Manual only",
+      "Model",
+      "Model Pricing Reference",
+      "Monthly",
+      "Network error: %@",
+      "Never",
+      "No AI provider configured",
+      "No Backups",
+      "No sync activity yet this session.",
+      "None",
+      "Not Set",
+      "OK",
+      "On-Device AI",
+      "On-Device AI · %@",
+      "On-device",
+      "On-device AI is not supported on this platform.",
+      "On-device · %@",
+      "On-device, free, private. No data leaves your device.",
+      "OpenAI",
+      "OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.",
+      "Out:",
+      "Output Tokens",
+      "Override the model this feature uses on %@.",
+      "Override · %@",
+      "Overview",
+      "Paste API key",
+      "Per-source last write, external update, and sync round-trip. Resets when the app relaunches.",
+      "Pick a palette — it syncs across all your devices and apps.",
+      "Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.",
+      "Pricing",
+      "Privacy policy",
+      "Provider",
+      "Pulled",
+      "Rate limited. Please try again in a moment.",
+      "Recent Requests",
+      "Requires %@",
+      "Reset",
+      "Reset Usage Stats",
+      "Reset all usage stats?",
+      "Reset to Default Provider",
+      "Resync requested",
+      "Reveal in Files…",
+      "Schedule",
+      "Search logs",
+      "Show API key",
+      "Some of your AI providers retired the model you had selected:",
+      "Storage",
+      "Sync Health",
+      "Synced",
+      "Test",
+      "Test Connection",
+      "Theme",
+      "This Month",
+      "This app hasn't registered any AI features yet.",
+      "This feature uses %@ instead of the default.",
+      "This may take a moment if files are still syncing.",
+      "This provider does not support vision/image inputs",
+      "This will permanently delete \"%@\".",
+      "Today",
+      "Token Usage",
+      "Total Tokens",
+      "Unknown",
+      "Unknown date",
+      "Used by features without an override.",
+      "Weekly",
+      "When off, this feature won't make AI requests.",
+      "Wrote",
+      "Your API key is stored securely in the device Keychain.",
+      "Your key is stored in the Keychain and requests go directly to %@. Usage is billed to your %@ account.",
+      "Your key is stored in the Keychain. Usage is billed to your %@ account.",
+      "Your previously-selected model (%@) was retired. We switched you to %@.",
+      "console.anthropic.com",
+      "http://localhost:11434/v1",
+      "just now",
+      "llava",
+      "platform.openai.com",
+      "sk-...",
+      "sk-ant-...",
+      "•",
+      "• %@: %@ → %@",
+      "✓ Connected successfully",
+      "✗ %@",
+      "✗ Connection failed"
+    ],
+    "CHLocalLLM": [
+      "%@ (Locked)",
+      "%@ is provided under this license. Review its terms before downloading.",
+      "%@ is ready for offline use.",
+      "%@ · API key saved",
+      "%@ · Add API key",
+      "%@ · OpenAI-compatible API",
+      "%@ · Unlocked",
+      "%@/s",
+      "%lld languages",
+      "%lld%%",
+      "%lldm %llds",
+      "%llds",
+      "A newer version is available, but it cannot run in this app. %@",
+      "A newer version is available, but it needs more memory than this device has.",
+      "AI Provider",
+      "AI for Quick Add and daily insights now runs on your iPhone — no network needed. Photo meal scanning still uses cloud AI by default. To run photos on-device too, download the vision model in Settings → AI Provider → On-Device.",
+      "AI providers unlocked",
+      "API Key",
+      "Active",
+      "Active · Runs offline on this device",
+      "Add Custom Model",
+      "Add a Hugging Face MLX model",
+      "Add and Download",
+      "Added from Hugging Face",
+      "Advanced",
+      "All AI providers are available.",
+      "Apple Intelligence",
+      "Apple Intelligence and downloaded models keep requests on this device.",
+      "Apple Intelligence is included without this unlock",
+      "Apple Intelligence keeps requests on this device.",
+      "Apple Intelligence runs on this Mac. It is free, and requests never leave the device.",
+      "Available Models",
+      "Base URL",
+      "Bring your own keys for cloud providers — you control the cost",
+      "Cancel",
+      "Change Model",
+      "Check Repository",
+      "Checking for model updates…",
+      "Checks this Apple Account for previous purchases",
+      "Choose a Model",
+      "Closet can now categorize items, detect brands, and suggest outfits privately on your device.",
+      "Cloud",
+      "Cloud APIs",
+      "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.",
+      "Connect an OpenAI-compatible service that you operate or trust.",
+      "Connection failed",
+      "Copy",
+      "Could not load %@: %@",
+      "Couldn’t check this repository. Check your connection and try again.",
+      "Couldn’t read the model’s download size.",
+      "Couldn’t refresh the model list. Your saved list and installed models are still available.",
+      "Current Provider",
+      "Custom Endpoint",
+      "Custom Models",
+      "Custom model · Not evaluated for %@",
+      "Delete this model from disk",
+      "Discard",
+      "Distill can now summarize articles without a network.",
+      "Done",
+      "Download %@",
+      "Download Failed",
+      "Download Model (%@)",
+      "Download Paused",
+      "Download a Model",
+      "Download a small AI model once. After that, Closet categorizes items and suggests outfits with no API key, no account, and no network connection required.",
+      "Download a small AI model once. After that, Distill summarizes articles with no API key, no account, and no network connection required.",
+      "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required.",
+      "Download a small AI model once. After that, LiftCoach suggests workouts, gives form tips, detects plateaus, and writes your weekly training summaries with no API key, no account, and no network connection required.",
+      "Download a small AI model once. After that, SpendWisely categorizes transactions and analyzes your spending with no API key, no account, and no network connection required.",
+      "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required.",
+      "Download stalled",
+      "Downloading %@",
+      "ETA %@",
+      "Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.",
+      "Free",
+      "Hugging Face Model Repository",
+      "I Accept",
+      "In Use",
+      "Installed",
+      "Installed Models",
+      "Installing update…",
+      "Installing…",
+      "Insufficient memory — close other apps and try again.",
+      "LiftCoach can now suggest workouts, detect plateaus, and write training summaries privately on your device. Your workout data never leaves this iPhone.",
+      "Loading…",
+      "Locked — purchase required",
+      "Locked — unlock above to use this provider",
+      "May run slowly",
+      "Meets memory estimate",
+      "Metal-accelerated on iPhone 16",
+      "Model",
+      "Model Installed",
+      "Model License",
+      "Model Name",
+      "Model action failed",
+      "Model files for %@ are missing. Re-download from Settings → AI Provider.",
+      "Model snapshot for %@ is incomplete (missing config.json). Re-download to fix.",
+      "Model snapshot for %@ is missing or incomplete. Re-download from Settings → AI Provider.",
+      "Moving model to local storage",
+      "Needs an API key — add it below",
+      "New messages",
+      "No API key or account needed",
+      "No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.",
+      "No longer listed. You can let this download finish or cancel it.",
+      "No longer offered for download. Its files are still stored on this device.",
+      "No longer offered for download. You can keep using your installed copy.",
+      "No model downloaded yet",
+      "No previous purchase was found for this Apple Account.",
+      "Not Now",
+      "Not supported",
+      "Not yet evaluated for %@",
+      "Offline",
+      "On This Device",
+      "On-Device",
+      "On-Device AI",
+      "On-Device Vision",
+      "On-device AI ready",
+      "On-device models require a supported Apple Silicon device.",
+      "On-device, free, private. No data leaves your device.",
+      "Once downloaded, the model runs on your device.",
+      "OpenAI-compatible API",
+      "OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.",
+      "Optional",
+      "Private",
+      "Private offline LLMs — no cloud, no rate limits",
+      "Processing…",
+      "Provider",
+      "Purchase failed: %@",
+      "Purchases restored.",
+      "Read License Terms",
+      "Ready to Download",
+      "Recommended",
+      "Recommended for %@",
+      "Recommended: %@",
+      "Refresh Models",
+      "Refreshing checks availability. Model downloads start only when you choose them.",
+      "Remove",
+      "Remove %@",
+      "Remove Model",
+      "Repository found · Approx. %@",
+      "Repository found. Download size unavailable.",
+      "Requires Wi-Fi or cellular. Download once; model persists on device.",
+      "Restore",
+      "Restore Purchases",
+      "Restore failed: %@",
+      "Resume",
+      "Retry",
+      "Runs a downloaded model entirely on this Mac, even offline.",
+      "Runs fully offline · No API key",
+      "Selected — finishing setup…",
+      "Size unknown",
+      "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone.",
+      "Stalled — %lld%% complete",
+      "Storage: %@",
+      "The downloaded model file failed verification: %@. Your installed model was kept.",
+      "The model did not finish its local compatibility check in time. Your installed model was kept.",
+      "The model download failed (HTTP %lld).",
+      "The model manifest contains an invalid file path: %@.",
+      "The model snapshot is incomplete. Download it again before selecting it.",
+      "The model was removed from your installed models, but some files could not be deleted.",
+      "This is an image model. Choose a text model for this app.",
+      "This model has no supported, pinned release manifest. Refresh the model catalog and try again.",
+      "This model is no longer offered for download.",
+      "This model isn't supported by this version of the app.",
+      "This model needs more memory than this device has.",
+      "This model requires image-model support.",
+      "This repository doesn’t contain the files needed for an MLX model.",
+      "This repository isn’t available. Use a public model repository.",
+      "TrainInsight can now generate your daily readiness advice privately on your iPhone.",
+      "Try Again",
+      "Unlock",
+      "Unlock AI providers",
+      "Unlock for %@",
+      "Update",
+      "Update %@",
+      "Update available. Your installed copy is kept until the update finishes.",
+      "Update the app to use this model.",
+      "Use",
+      "Use an MLX-format text model. Custom models aren’t evaluated for this app.",
+      "Works fully offline",
+      "Your installed copy isn’t supported by this version of the app. You can remove it to free space.",
+      "Your purchase is confirmed. Nothing needed restoring.",
+      "Your text never leaves the device",
+      "calculating speed…",
+      "e.g. My Custom 7B",
+      "for %@",
+      "http://localhost:11434/v1",
+      "https://huggingface.co/mlx-community/model-name",
+      "llama3",
+      "•"
+    ]
+  },
+  "keys": [
+    "",
+    "%@ %@",
+    "%@ (Locked)",
+    "%@ API key",
+    "%@ is provided under this license. Review its terms before downloading.",
+    "%@ is ready for offline use.",
+    "%@ model updated",
+    "%@ requires a one-time purchase. Open Settings → AI Provider to unlock.",
+    "%@ · API key saved",
+    "%@ · Add API key",
+    "%@ · OpenAI-compatible API",
+    "%@ · Unlocked",
+    "%@ —",
+    "%@/s",
+    "%lld backups stored",
+    "%lld discarded writes",
+    "%lld languages",
+    "%lld requests",
+    "%lld tokens",
+    "%lld%%",
+    "%lldh ago",
+    "%lldm %llds",
+    "%lldm ago",
+    "%llds",
+    "%llds ago",
+    "A newer version is available, but it cannot run in this app. %@",
+    "A newer version is available, but it needs more memory than this device has.",
+    "AI Features",
+    "AI Provider",
+    "AI Usage",
+    "AI for Quick Add and daily insights now runs on your iPhone — no network needed. Photo meal scanning still uses cloud AI by default. To run photos on-device too, download the vision model in Settings → AI Provider → On-Device.",
+    "AI models updated",
+    "AI providers unlocked",
+    "AI-Powered Features",
+    "API Key",
+    "API Key (optional)",
+    "API key not set. Go to Settings → AI Provider to add your key.",
+    "Active",
+    "Active Provider",
+    "Active · Runs offline on this device",
+    "Activity",
+    "Add Custom Model",
+    "Add a Hugging Face MLX model",
+    "Add and Download",
+    "Added from Hugging Face",
+    "Advanced",
+    "All AI providers are available.",
+    "All Time",
+    "Anthropic Claude",
+    "Apple Intelligence",
+    "Apple Intelligence and downloaded models keep requests on this device.",
+    "Apple Intelligence is included without this unlock",
+    "Apple Intelligence keeps requests on this device.",
+    "Apple Intelligence requires iOS 26 or later",
+    "Apple Intelligence requires macOS 26 or later",
+    "Apple Intelligence requires visionOS 26 or later",
+    "Apple Intelligence runs on this Mac. It is free, and requests never leave the device.",
+    "Asks every sync primitive to push local state to iCloud and pull whatever's pending. Apple's daemon decides when to actually run the round-trip.",
+    "Auto-Backup",
+    "Auto-backup is off. Use Back Up Now to trigger manually.",
+    "Available Models",
+    "Back Up Now",
+    "Backs up automatically each day on first foreground.",
+    "Backs up automatically each month on first foreground.",
+    "Backs up automatically each week on first foreground.",
+    "Backup",
+    "Backup failed. %@",
+    "Backup imported.",
+    "Backups",
+    "Backups are saved locally. Enable iCloud Drive for cross-device sync.",
+    "Backups are saved to iCloud Drive and sync across all your devices.",
+    "Backups are stored in iCloud Drive → %@ → Backups when iCloud is available, otherwise on this device only.",
+    "Backups are stored on this device. Enable iCloud Drive in Settings to sync them across your devices.",
+    "Base URL",
+    "Bring your own keys for cloud providers — you control the cost",
+    "Cancel",
+    "Change Model",
+    "Change anytime in Settings → AI.",
+    "Check Repository",
+    "Checking for model updates…",
+    "Checks this Apple Account for previous purchases",
+    "Choose Provider",
+    "Choose a Model",
+    "Clear",
+    "Closet can now categorize items, detect brands, and suggest outfits privately on your device.",
+    "Cloud",
+    "Cloud APIs",
+    "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.",
+    "Conflicts",
+    "Connect an OpenAI-compatible service that you operate or trust.",
+    "Connected",
+    "Connection",
+    "Connection failed",
+    "Copy",
+    "Copy All",
+    "Could not load %@: %@",
+    "Could not parse AI response",
+    "Couldn’t check this repository. Check your connection and try again.",
+    "Couldn’t read the model’s download size.",
+    "Couldn’t refresh the model list. Your saved list and installed models are still available.",
+    "Current Provider",
+    "Custom Endpoint",
+    "Custom Models",
+    "Custom model · Not evaluated for %@",
+    "Daily",
+    "Default",
+    "Default (%@)",
+    "Default Provider",
+    "Default · %@",
+    "Delete",
+    "Delete Backup?",
+    "Delete this model from disk",
+    "Discard",
+    "Distill can now summarize articles without a network.",
+    "Done",
+    "Download %@",
+    "Download Failed",
+    "Download Model (%@)",
+    "Download Paused",
+    "Download a Model",
+    "Download a small AI model once. After that, Closet categorizes items and suggests outfits with no API key, no account, and no network connection required.",
+    "Download a small AI model once. After that, Distill summarizes articles with no API key, no account, and no network connection required.",
+    "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required.",
+    "Download a small AI model once. After that, LiftCoach suggests workouts, gives form tips, detects plateaus, and writes your weekly training summaries with no API key, no account, and no network connection required.",
+    "Download a small AI model once. After that, SpendWisely categorizes transactions and analyzes your spending with no API key, no account, and no network connection required.",
+    "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required.",
+    "Download stalled",
+    "Downloading %@",
+    "ETA %@",
+    "Each feature can use its own AI provider. Tap a feature to override the default.",
+    "Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.",
+    "Embed `CHAIProviderPickerView(appIdentifier:)` from CHLocalLLM in this NavigationStack to switch the default provider.",
+    "Enable auto-backup to automatically save your data.",
+    "Enabled",
+    "Export Backup",
+    "Export failed. %@",
+    "Following the default provider (%@).",
+    "Force resync",
+    "Free",
+    "Frequency",
+    "Get an API key",
+    "Get your API key at",
+    "Hide API key",
+    "Hugging Face Model Repository",
+    "I Accept",
+    "Image Tokens",
+    "Import Backup",
+    "Import failed. %@",
+    "Imported %lld records.",
+    "In Use",
+    "In:",
+    "Input Tokens",
+    "Installed",
+    "Installed Models",
+    "Installing update…",
+    "Installing…",
+    "Insufficient memory — close other apps and try again.",
+    "Invalid API key. Please check your key in Settings.",
+    "Keep %lld backups",
+    "Last Backup",
+    "LiftCoach can now suggest workouts, detect plateaus, and write training summaries privately on your device. Your workout data never leaves this iPhone.",
+    "Loading backups from iCloud Drive…",
+    "Loading…",
+    "Locked — purchase required",
+    "Locked — unlock above to use this provider",
+    "Logs",
+    "Manual only",
+    "May run slowly",
+    "Meets memory estimate",
+    "Metal-accelerated on iPhone 16",
+    "Model",
+    "Model Installed",
+    "Model License",
+    "Model Name",
+    "Model Pricing Reference",
+    "Model action failed",
+    "Model files for %@ are missing. Re-download from Settings → AI Provider.",
+    "Model snapshot for %@ is incomplete (missing config.json). Re-download to fix.",
+    "Model snapshot for %@ is missing or incomplete. Re-download from Settings → AI Provider.",
+    "Monthly",
+    "Moving model to local storage",
+    "Needs an API key — add it below",
+    "Network error: %@",
+    "Never",
+    "New messages",
+    "No AI provider configured",
+    "No API key or account needed",
+    "No Backups",
+    "No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.",
+    "No longer listed. You can let this download finish or cancel it.",
+    "No longer offered for download. Its files are still stored on this device.",
+    "No longer offered for download. You can keep using your installed copy.",
+    "No model downloaded yet",
+    "No previous purchase was found for this Apple Account.",
+    "No sync activity yet this session.",
+    "None",
+    "Not Now",
+    "Not Set",
+    "Not supported",
+    "Not yet evaluated for %@",
+    "OK",
+    "Offline",
+    "On This Device",
+    "On-Device",
+    "On-Device AI",
+    "On-Device AI · %@",
+    "On-Device Vision",
+    "On-device",
+    "On-device AI is not supported on this platform.",
+    "On-device AI ready",
+    "On-device models require a supported Apple Silicon device.",
+    "On-device · %@",
+    "On-device, free, private. No data leaves your device.",
+    "Once downloaded, the model runs on your device.",
+    "OpenAI",
+    "OpenAI-compatible API",
+    "OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.",
+    "OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.",
+    "Optional",
+    "Out:",
+    "Output Tokens",
+    "Override the model this feature uses on %@.",
+    "Override · %@",
+    "Overview",
+    "Paste API key",
+    "Per-source last write, external update, and sync round-trip. Resets when the app relaunches.",
+    "Pick a palette — it syncs across all your devices and apps.",
+    "Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.",
+    "Pricing",
+    "Privacy policy",
+    "Private",
+    "Private offline LLMs — no cloud, no rate limits",
+    "Processing…",
+    "Provider",
+    "Pulled",
+    "Purchase failed: %@",
+    "Purchases restored.",
+    "Rate limited. Please try again in a moment.",
+    "Read License Terms",
+    "Ready to Download",
+    "Recent Requests",
+    "Recommended",
+    "Recommended for %@",
+    "Recommended: %@",
+    "Refresh Models",
+    "Refreshing checks availability. Model downloads start only when you choose them.",
+    "Remove",
+    "Remove %@",
+    "Remove Model",
+    "Repository found · Approx. %@",
+    "Repository found. Download size unavailable.",
+    "Requires %@",
+    "Requires Wi-Fi or cellular. Download once; model persists on device.",
+    "Reset",
+    "Reset Usage Stats",
+    "Reset all usage stats?",
+    "Reset to Default Provider",
+    "Restore",
+    "Restore Purchases",
+    "Restore failed: %@",
+    "Resume",
+    "Resync requested",
+    "Retry",
+    "Reveal in Files…",
+    "Runs a downloaded model entirely on this Mac, even offline.",
+    "Runs fully offline · No API key",
+    "Schedule",
+    "Search logs",
+    "Selected — finishing setup…",
+    "Show API key",
+    "Size unknown",
+    "Some of your AI providers retired the model you had selected:",
+    "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone.",
+    "Stalled — %lld%% complete",
+    "Storage",
+    "Storage: %@",
+    "Sync Health",
+    "Synced",
+    "Test",
+    "Test Connection",
+    "The downloaded model file failed verification: %@. Your installed model was kept.",
+    "The model did not finish its local compatibility check in time. Your installed model was kept.",
+    "The model download failed (HTTP %lld).",
+    "The model manifest contains an invalid file path: %@.",
+    "The model snapshot is incomplete. Download it again before selecting it.",
+    "The model was removed from your installed models, but some files could not be deleted.",
+    "Theme",
+    "This Month",
+    "This app hasn't registered any AI features yet.",
+    "This feature uses %@ instead of the default.",
+    "This is an image model. Choose a text model for this app.",
+    "This may take a moment if files are still syncing.",
+    "This model has no supported, pinned release manifest. Refresh the model catalog and try again.",
+    "This model is no longer offered for download.",
+    "This model isn't supported by this version of the app.",
+    "This model needs more memory than this device has.",
+    "This model requires image-model support.",
+    "This provider does not support vision/image inputs",
+    "This repository doesn’t contain the files needed for an MLX model.",
+    "This repository isn’t available. Use a public model repository.",
+    "This will permanently delete \"%@\".",
+    "Today",
+    "Token Usage",
+    "Total Tokens",
+    "TrainInsight can now generate your daily readiness advice privately on your iPhone.",
+    "Try Again",
+    "Unknown",
+    "Unknown date",
+    "Unlock",
+    "Unlock AI providers",
+    "Unlock for %@",
+    "Update",
+    "Update %@",
+    "Update available. Your installed copy is kept until the update finishes.",
+    "Update the app to use this model.",
+    "Use",
+    "Use an MLX-format text model. Custom models aren’t evaluated for this app.",
+    "Used by features without an override.",
+    "Weekly",
+    "When off, this feature won't make AI requests.",
+    "Works fully offline",
+    "Wrote",
+    "Your API key is stored securely in the device Keychain.",
+    "Your installed copy isn’t supported by this version of the app. You can remove it to free space.",
+    "Your key is stored in the Keychain and requests go directly to %@. Usage is billed to your %@ account.",
+    "Your key is stored in the Keychain. Usage is billed to your %@ account.",
+    "Your previously-selected model (%@) was retired. We switched you to %@.",
+    "Your purchase is confirmed. Nothing needed restoring.",
+    "Your text never leaves the device",
+    "calculating speed…",
+    "console.anthropic.com",
+    "e.g. My Custom 7B",
+    "for %@",
+    "http://localhost:11434/v1",
+    "https://huggingface.co/mlx-community/model-name",
+    "just now",
+    "llama3",
+    "llava",
+    "platform.openai.com",
+    "sk-...",
+    "sk-ant-...",
+    "•",
+    "• %@: %@ → %@",
+    "✓ Connected successfully",
+    "✗ %@",
+    "✗ Connection failed"
+  ],
+  "sourceLocations": {
+    "None": [
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 64,
+        "startingLine": 71
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 102,
+        "startingLine": 108
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 56,
+        "startingLine": 153
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 64,
+        "startingLine": 71
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 102,
+        "startingLine": 108
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 56,
+        "startingLine": 153
+      }
+    ],
+    "AI Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 53,
+        "startingLine": 152
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 257
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabel.swift",
+        "startingColumn": 53,
+        "startingLine": 152
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 257
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 66
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 25,
+        "startingLine": 118
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 66
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 25,
+        "startingLine": 118
+      }
+    ],
+    "On-Device AI": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager+Gating.swift",
+        "startingColumn": 56,
+        "startingLine": 98
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 38,
+        "startingLine": 123
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIManager+Gating.swift",
+        "startingColumn": 56,
+        "startingLine": 98
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 38,
+        "startingLine": 123
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 92,
+        "startingLine": 608
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 715
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 385
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 715
+      },
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 40,
+        "startingLine": 35
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 385
+      }
+    ],
+    "Custom Endpoint": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager+Gating.swift",
+        "startingColumn": 76,
+        "startingLine": 101
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 225
+      },
+      {
+        "file": "Sources/CHSharedKit/CHCustomEndpointProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 11
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIManager+Gating.swift",
+        "startingColumn": 76,
+        "startingLine": 101
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 225
+      },
+      {
+        "file": "Sources/CHSharedKit/CHCustomEndpointProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 11
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 536
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 61,
+        "startingLine": 622
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 536
+      }
+    ],
+    "Choose Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 48
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 48
+      }
+    ],
+    "Active Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 50,
+        "startingLine": 42
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 50,
+        "startingLine": 42
+      }
+    ],
+    "Free": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 50,
+        "startingLine": 56
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 194
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 50,
+        "startingLine": 56
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 194
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 341
+      }
+    ],
+    "On-device, free, private. No data leaves your device.": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 77
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 77
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 396
+      }
+    ],
+    "Apple Intelligence": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 82
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 21,
+        "startingLine": 189
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 82
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 21,
+        "startingLine": 189
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 22,
+        "startingLine": 400
+      }
+    ],
+    "Model": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 46,
+        "startingLine": 109
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 46,
+        "startingLine": 153
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 196
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 46,
+        "startingLine": 195
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 202
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAICatalogProviderSettings.swift",
+        "startingColumn": 38,
+        "startingLine": 50
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 46,
+        "startingLine": 109
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 46,
+        "startingLine": 153
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 196
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 46,
+        "startingLine": 195
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 202
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAICatalogProviderSettings.swift",
+        "startingColumn": 38,
+        "startingLine": 50
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 441
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 469
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 518
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 136,
+        "startingLine": 519
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 441
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 469
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 503
+      }
+    ],
+    "API Key": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 98
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 142
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 46,
+        "startingLine": 89
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 97,
+        "startingLine": 128
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 99,
+        "startingLine": 130
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 98
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 142
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 46,
+        "startingLine": 89
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 97,
+        "startingLine": 128
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 99,
+        "startingLine": 130
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 527
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 90,
+        "startingLine": 1105
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 92,
+        "startingLine": 1112
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 527
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 90,
+        "startingLine": 1105
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 92,
+        "startingLine": 1112
+      }
+    ],
+    "sk-...": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 91
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 91
+      }
+    ],
+    "OpenAI": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 116
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 116
+      }
+    ],
+    "Your API key is stored securely in the device Keychain.": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 125
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 169
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 125
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 169
+      }
+    ],
+    "Get your API key at": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 120
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 164
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 120
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 164
+      }
+    ],
+    "platform.openai.com": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 38,
+        "startingLine": 122
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 38,
+        "startingLine": 122
+      }
+    ],
+    "sk-ant-...": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 135
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 39,
+        "startingLine": 135
+      }
+    ],
+    "Anthropic Claude": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 160
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 26,
+        "startingLine": 160
+      }
+    ],
+    "console.anthropic.com": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 38,
+        "startingLine": 166
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 38,
+        "startingLine": 166
+      }
+    ],
+    "Base URL": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 183
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 183
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 510
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 117,
+        "startingLine": 511
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 496
+      }
+    ],
+    "http://localhost:11434/v1": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 35,
+        "startingLine": 185
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 35,
+        "startingLine": 185
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 62,
+        "startingLine": 511
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 31,
+        "startingLine": 497
+      }
+    ],
+    "llava": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 35,
+        "startingLine": 198
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 35,
+        "startingLine": 198
+      }
+    ],
+    "API Key (optional)": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 57,
+        "startingLine": 209
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 215
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 57,
+        "startingLine": 209
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 215
+      }
+    ],
+    "OpenAI-compatible API (Ollama, vLLM, LMStudio, etc.)\nYour API key is stored securely in the device Keychain.": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 227
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 227
+      }
+    ],
+    "Test Connection": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 239
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 51,
+        "startingLine": 238
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 239
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 31,
+        "startingLine": 218
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 51,
+        "startingLine": 238
+      }
+    ],
+    "✓ Connected successfully": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 332
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 59,
+        "startingLine": 332
+      }
+    ],
+    "✗ Connection failed": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 126,
+        "startingLine": 332
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 126,
+        "startingLine": 332
+      }
+    ],
+    "✗ %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 54,
+        "startingLine": 334
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 54,
+        "startingLine": 334
+      }
+    ],
+    "This app hasn't registered any AI features yet.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 52
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 52
+      }
+    ],
+    "AI-Powered Features": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 65
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 65
+      }
+    ],
+    "Each feature can use its own AI provider. Tap a feature to override the default.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 67
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 67
+      }
+    ],
+    "Default Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 81
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 324
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 81
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 324
+      }
+    ],
+    "Used by features without an override.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 86
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 86
+      }
+    ],
+    "Override · %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 136
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 136
+      }
+    ],
+    "Default · %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 115,
+        "startingLine": 136
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 115,
+        "startingLine": 136
+      }
+    ],
+    "Unknown": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 106,
+        "startingLine": 135
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 106,
+        "startingLine": 135
+      }
+    ],
+    "Enabled": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 168
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 168
+      }
+    ],
+    "When off, this feature won't make AI requests.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 170
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 170
+      }
+    ],
+    "Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 175
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 185
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 175
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 185
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 599
+      }
+    ],
+    "Default (%@)": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 176
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 176
+      }
+    ],
+    "Following the default provider (%@).": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 286
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 286
+      }
+    ],
+    "This feature uses %@ instead of the default.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 34,
+        "startingLine": 288
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 34,
+        "startingLine": 288
+      }
+    ],
+    "Default": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 196
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 196
+      }
+    ],
+    "Override the model this feature uses on %@.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 204
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 204
+      }
+    ],
+    "Reset to Default Provider": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 215
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 215
+      }
+    ],
+    "Embed `CHAIProviderPickerView(appIdentifier:)` from CHLocalLLM in this NavigationStack to switch the default provider.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 326
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIFeaturesSettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 326
+      }
+    ],
+    "Done": [
+      {
+        "file": "Sources/CHSharedKit/CHSettingsSheet.swift",
+        "startingColumn": 43,
+        "startingLine": 77
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsView.swift",
+        "startingColumn": 42,
+        "startingLine": 264
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSettingsSheet.swift",
+        "startingColumn": 43,
+        "startingLine": 77
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 46,
+        "startingLine": 169
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 75
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 153
+      }
+    ],
+    "Logs": [
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 44,
+        "startingLine": 39
+      },
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 44,
+        "startingLine": 39
+      }
+    ],
+    "Search logs": [
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 44,
+        "startingLine": 38
+      },
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 44,
+        "startingLine": 38
+      }
+    ],
+    "Copy All": [
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 46,
+        "startingLine": 43
+      },
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 46,
+        "startingLine": 43
+      }
+    ],
+    "Clear": [
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 46,
+        "startingLine": 48
+      },
+      {
+        "file": "Sources/CHSharedKit/CHLogViewerView.swift",
+        "startingColumn": 46,
+        "startingLine": 48
+      }
+    ],
+    "Backups": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 44,
+        "startingLine": 62
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 44,
+        "startingLine": 62
+      }
+    ],
+    "Delete Backup?": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 31,
+        "startingLine": 77
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 31,
+        "startingLine": 77
+      }
+    ],
+    "No Backups": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 39,
+        "startingLine": 36
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 39,
+        "startingLine": 36
+      }
+    ],
+    "Enable auto-backup to automatically save your data.": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 57,
+        "startingLine": 38
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 57,
+        "startingLine": 38
+      }
+    ],
+    "Loading backups from iCloud Drive…": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 52,
+        "startingLine": 25
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 52,
+        "startingLine": 25
+      }
+    ],
+    "This may take a moment if files are still syncing.": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 52,
+        "startingLine": 27
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 52,
+        "startingLine": 27
+      }
+    ],
+    "Delete": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 53,
+        "startingLine": 56
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 38,
+        "startingLine": 81
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 53,
+        "startingLine": 56
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 38,
+        "startingLine": 81
+      }
+    ],
+    "Cancel": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 38,
+        "startingLine": 86
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 38,
+        "startingLine": 86
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 45,
+        "startingLine": 121
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 606
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 672
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 845
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 954
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 664
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 738
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 867
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 984
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 45,
+        "startingLine": 121
+      }
+    ],
+    "This will permanently delete \"%@\".": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 40,
+        "startingLine": 89
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 40,
+        "startingLine": 89
+      }
+    ],
+    "Unknown date": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 71,
+        "startingLine": 309
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 71,
+        "startingLine": 309
+      }
+    ],
+    "•": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 26,
+        "startingLine": 334
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupListView.swift",
+        "startingColumn": 26,
+        "startingLine": 334
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 38,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 38,
+        "startingLine": 99
+      }
+    ],
+    "AI Features": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsSheets.swift",
+        "startingColumn": 25,
+        "startingLine": 23
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsSheets.swift",
+        "startingColumn": 25,
+        "startingLine": 23
+      }
+    ],
+    "AI Usage": [
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsSheets.swift",
+        "startingColumn": 25,
+        "startingLine": 42
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 95
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAISettingsSheets.swift",
+        "startingColumn": 25,
+        "startingLine": 42
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 95
+      }
+    ],
+    "Sync Health": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 44,
+        "startingLine": 154
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 44,
+        "startingLine": 154
+      }
+    ],
+    "Conflicts": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 43,
+        "startingLine": 126
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 43,
+        "startingLine": 126
+      }
+    ],
+    "No sync activity yet this session.": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 44,
+        "startingLine": 115
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 44,
+        "startingLine": 115
+      }
+    ],
+    "Activity": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 120
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 120
+      }
+    ],
+    "Per-source last write, external update, and sync round-trip. Resets when the app relaunches.": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 122
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 122
+      }
+    ],
+    "%lld discarded writes": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 130
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 130
+      }
+    ],
+    "Resync requested": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 57,
+        "startingLine": 145
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 57,
+        "startingLine": 145
+      }
+    ],
+    "Force resync": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 114,
+        "startingLine": 145
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 114,
+        "startingLine": 145
+      }
+    ],
+    "Asks every sync primitive to push local state to iCloud and pull whatever's pending. Apple's daemon decides when to actually run the round-trip.": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 151
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 40,
+        "startingLine": 151
+      }
+    ],
+    "Wrote": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 177
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 177
+      }
+    ],
+    "Pulled": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 178
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 178
+      }
+    ],
+    "Synced": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 179
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 48,
+        "startingLine": 179
+      }
+    ],
+    "%@ %@": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 18,
+        "startingLine": 190
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 18,
+        "startingLine": 190
+      }
+    ],
+    "%@ —": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 18,
+        "startingLine": 192
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 18,
+        "startingLine": 192
+      }
+    ],
+    "just now": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 52,
+        "startingLine": 198
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 52,
+        "startingLine": 198
+      }
+    ],
+    "%llds ago": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 53,
+        "startingLine": 199
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 53,
+        "startingLine": 199
+      }
+    ],
+    "%lldm ago": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 55,
+        "startingLine": 200
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 55,
+        "startingLine": 200
+      }
+    ],
+    "%lldh ago": [
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 57,
+        "startingLine": 201
+      },
+      {
+        "file": "Sources/CHSharedKit/CHSyncHealth.swift",
+        "startingColumn": 57,
+        "startingLine": 201
+      }
+    ],
+    "Theme": [
+      {
+        "file": "Sources/CHSharedKit/Theme/ThemePickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 50
+      },
+      {
+        "file": "Sources/CHSharedKit/Theme/ThemePickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 50
+      }
+    ],
+    "Pick a palette — it syncs across all your devices and apps.": [
+      {
+        "file": "Sources/CHSharedKit/Theme/ThemePickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 21
+      },
+      {
+        "file": "Sources/CHSharedKit/Theme/ThemePickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 21
+      }
+    ],
+    "Hide API key": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 58,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 72,
+        "startingLine": 100
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 58,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 72,
+        "startingLine": 100
+      }
+    ],
+    "Show API key": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 111,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 125,
+        "startingLine": 100
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 111,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 125,
+        "startingLine": 100
+      }
+    ],
+    "%@ API key": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 47,
+        "startingLine": 146
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 47,
+        "startingLine": 146
+      }
+    ],
+    "Your key is stored in the Keychain and requests go directly to %@. Usage is billed to your %@ account.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 38,
+        "startingLine": 180
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 38,
+        "startingLine": 180
+      }
+    ],
+    "Your key is stored in the Keychain. Usage is billed to your %@ account.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 34,
+        "startingLine": 182
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 34,
+        "startingLine": 182
+      }
+    ],
+    "Get an API key": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 53,
+        "startingLine": 159
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 53,
+        "startingLine": 159
+      }
+    ],
+    "Privacy policy": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 53,
+        "startingLine": 165
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 53,
+        "startingLine": 165
+      }
+    ],
+    "Connection": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 42,
+        "startingLine": 206
+      }
+    ],
+    "Test": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 35,
+        "startingLine": 213
+      }
+    ],
+    "Connected": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 40,
+        "startingLine": 246
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProviderCredentialSection.swift",
+        "startingColumn": 40,
+        "startingLine": 246
+      }
+    ],
+    "No AI provider configured": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 52,
+        "startingLine": 112
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 52,
+        "startingLine": 112
+      }
+    ],
+    "API key not set. Go to Settings → AI Provider to add your key.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 50,
+        "startingLine": 113
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 50,
+        "startingLine": 113
+      }
+    ],
+    "Could not parse AI response": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 57,
+        "startingLine": 114
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 57,
+        "startingLine": 114
+      }
+    ],
+    "Network error: %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 61,
+        "startingLine": 115
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 61,
+        "startingLine": 115
+      }
+    ],
+    "Rate limited. Please try again in a moment.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 53,
+        "startingLine": 116
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 53,
+        "startingLine": 116
+      }
+    ],
+    "Invalid API key. Please check your key in Settings.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 52,
+        "startingLine": 117
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 52,
+        "startingLine": 117
+      }
+    ],
+    "This provider does not support vision/image inputs": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 60,
+        "startingLine": 118
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 60,
+        "startingLine": 118
+      }
+    ],
+    "On-device AI is not supported on this platform.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 61,
+        "startingLine": 121
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 61,
+        "startingLine": 121
+      }
+    ],
+    "%@ requires a one-time purchase. Open Settings → AI Provider to unlock.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 66,
+        "startingLine": 122
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIProvider.swift",
+        "startingColumn": 66,
+        "startingLine": 122
+      }
+    ],
+    "%@ model updated": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 39,
+        "startingLine": 89
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 39,
+        "startingLine": 89
+      }
+    ],
+    "Your previously-selected model (%@) was retired. We switched you to %@.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 35,
+        "startingLine": 91
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 35,
+        "startingLine": 91
+      }
+    ],
+    "Change anytime in Settings → AI.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 35,
+        "startingLine": 93
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 44,
+        "startingLine": 102
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 35,
+        "startingLine": 93
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 44,
+        "startingLine": 102
+      }
+    ],
+    "AI models updated": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 39,
+        "startingLine": 96
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 39,
+        "startingLine": 96
+      }
+    ],
+    "Some of your AI providers retired the model you had selected:": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 44,
+        "startingLine": 97
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 44,
+        "startingLine": 97
+      }
+    ],
+    "• %@: %@ → %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 48,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 48,
+        "startingLine": 99
+      }
+    ],
+    "OK": [
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 42,
+        "startingLine": 228
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 158
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIModelMigration.swift",
+        "startingColumn": 42,
+        "startingLine": 228
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 158
+      }
+    ],
+    "Reset all usage stats?": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 47,
+        "startingLine": 99
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 47,
+        "startingLine": 99
+      }
+    ],
+    "Overview": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 39,
+        "startingLine": 15
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 39,
+        "startingLine": 15
+      }
+    ],
+    "Token Usage": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 39,
+        "startingLine": 26
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 39,
+        "startingLine": 26
+      }
+    ],
+    "Recent Requests": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 43,
+        "startingLine": 37
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 43,
+        "startingLine": 37
+      }
+    ],
+    "Today": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 17
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 17
+      }
+    ],
+    "This Month": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 18
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 18
+      }
+    ],
+    "%lld requests": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 157,
+        "startingLine": 18
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 160,
+        "startingLine": 19
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 157,
+        "startingLine": 18
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 160,
+        "startingLine": 19
+      }
+    ],
+    "All Time": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 19
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 19
+      }
+    ],
+    "Input Tokens": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 27
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 27
+      }
+    ],
+    "Output Tokens": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 28
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 28
+      }
+    ],
+    "Image Tokens": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 30
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 55,
+        "startingLine": 30
+      }
+    ],
+    "Total Tokens": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 32
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 51,
+        "startingLine": 32
+      }
+    ],
+    "%lld tokens": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 60,
+        "startingLine": 54
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 60,
+        "startingLine": 54
+      }
+    ],
+    "Model Pricing Reference": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 50,
+        "startingLine": 78
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 50,
+        "startingLine": 78
+      }
+    ],
+    "Reset Usage Stats": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 45,
+        "startingLine": 88
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 45,
+        "startingLine": 88
+      }
+    ],
+    "Reset": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 38,
+        "startingLine": 100
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 38,
+        "startingLine": 100
+      }
+    ],
+    "Pricing": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 209
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 209
+      }
+    ],
+    "On-device": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 191
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 191
+      }
+    ],
+    "Prices are per 1M tokens. Vision requests use additional tokens for image processing. Costs are estimates and may differ from your actual bill.": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 40,
+        "startingLine": 201
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 40,
+        "startingLine": 201
+      }
+    ],
+    "In:": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 234
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 234
+      }
+    ],
+    "Out:": [
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 238
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIUsageView.swift",
+        "startingColumn": 44,
+        "startingLine": 238
+      }
+    ],
+    "On-Device AI · %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 42,
+        "startingLine": 121
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 42,
+        "startingLine": 121
+      }
+    ],
+    "Not Set": [
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 73,
+        "startingLine": 125
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIActiveProviderLabelView.swift",
+        "startingColumn": 73,
+        "startingLine": 125
+      }
+    ],
+    "Keep %lld backups": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 43,
+        "startingLine": 207
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 43,
+        "startingLine": 240
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 43,
+        "startingLine": 207
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 43,
+        "startingLine": 240
+      }
+    ],
+    "Auto-Backup": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 41,
+        "startingLine": 167
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 41,
+        "startingLine": 207
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 41,
+        "startingLine": 167
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 41,
+        "startingLine": 207
+      }
+    ],
+    "": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 24,
+        "startingLine": 169
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 24,
+        "startingLine": 209
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 24,
+        "startingLine": 169
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 24,
+        "startingLine": 209
+      }
+    ],
+    "Last Backup": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 179
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 218
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 179
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 218
+      }
+    ],
+    "Never": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 187
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 48,
+        "startingLine": 225
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 48,
+        "startingLine": 187
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 48,
+        "startingLine": 225
+      }
+    ],
+    "%lld backups stored": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 199
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 48,
+        "startingLine": 235
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 52,
+        "startingLine": 199
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 48,
+        "startingLine": 235
+      }
+    ],
+    "Back Up Now": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 226
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 255
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 226
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 255
+      }
+    ],
+    "Export Backup": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 233
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 263
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 233
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 263
+      }
+    ],
+    "Import Backup": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 245
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 276
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 45,
+        "startingLine": 245
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 45,
+        "startingLine": 276
+      }
+    ],
+    "Backup": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 36,
+        "startingLine": 255
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 34,
+        "startingLine": 157
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 36,
+        "startingLine": 285
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 36,
+        "startingLine": 255
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 34,
+        "startingLine": 157
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 36,
+        "startingLine": 285
+      }
+    ],
+    "Backups are saved to iCloud Drive and sync across all your devices.": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 259
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 289
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 259
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 289
+      }
+    ],
+    "Backups are saved locally. Enable iCloud Drive for cross-device sync.": [
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 261
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 291
+      },
+      {
+        "file": "Sources/CHSharedKit/CHBackupSettingsView.swift",
+        "startingColumn": 44,
+        "startingLine": 261
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 44,
+        "startingLine": 291
+      }
+    ],
+    "On-device · %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 515
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 515
+      }
+    ],
+    "Requires %@": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 519
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 519
+      }
+    ],
+    "Apple Intelligence requires macOS 26 or later": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 524
+      }
+    ],
+    "Daily": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 21
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 21
+      }
+    ],
+    "Weekly": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 22
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 22
+      }
+    ],
+    "Monthly": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 23
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 23
+      }
+    ],
+    "Manual only": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 24
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 49,
+        "startingLine": 24
+      }
+    ],
+    "Backs up automatically each day on first foreground.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 31
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 31
+      }
+    ],
+    "Backs up automatically each week on first foreground.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 33
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 33
+      }
+    ],
+    "Backs up automatically each month on first foreground.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 35
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 35
+      }
+    ],
+    "Auto-backup is off. Use Back Up Now to trigger manually.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 37
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 38,
+        "startingLine": 37
+      }
+    ],
+    "Imported %lld records.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 37,
+        "startingLine": 379
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 37,
+        "startingLine": 379
+      }
+    ],
+    "Backup imported.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 37,
+        "startingLine": 380
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 37,
+        "startingLine": 380
+      }
+    ],
+    "Import failed. %@": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 384
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 384
+      }
+    ],
+    "Frequency": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 41,
+        "startingLine": 193
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 41,
+        "startingLine": 193
+      }
+    ],
+    "Schedule": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 36,
+        "startingLine": 197
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 36,
+        "startingLine": 197
+      }
+    ],
+    "Backup failed. %@": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 347
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 347
+      }
+    ],
+    "Export failed. %@": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 364
+      },
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 47,
+        "startingLine": 364
+      }
+    ],
+    "Paste API key": [
+      {
+        "file": "Sources/CHSharedKit/CHAICatalogProviderSettings.swift",
+        "startingColumn": 47,
+        "startingLine": 41
+      },
+      {
+        "file": "Sources/CHSharedKit/CHAICatalogProviderSettings.swift",
+        "startingColumn": 47,
+        "startingLine": 41
+      }
+    ],
+    "Apple Intelligence requires iOS 26 or later": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "startingColumn": 27,
+        "startingLine": 528
+      }
+    ],
+    "Reveal in Files…": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 41,
+        "startingLine": 304
+      }
+    ],
+    "Storage": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 36,
+        "startingLine": 307
+      }
+    ],
+    "Backups are stored in iCloud Drive → %@ → Backups when iCloud is available, otherwise on this device only.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 40,
+        "startingLine": 310
+      }
+    ],
+    "Backups are stored on this device. Enable iCloud Drive in Settings to sync them across your devices.": [
+      {
+        "file": "Sources/CHSharedKit/CHStorageSection.swift",
+        "startingColumn": 40,
+        "startingLine": 312
+      }
+    ],
+    "Download a small AI model once. After that, Distill summarizes articles with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 16
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 16
+      }
+    ],
+    "Download a small AI model once. After that, Closet categorizes items and suggests outfits with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 18
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 18
+      }
+    ],
+    "Download a small AI model once. After that, SpendWisely categorizes transactions and analyzes your spending with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 20
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 20
+      }
+    ],
+    "Download a small AI model once. After that, EatWisely generates nutrition insights with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 22
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 22
+      }
+    ],
+    "Download a small AI model once. After that, TrainInsight generates readiness advice with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 24
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 24
+      }
+    ],
+    "Download a small AI model once. After that, LiftCoach suggests workouts, gives form tips, detects plateaus, and writes your weekly training summaries with no API key, no account, and no network connection required.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 26
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 26
+      }
+    ],
+    "On-device AI ready": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 68,
+        "startingLine": 31
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 68,
+        "startingLine": 31
+      }
+    ],
+    "Distill can now summarize articles without a network.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 37
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 37
+      }
+    ],
+    "Closet can now categorize items, detect brands, and suggest outfits privately on your device.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 39
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 39
+      }
+    ],
+    "SpendWisely now categorizes transactions and generates insights privately. Your financial data never leaves this iPhone.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 41
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 41
+      }
+    ],
+    "AI for Quick Add and daily insights now runs on your iPhone — no network needed. Photo meal scanning still uses cloud AI by default. To run photos on-device too, download the vision model in Settings → AI Provider → On-Device.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 43
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 43
+      }
+    ],
+    "TrainInsight can now generate your daily readiness advice privately on your iPhone.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 45
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 45
+      }
+    ],
+    "LiftCoach can now suggest workouts, detect plateaus, and write training summaries privately on your device. Your workout data never leaves this iPhone.": [
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 47
+      },
+      {
+        "file": "Sources/CHLocalLLM/AppIdentifier+Strings.swift",
+        "startingColumn": 38,
+        "startingLine": 47
+      }
+    ],
+    "Purchase failed: %@": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 1055
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 1055
+      }
+    ],
+    "Restore failed: %@": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 1073
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 1073
+      }
+    ],
+    "llama3": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 82,
+        "startingLine": 519
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 49,
+        "startingLine": 504
+      }
+    ],
+    "Optional": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 528
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 528
+      }
+    ],
+    "OpenAI-compatible API — Ollama, vLLM, LMStudio, etc.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 538
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 538
+      }
+    ],
+    "Locked — unlock above to use this provider": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 41,
+        "startingLine": 629
+      }
+    ],
+    "On This Device": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 43,
+        "startingLine": 603
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 351
+      }
+    ],
+    "Cloud": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 612
+      }
+    ],
+    "Advanced": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 47,
+        "startingLine": 620
+      }
+    ],
+    "%@ (Locked)": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 51,
+        "startingLine": 641
+      }
+    ],
+    "OpenAI-compatible API": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 77,
+        "startingLine": 875
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 77,
+        "startingLine": 875
+      }
+    ],
+    "%@ · OpenAI-compatible API": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 139,
+        "startingLine": 875
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 139,
+        "startingLine": 875
+      }
+    ],
+    "Apple Intelligence runs on this Mac. It is free, and requests never leave the device.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 664
+      }
+    ],
+    "Runs a downloaded model entirely on this Mac, even offline.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 666
+      }
+    ],
+    "Connect an OpenAI-compatible service that you operate or trust.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 668
+      }
+    ],
+    "Cloud providers use your own API key and bill your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 38,
+        "startingLine": 670
+      }
+    ],
+    "Locked — purchase required": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 728
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 966
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 728
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 966
+      }
+    ],
+    "Private": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 49,
+        "startingLine": 724
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 49,
+        "startingLine": 724
+      }
+    ],
+    "Offline": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 49,
+        "startingLine": 725
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 49,
+        "startingLine": 725
+      }
+    ],
+    "Runs fully offline · No API key": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 86,
+        "startingLine": 732
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 86,
+        "startingLine": 732
+      }
+    ],
+    "Change Model": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 765
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 765
+      }
+    ],
+    "Download a Model": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 775
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 42,
+        "startingLine": 775
+      }
+    ],
+    "Active · Runs offline on this device": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 761
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 48,
+        "startingLine": 761
+      }
+    ],
+    "No model downloaded yet": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 772
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 44,
+        "startingLine": 772
+      }
+    ],
+    "On-Device": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 779
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 779
+      }
+    ],
+    "Needs an API key — add it below": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 37,
+        "startingLine": 829
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 37,
+        "startingLine": 829
+      }
+    ],
+    "Recommended: %@": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 34,
+        "startingLine": 907
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 34,
+        "startingLine": 907
+      }
+    ],
+    "%@ · API key saved": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 39,
+        "startingLine": 897
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 39,
+        "startingLine": 897
+      }
+    ],
+    "%@ · Add API key": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 105,
+        "startingLine": 897
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 105,
+        "startingLine": 897
+      }
+    ],
+    "Connection failed": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 70,
+        "startingLine": 1149
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 70,
+        "startingLine": 1149
+      }
+    ],
+    "Model snapshot for %@ is missing or incomplete. Re-download from Settings → AI Provider.": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 135
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 135
+      }
+    ],
+    "Insufficient memory — close other apps and try again.": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 39,
+        "startingLine": 162
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 39,
+        "startingLine": 286
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 39,
+        "startingLine": 162
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 39,
+        "startingLine": 286
+      }
+    ],
+    "Could not load %@: %@": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 166
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 290
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 166
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 290
+      }
+    ],
+    "On-Device Vision": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 176
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalVLMProvider.swift",
+        "startingColumn": 56,
+        "startingLine": 176
+      }
+    ],
+    "The model was removed from your installed models, but some files could not be deleted.": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelStore.swift",
+        "startingColumn": 55,
+        "startingLine": 685
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelStore.swift",
+        "startingColumn": 55,
+        "startingLine": 685
+      }
+    ],
+    "Purchases restored.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 196
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 196
+      }
+    ],
+    "Your purchase is confirmed. Nothing needed restoring.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 200
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 200
+      }
+    ],
+    "No previous purchase was found for this Apple Account.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 204
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 204
+      }
+    ],
+    "%@ · Unlocked": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 38,
+        "startingLine": 178
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 38,
+        "startingLine": 178
+      }
+    ],
+    "AI providers unlocked": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 180
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 180
+      }
+    ],
+    "All AI providers are available.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 184
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 184
+      }
+    ],
+    "Restore Purchases": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 188
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 188
+      }
+    ],
+    "Checks this Apple Account for previous purchases": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 192
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderOwnershipCard.swift",
+        "startingColumn": 34,
+        "startingLine": 192
+      }
+    ],
+    "Ready to Download": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 41
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 41
+      }
+    ],
+    "Download %@": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 52
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 52
+      }
+    ],
+    "Download stalled": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 46,
+        "startingLine": 72
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 46,
+        "startingLine": 72
+      }
+    ],
+    "Downloading %@": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 103,
+        "startingLine": 72
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 103,
+        "startingLine": 72
+      }
+    ],
+    "No data received in the last 30 seconds. Tap Retry to resume — already-downloaded files are skipped.": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 76
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 76
+      }
+    ],
+    "%@/s": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 101
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 101
+      }
+    ],
+    "%lld%%": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 91
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 91
+      }
+    ],
+    "Retry": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 49,
+        "startingLine": 111
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 46,
+        "startingLine": 669
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 735
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 49,
+        "startingLine": 111
+      }
+    ],
+    "Installing…": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 135
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 135
+      }
+    ],
+    "Moving model to local storage": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 138
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 138
+      }
+    ],
+    "Model Installed": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 150
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 150
+      }
+    ],
+    "%@ is ready for offline use.": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 153
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 153
+      }
+    ],
+    "Download Failed": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 168
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 168
+      }
+    ],
+    "Try Again": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 179
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 179
+      }
+    ],
+    "Download Paused": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 193
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 36,
+        "startingLine": 193
+      }
+    ],
+    "Resume": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 45,
+        "startingLine": 200
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 45,
+        "startingLine": 200
+      }
+    ],
+    "Discard": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 210
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 41,
+        "startingLine": 210
+      }
+    ],
+    "Storage: %@": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 37,
+        "startingLine": 222
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 37,
+        "startingLine": 222
+      }
+    ],
+    "Remove Model": [
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 230
+      },
+      {
+        "file": "Sources/CHLocalLLM/LocalModelDownloadView.swift",
+        "startingColumn": 40,
+        "startingLine": 230
+      }
+    ],
+    "Choose a Model": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 164
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 146
+      }
+    ],
+    "Installed Models": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 43,
+        "startingLine": 110
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 53,
+        "startingLine": 102
+      }
+    ],
+    "Recommended for %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 43,
+        "startingLine": 118
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 53,
+        "startingLine": 111
+      }
+    ],
+    "Available Models": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 43,
+        "startingLine": 126
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 53,
+        "startingLine": 120
+      }
+    ],
+    "Custom Models": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 43,
+        "startingLine": 134
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 53,
+        "startingLine": 130
+      }
+    ],
+    "Add Custom Model": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 52,
+        "startingLine": 150
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 841
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 257
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 48,
+        "startingLine": 863
+      }
+    ],
+    "Add a Hugging Face MLX model": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 52,
+        "startingLine": 152
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 259
+      }
+    ],
+    "Couldn’t refresh the model list. Your saved list and installed models are still available.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 217
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 203
+      }
+    ],
+    "Refreshing checks availability. Model downloads start only when you choose them.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 228
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 36,
+        "startingLine": 214
+      }
+    ],
+    "Checking for model updates…": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 207
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 192
+      }
+    ],
+    "Refresh Models": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 211
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 196
+      }
+    ],
+    "Model action failed": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 45,
+        "startingLine": 222
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 45,
+        "startingLine": 208
+      }
+    ],
+    "This is an image model. Choose a text model for this app.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 302
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 360
+      }
+    ],
+    "Your installed copy isn’t supported by this version of the app. You can remove it to free space.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 38,
+        "startingLine": 304
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 38,
+        "startingLine": 362
+      }
+    ],
+    "Not yet evaluated for %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 358
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 405
+      }
+    ],
+    "Custom model · Not evaluated for %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 518
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 36,
+        "startingLine": 574
+      }
+    ],
+    "No longer offered for download. You can keep using your installed copy.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 528
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 584
+      }
+    ],
+    "No longer offered for download. Its files are still stored on this device.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 529
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 42,
+        "startingLine": 585
+      }
+    ],
+    "No longer listed. You can let this download finish or cancel it.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 532
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 588
+      }
+    ],
+    "A newer version is available, but it cannot run in this app. %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 538
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 594
+      }
+    ],
+    "A newer version is available, but it needs more memory than this device has.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 541
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 597
+      }
+    ],
+    "Update available. Your installed copy is kept until the update finishes.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 544
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 600
+      }
+    ],
+    "Added from Hugging Face": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 57,
+        "startingLine": 386
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 57,
+        "startingLine": 446
+      }
+    ],
+    "Active": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 49,
+        "startingLine": 381
+      }
+    ],
+    "Recommended": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 393
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 453
+      }
+    ],
+    "for %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 399
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 459
+      }
+    ],
+    "Size unknown": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 105,
+        "startingLine": 413
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 105,
+        "startingLine": 475
+      }
+    ],
+    "%lld languages": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 34,
+        "startingLine": 446
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 494
+      }
+    ],
+    "Not supported": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 111,
+        "startingLine": 500
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 39,
+        "startingLine": 503
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 111,
+        "startingLine": 556
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 39,
+        "startingLine": 559
+      }
+    ],
+    "Meets memory estimate": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 83,
+        "startingLine": 501
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 83,
+        "startingLine": 557
+      }
+    ],
+    "May run slowly": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 57,
+        "startingLine": 502
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 57,
+        "startingLine": 558
+      }
+    ],
+    "Update": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 38,
+        "startingLine": 553
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 38,
+        "startingLine": 609
+      }
+    ],
+    "Update %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 55,
+        "startingLine": 557
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 55,
+        "startingLine": 613
+      }
+    ],
+    "Remove %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 51,
+        "startingLine": 569
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 51,
+        "startingLine": 625
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 59,
+        "startingLine": 695
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 55,
+        "startingLine": 708
+      }
+    ],
+    "Remove": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 41,
+        "startingLine": 565
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 41,
+        "startingLine": 621
+      }
+    ],
+    "This model needs more memory than this device has.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 57,
+        "startingLine": 579
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 57,
+        "startingLine": 635
+      }
+    ],
+    "Use": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 45,
+        "startingLine": 588
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 45,
+        "startingLine": 625
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 45,
+        "startingLine": 645
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 49,
+        "startingLine": 685
+      }
+    ],
+    "Installing update…": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 54,
+        "startingLine": 603
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 54,
+        "startingLine": 661
+      }
+    ],
+    "Selected — finishing setup…": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 612
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 40,
+        "startingLine": 670
+      }
+    ],
+    "Installed": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 41,
+        "startingLine": 617
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 41,
+        "startingLine": 676
+      }
+    ],
+    "Delete this model from disk": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 41,
+        "startingLine": 634
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 41,
+        "startingLine": 645
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 41,
+        "startingLine": 707
+      }
+    ],
+    "Stalled — %lld%% complete": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 45,
+        "startingLine": 659
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 45,
+        "startingLine": 725
+      }
+    ],
+    "calculating speed…": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 687
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 754
+      }
+    ],
+    "ETA %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 690
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 757
+      }
+    ],
+    "%llds": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 46,
+        "startingLine": 718
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 785
+      }
+    ],
+    "%lldm %llds": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 53,
+        "startingLine": 721
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 53,
+        "startingLine": 788
+      }
+    ],
+    "In Use": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 699
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 36,
+        "startingLine": 766
+      }
+    ],
+    "Model Name": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 39,
+        "startingLine": 836
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 43,
+        "startingLine": 859
+      }
+    ],
+    "https://huggingface.co/mlx-community/model-name": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 27,
+        "startingLine": 808
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 31,
+        "startingLine": 829
+      }
+    ],
+    "Hugging Face Model Repository": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 40,
+        "startingLine": 817
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 840
+      }
+    ],
+    "Use an MLX-format text model. Custom models aren’t evaluated for this app.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 824
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 48,
+        "startingLine": 847
+      }
+    ],
+    "Repository found · Approx. %@": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 55,
+        "startingLine": 822
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 59,
+        "startingLine": 845
+      }
+    ],
+    "Repository found. Download size unavailable.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 146,
+        "startingLine": 822
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 150,
+        "startingLine": 845
+      }
+    ],
+    "Check Repository": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 71,
+        "startingLine": 830
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 75,
+        "startingLine": 853
+      }
+    ],
+    "Couldn’t read the model’s download size.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 52,
+        "startingLine": 913
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 52,
+        "startingLine": 936
+      }
+    ],
+    "This repository doesn’t contain the files needed for an MLX model.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 48,
+        "startingLine": 906
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 48,
+        "startingLine": 929
+      }
+    ],
+    "This repository isn’t available. Use a public model repository.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 48,
+        "startingLine": 897
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 48,
+        "startingLine": 920
+      }
+    ],
+    "Couldn’t check this repository. Check your connection and try again.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 44,
+        "startingLine": 924
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 947
+      }
+    ],
+    "e.g. My Custom 7B": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 45,
+        "startingLine": 837
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 49,
+        "startingLine": 860
+      }
+    ],
+    "Add and Download": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 848
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 870
+      }
+    ],
+    "%@ is provided under this license. Review its terms before downloading.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 946
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 971
+      }
+    ],
+    "Read License Terms": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 948
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 973
+      }
+    ],
+    "Once downloaded, the model runs on your device.": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 36,
+        "startingLine": 949
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 44,
+        "startingLine": 974
+      }
+    ],
+    "I Accept": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView+macOS.swift",
+        "startingColumn": 42,
+        "startingLine": 955
+      },
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 46,
+        "startingLine": 987
+      }
+    ],
+    "Unlock AI providers": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 217
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 217
+      }
+    ],
+    "Private offline LLMs — no cloud, no rate limits": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 249
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 249
+      }
+    ],
+    "Bring your own keys for cloud providers — you control the cost": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 254
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 254
+      }
+    ],
+    "Processing…": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 229
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 229
+      }
+    ],
+    "Restore": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 225
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 225
+      }
+    ],
+    "Apple Intelligence is included without this unlock": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 221
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 221
+      }
+    ],
+    "Unlock for %@": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 237
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 237
+      }
+    ],
+    "Unlock": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 244
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 244
+      }
+    ],
+    "Loading…": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 233
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift",
+        "startingColumn": 34,
+        "startingLine": 233
+      }
+    ],
+    "Model snapshot for %@ is incomplete (missing config.json). Re-download to fix.": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 236
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 236
+      }
+    ],
+    "Model files for %@ are missing. Re-download from Settings → AI Provider.": [
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 229
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHLocalLLMProvider.swift",
+        "startingColumn": 35,
+        "startingLine": 229
+      }
+    ],
+    "This model has no supported, pinned release manifest. Refresh the model catalog and try again.": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 49,
+        "startingLine": 34
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 49,
+        "startingLine": 34
+      }
+    ],
+    "The model manifest contains an invalid file path: %@.": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 56,
+        "startingLine": 35
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 56,
+        "startingLine": 35
+      }
+    ],
+    "The model download failed (HTTP %lld).": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 62,
+        "startingLine": 36
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 62,
+        "startingLine": 36
+      }
+    ],
+    "The downloaded model file failed verification: %@. Your installed model was kept.": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 63,
+        "startingLine": 37
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 63,
+        "startingLine": 37
+      }
+    ],
+    "The model snapshot is incomplete. Download it again before selecting it.": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 53,
+        "startingLine": 38
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 53,
+        "startingLine": 38
+      }
+    ],
+    "The model did not finish its local compatibility check in time. Your installed model was kept.": [
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 60,
+        "startingLine": 39
+      },
+      {
+        "file": "Sources/CHLocalLLM/OfflineModelInstallation.swift",
+        "startingColumn": 60,
+        "startingLine": 39
+      }
+    ],
+    "Copy": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIChatBubble.swift",
+        "startingColumn": 41,
+        "startingLine": 76
+      },
+      {
+        "file": "Sources/CHLocalLLM/CHAIChatBubble.swift",
+        "startingColumn": 41,
+        "startingLine": 76
+      }
+    ],
+    "Current Provider": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 50,
+        "startingLine": 249
+      }
+    ],
+    "Apple Intelligence and downloaded models keep requests on this device.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 354
+      }
+    ],
+    "Apple Intelligence keeps requests on this device.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 40,
+        "startingLine": 356
+      }
+    ],
+    "Cloud APIs": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 370
+      }
+    ],
+    "Each service uses your own API key and bills your account with that provider. Chat subscriptions such as ChatGPT Plus or Claude Pro do not include API usage.": [
+      {
+        "file": "Sources/CHLocalLLM/CHAISettingsContent.swift",
+        "startingColumn": 36,
+        "startingLine": 377
+      }
+    ],
+    "Model License": [
+      {
+        "file": "Sources/CHLocalLLM/ModelPickerView.swift",
+        "startingColumn": 48,
+        "startingLine": 980
+      }
+    ],
+    "Works fully offline": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 72,
+        "startingLine": 46
+      }
+    ],
+    "No API key or account needed": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 71,
+        "startingLine": 47
+      }
+    ],
+    "Your text never leaves the device": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 73,
+        "startingLine": 48
+      }
+    ],
+    "Metal-accelerated on iPhone 16": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 71,
+        "startingLine": 49
+      }
+    ],
+    "Requires Wi-Fi or cellular. Download once; model persists on device.": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 40,
+        "startingLine": 75
+      }
+    ],
+    "Not Now": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 46,
+        "startingLine": 91
+      }
+    ],
+    "Download Model (%@)": [
+      {
+        "file": "Sources/CHLocalLLM/OnDeviceLLMOnboardingView.swift",
+        "startingColumn": 45,
+        "startingLine": 84
+      }
+    ],
+    "Apple Intelligence requires visionOS 26 or later": [
+      {
+        "file": "Sources/CHSharedKit/CHAIManager.swift",
+        "line": 526
+      }
+    ],
+    "New messages": [
+      {
+        "file": "Sources/CHLocalLLM/CHAIChatScrollView.swift",
+        "line": 13
+      }
+    ],
+    "On-device models require a supported Apple Silicon device.": [
+      {
+        "file": "Sources/CHLocalLLM/CHOfflineModelCatalog.swift",
+        "line": 203
+      }
+    ],
+    "This model requires image-model support.": [
+      {
+        "file": "Sources/CHLocalLLM/CHOfflineModelCatalog.swift",
+        "line": 207
+      }
+    ],
+    "This model is no longer offered for download.": [
+      {
+        "file": "Sources/CHLocalLLM/CHOfflineModelCatalog.swift",
+        "line": 209
+      }
+    ],
+    "Update the app to use this model.": [
+      {
+        "file": "Sources/CHLocalLLM/CHOfflineModelCatalog.swift",
+        "line": 210
+      }
+    ],
+    "This model isn't supported by this version of the app.": [
+      {
+        "file": "Sources/CHLocalLLM/CHOfflineModelCatalog.swift",
+        "line": 212
+      }
+    ]
+  },
+  "invariantKeys": [
+    "",
+    "%@ %@",
+    "%@ —",
+    "%lld%%",
+    "Anthropic Claude",
+    "Apple Intelligence",
+    "OpenAI",
+    "console.anthropic.com",
+    "http://localhost:11434/v1",
+    "https://huggingface.co/mlx-community/model-name",
+    "llama3",
+    "llava",
+    "platform.openai.com",
+    "sk-...",
+    "sk-ant-...",
+    "•",
+    "• %@: %@ → %@",
+    "✗ %@"
+  ]
+}

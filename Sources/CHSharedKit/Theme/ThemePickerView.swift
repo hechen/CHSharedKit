@@ -10,14 +10,15 @@ public struct ThemePickerView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 14)]
-    private let caption: LocalizedStringKey
+    private let caption: LocalizedStringKey?
 
-    /// - Parameter caption: the line above the grid. The default promises
+    /// - Parameter caption: the line above the grid, looked up in the app's
+    ///   own strings. Nil uses the kit's localized default, which promises
     ///   cross-device sync; apps that keep the theme on the device should
     ///   pass their own.
     public init(
         manager: ThemeManager = .shared,
-        caption: LocalizedStringKey = "Pick a palette — it syncs across all your devices and apps."
+        caption: LocalizedStringKey? = nil
     ) {
         self.manager = manager
         self.caption = caption
@@ -26,7 +27,13 @@ public struct ThemePickerView: View {
     public var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(caption)
+                Group {
+                    if let caption {
+                        Text(caption)
+                    } else {
+                        Text(String(localized: "Pick a palette — it syncs across all your devices and apps.", bundle: .module))
+                    }
+                }
                     .font(.subheadline)
                     .foregroundStyle(currentTheme.textSecondary)
                     .padding(.horizontal, 20)
@@ -55,7 +62,7 @@ public struct ThemePickerView: View {
             }
         }
         .background(currentTheme.background.ignoresSafeArea())
-        .navigationTitle("Theme")
+        .navigationTitle(String(localized: "Theme", bundle: .module))
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif

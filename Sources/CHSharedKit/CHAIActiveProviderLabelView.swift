@@ -118,10 +118,10 @@ public struct CHAIActiveProviderLabelView: View {
         let id = manager.effectiveActiveProviderID
         if id == onDeviceProviderID {
             if let name = manager.activeModelDisplayName, !name.isEmpty {
-                return "On-Device AI · \(name)"
+                return String(localized: "On-Device AI · \(name)", bundle: .module)
             }
-            return "On-Device AI"
+            return String(localized: "On-Device AI", bundle: .module)
         }
-        return manager.activeProvider?.displayName ?? "Not Set"
+        return manager.activeProvider?.displayName ?? String(localized: "Not Set", bundle: .module)
     }
 }

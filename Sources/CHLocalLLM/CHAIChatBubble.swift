@@ -73,7 +73,7 @@ public struct CHAIChatBubble<Message: CHAIChatMessage>: View {
             Button {
                 copyContent()
             } label: {
-                Label("Copy", systemImage: "doc.on.doc")
+                Label(String(localized: "Copy", bundle: .module), systemImage: "doc.on.doc")
             }
         }
         .task(id: message.content) {

@@ -160,21 +160,8 @@ public struct CHAIProviderOwnershipCard: View {
 
 // MARK: - Strings
 
-/// 2.16.0: strings for the purchase surfaces added in 2.16.0, keyed off the
-/// same four locales as ``CHAIProviderUnlockBanner`` (en, zh-Hans, zh-Hant,
-/// ja) and following its no-catalog, `Locale`-switch convention.
+/// Package-localized copy for purchase and restore surfaces.
 enum CHAIUnlockStrings {
-    private enum Lang { case en, zhHans, zhHant, ja }
-
-    private static var lang: Lang {
-        let code = Locale.current.language.languageCode?.identifier ?? "en"
-        switch code {
-        case "zh":
-            return Locale.current.language.script?.identifier == "Hant" ? .zhHant : .zhHans
-        case "ja": return .ja
-        default:   return .en
-        }
-    }
 
     /// Mac `.regular` buttons render noticeably smaller than their iOS
     /// counterparts, which is how the old Restore ended up hard to hit.
@@ -188,72 +175,32 @@ enum CHAIUnlockStrings {
 
     static func ownedTitle(productName: String?) -> String {
         if let productName, !productName.isEmpty {
-            switch lang {
-            case .zhHans: return "\(productName) · 已解锁"
-            case .zhHant: return "\(productName) · 已解鎖"
-            case .ja:     return "\(productName) · 購入済み"
-            case .en:     return "\(productName) · Unlocked"
-            }
+            return String(localized: "\(productName) · Unlocked", bundle: .module)
         }
-        switch lang {
-        case .zhHans: return "AI 提供商已解锁"
-        case .zhHant: return "AI 供應商已解鎖"
-        case .ja:     return "AI プロバイダーは解放済み"
-        case .en:     return "AI providers unlocked"
-        }
+        return String(localized: "AI providers unlocked", bundle: .module)
     }
 
     static var ownedSubtitle: String {
-        switch lang {
-        case .zhHans: return "所有 AI 提供商均可使用。"
-        case .zhHant: return "所有 AI 供應商皆可使用。"
-        case .ja:     return "すべての AI プロバイダーを利用できます。"
-        case .en:     return "All AI providers are available."
-        }
+        return String(localized: "All AI providers are available.", bundle: .module)
     }
 
     static var restorePurchases: String {
-        switch lang {
-        case .zhHans: return "恢复购买"
-        case .zhHant: return "恢復購買"
-        case .ja:     return "購入を復元"
-        case .en:     return "Restore Purchases"
-        }
+        return String(localized: "Restore Purchases", bundle: .module)
     }
 
     static var restoreHint: String {
-        switch lang {
-        case .zhHans: return "重新检查此 Apple 账户的购买记录"
-        case .zhHant: return "重新檢查此 Apple 帳號的購買記錄"
-        case .ja:     return "この Apple アカウントの購入を再確認します"
-        case .en:     return "Checks this Apple Account for previous purchases"
-        }
+        return String(localized: "Checks this Apple Account for previous purchases", bundle: .module)
     }
 
     static var restoredMessage: String {
-        switch lang {
-        case .zhHans: return "已恢复购买。"
-        case .zhHant: return "已恢復購買。"
-        case .ja:     return "購入を復元しました。"
-        case .en:     return "Purchases restored."
-        }
+        return String(localized: "Purchases restored.", bundle: .module)
     }
 
     static var confirmedMessage: String {
-        switch lang {
-        case .zhHans: return "购买已确认，无需恢复。"
-        case .zhHant: return "購買已確認，無需恢復。"
-        case .ja:     return "購入を確認しました。復元は不要です。"
-        case .en:     return "Your purchase is confirmed. Nothing needed restoring."
-        }
+        return String(localized: "Your purchase is confirmed. Nothing needed restoring.", bundle: .module)
     }
 
     static var nothingToRestoreMessage: String {
-        switch lang {
-        case .zhHans: return "此 Apple 账户没有可恢复的购买。"
-        case .zhHant: return "此 Apple 帳號沒有可恢復的購買。"
-        case .ja:     return "この Apple アカウントに復元できる購入はありません。"
-        case .en:     return "No previous purchase was found for this Apple Account."
-        }
+        return String(localized: "No previous purchase was found for this Apple Account.", bundle: .module)
     }
 }

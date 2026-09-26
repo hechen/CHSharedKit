@@ -86,20 +86,20 @@ public enum CHAIModelMigration {
         let bodyLines: [String]
         if migrated.count == 1 {
             let m = migrated[0]
-            title = "\(m.provider) model updated"
+            title = String(localized: "\(m.provider) model updated", bundle: .module)
             bodyLines = [
-                "Your previously-selected model (\(m.prev)) was retired. We switched you to \(m.newName).",
+                String(localized: "Your previously-selected model (\(m.prev)) was retired. We switched you to \(m.newName).", bundle: .module),
                 "",
-                "Change anytime in Settings → AI."
+                String(localized: "Change anytime in Settings → AI.", bundle: .module)
             ]
         } else {
-            title = "AI models updated"
-            var lines = ["Some of your AI providers retired the model you had selected:", ""]
+            title = String(localized: "AI models updated", bundle: .module)
+            var lines = [String(localized: "Some of your AI providers retired the model you had selected:", bundle: .module), ""]
             for m in migrated {
-                lines.append("• \(m.provider): \(m.prev) → \(m.newName)")
+                lines.append(String(localized: "• \(m.provider): \(m.prev) → \(m.newName)", bundle: .module))
             }
             lines.append("")
-            lines.append("Change anytime in Settings → AI.")
+            lines.append(String(localized: "Change anytime in Settings → AI.", bundle: .module))
             bodyLines = lines
         }
 
@@ -225,7 +225,7 @@ public struct CHAIModelMigrationAlertModifier: ViewModifier {
                 ),
                 presenting: notice
             ) { _ in
-                Button("OK", role: .cancel) { notice = nil }
+                Button(String(localized: "OK", bundle: .module), role: .cancel) { notice = nil }
             } message: { notice in
                 Text(notice.body)
             }

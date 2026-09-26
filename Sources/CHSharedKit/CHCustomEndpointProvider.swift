@@ -8,7 +8,7 @@ public struct CHCustomEndpointProvider: CHAIProvider, Sendable {
     public static let providerID = "custom"
 
     public var id: String { Self.providerID }
-    public var displayName: String { "Custom Endpoint" }
+    public var displayName: String { String(localized: "Custom Endpoint", bundle: .module) }
     public var supportsVision: Bool { true }
     /// 2.10.0: assume the user-configured endpoint supports text +
     /// vision. Streaming + function-calling vary by backend (vLLM,

@@ -29,15 +29,35 @@ public enum CHAIFeatureProviderResolver {
     /// Returns the provider ID that should handle `featureID`. When
     /// the override is empty, missing, or points at an unregistered
     /// provider, returns the manager's effective provider for this device.
+    ///
+    /// 2.18.0: a locked override (gating active, unlock not owned) also
+    /// falls back to the effective global provider when that one is
+    /// usable and unlocked (a locked global choice has itself already
+    /// resolved to Apple Intelligence when available); otherwise to the
+    /// manager's own fallback for the override. The stored override is
+    /// kept, so it resumes after a restore. With no unlocked provider at all
+    /// the override is returned and dispatch fails with
+    /// ``CHAIError/providerLocked(displayName:)``.
     public static func providerID(for featureID: String) -> String {
-        let key = providerOverrideKey(featureID: featureID)
-        if let override = UserDefaults.standard.string(forKey: key),
-           !override.isEmpty,
-           CHAIManager.shared.provider(id: override) != nil {
-            return override
-        }
         let manager = CHAIManager.shared
-        return manager.effectiveActiveProviderID ?? manager.activeProviderID
+        let global = manager.effectiveActiveProviderID ?? manager.activeProviderID
+        guard let override = storedOverride(for: featureID),
+              manager.provider(id: override) != nil else {
+            return global
+        }
+        guard manager.isLocked(providerID: override) else { return override }
+        if manager.provider(id: global) != nil, !manager.isLocked(providerID: global) {
+            return global
+        }
+        return manager.effectiveProviderID(forStoredChoice: override) ?? override
+    }
+
+    /// The raw per-feature override the user saved, or `nil` when the
+    /// feature follows the global provider. Unlike ``providerID(for:)`` this
+    /// ignores availability and locks, so settings can name the user's pick.
+    public static func storedOverride(for featureID: String) -> String? {
+        let value = UserDefaults.standard.string(forKey: providerOverrideKey(featureID: featureID))
+        return (value?.isEmpty ?? true) ? nil : value
     }
 
     /// Returns the model override for `featureID` against its current
@@ -153,6 +173,12 @@ public enum CHAIFeatureProviderResolver {
 
 extension CHAIManager {
 
+    // 2.18.0: the overloads dispatch to the resolved provider directly.
+    // Before, they temporarily wrote `activeProviderID` (persisted, and
+    // synced by some hosts) across the request's `await`; overlapping
+    // requests could restore each other's temporary value and leave a
+    // fallback provider saved as the user's choice.
+
     /// 2.10.0: send a text request through the per-feature provider
     /// resolution. Equivalent to `send(prompt:systemPrompt:)` when no
     /// override is set for `featureID`.
@@ -161,20 +187,10 @@ extension CHAIManager {
         systemPrompt: String? = nil,
         featureID: String
     ) async throws -> String {
-        let originalProviderID = activeProviderID
-        let resolved = CHAIFeatureProviderResolver.providerID(for: featureID)
-        guard provider(id: resolved) != nil else {
-            // Resolver fell through to active; just delegate.
-            return try await send(prompt: prompt, systemPrompt: systemPrompt)
+        guard let provider = CHAIFeatureProviderResolver.provider(for: featureID) else {
+            throw CHAIError.noProvider
         }
-        // Temporarily flip activeProviderID so the existing send()
-        // logic (cost tracking, error handling, system-prompt composition)
-        // runs against the resolved provider without duplicating the
-        // ~30-line block. Restored in defer to avoid surprising other
-        // callers that read activeProviderID concurrently.
-        activeProviderID = resolved
-        defer { activeProviderID = originalProviderID }
-        return try await send(prompt: prompt, systemPrompt: systemPrompt)
+        return try await send(prompt: prompt, systemPrompt: systemPrompt, to: provider)
     }
 
     /// 2.10.0: stream variant of the per-feature dispatch.
@@ -183,14 +199,10 @@ extension CHAIManager {
         systemPrompt: String? = nil,
         featureID: String
     ) async throws -> AsyncThrowingStream<String, Error> {
-        let originalProviderID = activeProviderID
-        let resolved = CHAIFeatureProviderResolver.providerID(for: featureID)
-        guard provider(id: resolved) != nil else {
-            return try await stream(prompt: prompt, systemPrompt: systemPrompt)
+        guard let provider = CHAIFeatureProviderResolver.provider(for: featureID) else {
+            throw CHAIError.noProvider
         }
-        activeProviderID = resolved
-        defer { activeProviderID = originalProviderID }
-        return try await stream(prompt: prompt, systemPrompt: systemPrompt)
+        return try await stream(prompt: prompt, systemPrompt: systemPrompt, to: provider)
     }
 
     /// 2.10.0: vision variant of the per-feature dispatch. The
@@ -203,13 +215,12 @@ extension CHAIManager {
         imageData: Data,
         featureID: String
     ) async throws -> String {
-        let originalProviderID = activeProviderID
-        let resolved = CHAIFeatureProviderResolver.providerID(for: featureID)
-        guard provider(id: resolved) != nil else {
-            return try await sendWithVision(prompt: prompt, imageData: imageData)
+        guard let provider = CHAIFeatureProviderResolver.provider(for: featureID) else {
+            throw CHAIError.noProvider
         }
-        activeProviderID = resolved
-        defer { activeProviderID = originalProviderID }
-        return try await sendWithVision(prompt: prompt, imageData: imageData)
+        let override = CHAIFeatureProviderResolver.storedOverride(for: featureID)
+        let storedChoice = override.flatMap { self.provider(id: $0) == nil ? nil : $0 } ?? activeProviderID
+        let imageProvider = try visionProvider(for: provider, storedChoice: storedChoice)
+        return try await sendWithVision(prompt: prompt, imageData: imageData, to: imageProvider)
     }
 }

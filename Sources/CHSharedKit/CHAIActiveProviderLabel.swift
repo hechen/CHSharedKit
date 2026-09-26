@@ -68,7 +68,7 @@ public struct CHAIActiveProviderLabel: View {
 
     @StateObject private var manager = CHAIManager.shared
 
-    public init(fallback: String = "None") {
+    public init(fallback: String = CHSharedLocalization.string("None")) {
         self.fallback = fallback
     }
 
@@ -105,7 +105,7 @@ public struct CHAIActiveProviderLabel: View {
     /// For every other provider, the rendered text is simply the
     /// provider's `displayName`.
     @MainActor
-    public static func text(for manager: CHAIManager, fallback: String = "None") -> String {
+    public static func text(for manager: CHAIManager, fallback: String = CHSharedLocalization.string("None")) -> String {
         guard let provider = manager.activeProvider else { return fallback }
         // On-device provider: compose the model suffix from the
         // manager's @Published selection so every observing view
@@ -149,8 +149,8 @@ public struct CHAIActiveProviderRow<Destination: View>: View {
     public let destination: () -> Destination
 
     public init(
-        title: String = "AI Provider",
-        fallback: String = "None",
+        title: String = CHSharedLocalization.string("AI Provider"),
+        fallback: String = CHSharedLocalization.string("None"),
         @ViewBuilder destination: @escaping () -> Destination
     ) {
         self.title = title

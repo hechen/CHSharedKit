@@ -49,7 +49,7 @@ public struct CHAIFeaturesSettingsContent: View {
             Section {
                 let features = CHAIFeatureRegistry.features(for: appName)
                 if features.isEmpty {
-                    Text("This app hasn't registered any AI features yet.")
+                    Text(String(localized: "This app hasn't registered any AI features yet.", bundle: .module))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 } else {
@@ -62,9 +62,9 @@ public struct CHAIFeaturesSettingsContent: View {
                     }
                 }
             } header: {
-                Text("AI-Powered Features")
+                Text(String(localized: "AI-Powered Features", bundle: .module))
             } footer: {
-                Text("Each feature can use its own AI provider. Tap a feature to override the default.")
+                Text(String(localized: "Each feature can use its own AI provider. Tap a feature to override the default.", bundle: .module))
             }
 
             displaySection()
@@ -78,12 +78,12 @@ public struct CHAIFeaturesSettingsContent: View {
                 } label: {
                     CHSettingsRow.value(
                         icon: "sparkles",
-                        title: "Default Provider",
+                        title: String(localized: "Default Provider", bundle: .module),
                         value: CHAIManager.shared.activeProvider?.displayName ?? "None"
                     )
                 }
             } footer: {
-                Text("Used by features without an override.")
+                Text(String(localized: "Used by features without an override.", bundle: .module))
             }
         }
         .task { await modelCatalog.refreshIfNeeded() }
@@ -97,6 +97,9 @@ public struct CHAIFeaturesSettingsContent: View {
 /// row itself, to keep the row tap target unambiguous.
 public struct CHAIFeatureRow: View {
     let feature: CHAIFeature
+    /// 2.18.0: re-render when a purchase, restore or refund changes the
+    /// provider a locked override resolves to.
+    @ObservedObject private var manager = CHAIManager.shared
 
     public init(feature: CHAIFeature) {
         self.feature = feature
@@ -132,8 +135,8 @@ public struct CHAIFeatureRow: View {
         let isOverride = (UserDefaults.standard.string(
             forKey: CHAIFeatureProviderResolver.providerOverrideKey(featureID: feature.id)
         ) ?? "").isEmpty == false
-        let providerName = CHAIManager.shared.provider(id: resolvedID)?.displayName ?? "Unknown"
-        return isOverride ? "Override · \(providerName)" : "Default · \(providerName)"
+        let providerName = CHAIManager.shared.provider(id: resolvedID)?.displayName ?? String(localized: "Unknown", bundle: .module)
+        return isOverride ? String(localized: "Override · \(providerName)", bundle: .module) : String(localized: "Default · \(providerName)", bundle: .module)
     }
 }
 
@@ -147,6 +150,8 @@ public struct CHAIFeatureDetailView: View {
     let feature: CHAIFeature
 
     @State private var refreshTick: Int = 0
+    /// 2.18.0: see ``CHAIFeatureRow``.
+    @ObservedObject private var manager = CHAIManager.shared
 
     public init(feature: CHAIFeature) {
         self.feature = feature
@@ -165,15 +170,15 @@ public struct CHAIFeatureDetailView: View {
 
             // Enabled toggle
             Section {
-                Toggle("Enabled", isOn: enabledBinding)
+                Toggle(String(localized: "Enabled", bundle: .module), isOn: enabledBinding)
             } footer: {
-                Text("When off, this feature won't make AI requests.")
+                Text(String(localized: "When off, this feature won't make AI requests.", bundle: .module))
             }
 
             // Provider override
             Section {
-                Picker("Provider", selection: providerBinding) {
-                    Text("Default (\(CHAIManager.shared.activeProvider?.displayName ?? "None"))")
+                Picker(String(localized: "Provider", bundle: .module), selection: providerBinding) {
+                    Text(String(localized: "Default (\(CHAIManager.shared.activeProvider?.displayName ?? "None"))", bundle: .module))
                         .tag("")
                     let eligible = CHAIFeatureProviderResolver.eligibleProviderIDs(for: feature)
                     ForEach(eligible, id: \.self) { id in
@@ -182,7 +187,7 @@ public struct CHAIFeatureDetailView: View {
                     }
                 }
             } header: {
-                Text("Provider")
+                Text(String(localized: "Provider", bundle: .module))
             } footer: {
                 Text(providerFooter)
             }
@@ -192,16 +197,16 @@ public struct CHAIFeatureDetailView: View {
                let models = modelsForProvider(modelPickerProviderID),
                !models.isEmpty {
                 Section {
-                    Picker("Model", selection: modelBinding(providerID: modelPickerProviderID)) {
-                        Text("Default").tag("")
+                    Picker(String(localized: "Model", bundle: .module), selection: modelBinding(providerID: modelPickerProviderID)) {
+                        Text(String(localized: "Default", bundle: .module)).tag("")
                         ForEach(models, id: \.id) { model in
                             Text(model.name).tag(model.id)
                         }
                     }
                 } header: {
-                    Text("Model")
+                    Text(String(localized: "Model", bundle: .module))
                 } footer: {
-                    Text("Override the model this feature uses on \(CHAIManager.shared.provider(id: modelPickerProviderID)?.displayName ?? modelPickerProviderID).")
+                    Text(String(localized: "Override the model this feature uses on \(CHAIManager.shared.provider(id: modelPickerProviderID)?.displayName ?? modelPickerProviderID).", bundle: .module))
                 }
             }
 
@@ -212,7 +217,7 @@ public struct CHAIFeatureDetailView: View {
                         CHAIFeatureProviderResolver.setProviderOverride(nil, for: feature.id)
                         refreshTick += 1
                     } label: {
-                        Text("Reset to Default Provider")
+                        Text(String(localized: "Reset to Default Provider", bundle: .module))
                     }
                 }
             }
@@ -282,10 +287,15 @@ public struct CHAIFeatureDetailView: View {
     private var providerFooter: String {
         let resolved = CHAIFeatureProviderResolver.providerID(for: feature.id)
         let name = CHAIManager.shared.provider(id: resolved)?.displayName ?? resolved
-        if currentOverrideProviderID == nil {
-            return "Following the default provider (\(name))."
+        // 2.18.0: a locked override runs on its fallback until unlocked.
+        if let override = currentOverrideProviderID,
+           let notice = CHAIManager.shared.lockedFallbackNotice(storedChoice: override, resolvedProviderID: resolved) {
+            return notice
         }
-        return "This feature uses \(name) instead of the default."
+        if currentOverrideProviderID == nil {
+            return String(localized: "Following the default provider (\(name)).", bundle: .module)
+        }
+        return String(localized: "This feature uses \(name) instead of the default.", bundle: .module)
     }
 
     private func modelsForProvider(_ id: String) -> [(id: String, name: String)]? {
@@ -321,9 +331,9 @@ private struct CHAIDefaultProviderLink: View {
         // section visible in case the parent is just embedding the
         // features view alone.
         VStack(alignment: .leading, spacing: 8) {
-            Text("Default Provider")
+            Text(String(localized: "Default Provider", bundle: .module))
                 .font(.headline)
-            Text("Embed `CHAIProviderPickerView(appIdentifier:)` from CHLocalLLM in this NavigationStack to switch the default provider.")
+            Text(String(localized: "Embed `CHAIProviderPickerView(appIdentifier:)` from CHLocalLLM in this NavigationStack to switch the default provider.", bundle: .module))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
