@@ -85,12 +85,17 @@ public final class CHAIRegionPolicy: ObservableObject {
     }
 
     private init() {
+        // Read through the projected storage so the observers do not run:
+        // an override passed as a launch argument (`-ch.ai.storefrontOverride
+        // CHN`, in the argument domain) must not be written back into the
+        // persistent domain, where it would outlive the launch.
         let defaults = UserDefaults.standard
         let stored = defaults.string(forKey: Self.overrideDefaultsKey)
-        storefrontOverride = stored?.isEmpty == false ? stored : nil
-        if defaults.object(forKey: Self.appleIntelligenceOverrideKey) != nil {
-            appleIntelligenceOverride = defaults.bool(forKey: Self.appleIntelligenceOverrideKey)
-        }
+        _storefrontOverride = Published(initialValue: stored?.isEmpty == false ? stored : nil)
+        let appleIntelligence: Bool? = defaults.object(forKey: Self.appleIntelligenceOverrideKey) != nil
+            ? defaults.bool(forKey: Self.appleIntelligenceOverrideKey)
+            : nil
+        _appleIntelligenceOverride = Published(initialValue: appleIntelligence)
         let mode = mode
         Self.currentModeLock.withLock { Self._currentMode = mode }
     }
