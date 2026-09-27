@@ -9,6 +9,10 @@
 // (streamed and not), for strict JSON, and for a short list. A model fails
 // when an answer is empty or carries reasoning, template tokens, or broken
 // JSON. Results go to stdout and `local-model-conformance.json`.
+//
+// Models install under ~/Library/Application Support/CHSharedKit. Do not run
+// the kit's tests at the same time: a store's startup removes staging
+// directories there, including a download in progress.
 
 import Foundation
 import CHSharedKit
