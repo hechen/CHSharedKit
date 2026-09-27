@@ -58,6 +58,12 @@
             "state": "translated",
             "value": ""
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ""
+          }
         }
       },
       "shouldTranslate": false
@@ -115,6 +121,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ %2$@"
@@ -180,6 +192,12 @@
             "state": "translated",
             "value": "%@ API 키"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ API 金鑰"
+          }
         }
       }
     },
@@ -239,6 +257,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@이(가) 잠겨 있습니다. 잠금 해제 전까지 %2$@을(를) 사용합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ 尚未解鎖。解鎖前會使用 %2$@。"
           }
         }
       }
@@ -300,6 +324,12 @@
             "state": "translated",
             "value": "%@ 모델 업데이트됨"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 模型已更新"
+          }
         }
       }
     },
@@ -360,6 +390,12 @@
             "state": "translated",
             "value": "%@는 일회성 구입이 필요합니다. 설정 → AI 제공업체에서 잠금 해제하세요."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 需要單次購買。請打開「設定」→「AI 供應商」解鎖。"
+          }
         }
       }
     },
@@ -416,6 +452,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ —"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ —"
@@ -595,6 +637,18 @@
               }
             }
           }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "已儲存 %lld 份備份"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -765,6 +819,18 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "쓰기 %lld개 폐기됨"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "已捨棄 %lld 次寫入"
                 }
               }
             }
@@ -943,6 +1009,18 @@
               }
             }
           }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld 次請求"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1117,6 +1195,18 @@
               }
             }
           }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld 個 Token"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -1176,6 +1266,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld시간 전"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 小時前"
           }
         }
       }
@@ -1237,6 +1333,12 @@
             "state": "translated",
             "value": "%lld분 전"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 分鐘前"
+          }
         }
       }
     },
@@ -1296,6 +1398,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld초 전"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 秒前"
           }
         }
       }
@@ -1357,6 +1465,12 @@
             "state": "translated",
             "value": "AI 기능"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 功能"
+          }
         }
       }
     },
@@ -1416,6 +1530,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI 제공업체"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 供應商"
           }
         }
       }
@@ -1477,6 +1597,12 @@
             "state": "translated",
             "value": "AI 사용량"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 用量"
+          }
         }
       }
     },
@@ -1536,6 +1662,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI 모델 업데이트됨"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 模型已更新"
           }
         }
       }
@@ -1597,6 +1729,12 @@
             "state": "translated",
             "value": "AI 기반 기능"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 智慧功能"
+          }
         }
       }
     },
@@ -1656,6 +1794,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 金鑰"
           }
         }
       }
@@ -1717,6 +1861,12 @@
             "state": "translated",
             "value": "API 키(선택 사항)"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 金鑰（選填）"
+          }
         }
       }
     },
@@ -1776,6 +1926,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키가 설정되지 않았습니다. 설정 → AI 제공업체에서 키를 추가하세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未設定 API 金鑰。請前往「設定」→「AI 供應商」加入你的金鑰。"
           }
         }
       }
@@ -1837,6 +1993,12 @@
             "state": "translated",
             "value": "현재 제공업체"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前的供應商"
+          }
         }
       }
     },
@@ -1896,6 +2058,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "활동"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "活動"
           }
         }
       }
@@ -1957,6 +2125,12 @@
             "state": "translated",
             "value": "전체 기간"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部期間"
+          }
         }
       }
     },
@@ -2013,6 +2187,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic Claude"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "Anthropic Claude"
@@ -2078,6 +2258,12 @@
             "state": "translated",
             "value": "Apple Intelligence"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence"
+          }
         }
       },
       "shouldTranslate": false
@@ -2139,6 +2325,12 @@
             "state": "translated",
             "value": "Apple Intelligence는 iOS 26 이상이 필요합니다"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence 需要 iOS 26 或以上版本"
+          }
         }
       }
     },
@@ -2198,6 +2390,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple Intelligence는 macOS 26 이상이 필요합니다"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence 需要 macOS 26 或以上版本"
           }
         }
       }
@@ -2259,6 +2457,12 @@
             "state": "translated",
             "value": "Apple Intelligence는 visionOS 26 이상이 필요합니다"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence 需要 visionOS 26 或以上版本"
+          }
         }
       }
     },
@@ -2318,6 +2522,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "각 동기화 구성요소에 로컬 상태를 iCloud에 보내고 대기 중인 업데이트를 가져오도록 요청합니다. 실제 동기화 시점은 Apple 데몬이 결정합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要求每個同步元件將本機狀態推送至 iCloud，並拉取所有待處理的更新。實際何時同步由 Apple 的系統背景程序決定。"
           }
         }
       }
@@ -2379,6 +2589,12 @@
             "state": "translated",
             "value": "자동 백업"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動備份"
+          }
         }
       }
     },
@@ -2438,6 +2654,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "자동 백업이 꺼져 있습니다. 지금 백업으로 직접 실행하세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動備份已關閉。可使用「立即備份」手動備份。"
           }
         }
       }
@@ -2499,6 +2721,12 @@
             "state": "translated",
             "value": "지금 백업"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立即備份"
+          }
         }
       }
     },
@@ -2558,6 +2786,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "매일 처음 앱을 열 때 자동 백업합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天第一次開啟 App 時自動備份。"
           }
         }
       }
@@ -2619,6 +2853,12 @@
             "state": "translated",
             "value": "매월 처음 앱을 열 때 자동 백업합니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每月第一次開啟 App 時自動備份。"
+          }
         }
       }
     },
@@ -2678,6 +2918,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "매주 처음 앱을 열 때 자동 백업합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每週第一次開啟 App 時自動備份。"
           }
         }
       }
@@ -2739,6 +2985,12 @@
             "state": "translated",
             "value": "백업"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份"
+          }
         }
       }
     },
@@ -2798,6 +3050,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업 실패. %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份失敗。%@"
           }
         }
       }
@@ -2859,6 +3117,12 @@
             "state": "translated",
             "value": "백업을 가져왔습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已匯入備份。"
+          }
         }
       }
     },
@@ -2918,6 +3182,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份"
           }
         }
       }
@@ -2979,6 +3249,12 @@
             "state": "translated",
             "value": "백업은 로컬에 저장됩니다. 기기 간 동기화하려면 iCloud Drive를 켜세요."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份儲存在本機。啟用 iCloud 雲碟即可跨裝置同步。"
+          }
         }
       }
     },
@@ -3038,6 +3314,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업은 iCloud Drive에 저장되어 모든 기기에 동기화됩니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份會儲存到 iCloud 雲碟，並在你的所有裝置間同步。"
           }
         }
       }
@@ -3099,6 +3381,12 @@
             "state": "translated",
             "value": "iCloud를 사용할 수 있으면 iCloud Drive → %@ → Backups에, 그렇지 않으면 이 기기에만 백업을 저장합니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud 可用時，備份會儲存在 iCloud 雲碟 → %@ → Backups；否則僅儲存在此裝置上。"
+          }
         }
       }
     },
@@ -3158,6 +3446,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업은 이 기기에 저장됩니다. 기기 간 동기화하려면 설정에서 iCloud Drive를 켜세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "備份儲存在此裝置上。在「設定」中啟用 iCloud 雲碟，即可在你的裝置間同步。"
           }
         }
       }
@@ -3219,6 +3513,12 @@
             "state": "translated",
             "value": "기본 URL"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基礎 URL"
+          }
         }
       }
     },
@@ -3278,6 +3578,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "취소"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
@@ -3339,6 +3645,12 @@
             "state": "translated",
             "value": "설정 → AI에서 언제든 변경할 수 있습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "可隨時在「設定」→「AI」中更改。"
+          }
         }
       }
     },
@@ -3398,6 +3710,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "제공업체 선택"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇供應商"
           }
         }
       }
@@ -3459,6 +3777,12 @@
             "state": "translated",
             "value": "지우기"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除"
+          }
         }
       }
     },
@@ -3518,6 +3842,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "충돌"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "衝突"
           }
         }
       }
@@ -3579,6 +3909,12 @@
             "state": "translated",
             "value": "연결됨"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已連線"
+          }
         }
       }
     },
@@ -3638,6 +3974,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "연결"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "連線"
           }
         }
       }
@@ -3699,6 +4041,12 @@
             "state": "translated",
             "value": "모두 복사"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部拷貝"
+          }
         }
       }
     },
@@ -3758,6 +4106,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI 응답을 분석할 수 없음"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析 AI 回應"
           }
         }
       }
@@ -3819,6 +4173,12 @@
             "state": "translated",
             "value": "사용자 지정 엔드포인트"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂端點"
+          }
         }
       }
     },
@@ -3878,6 +4238,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "매일"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每天"
           }
         }
       }
@@ -3939,6 +4305,12 @@
             "state": "translated",
             "value": "기본값"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設"
+          }
         }
       }
     },
@@ -3998,6 +4370,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "기본값 (%@)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設（%@）"
           }
         }
       }
@@ -4059,6 +4437,12 @@
             "state": "translated",
             "value": "기본 제공업체"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設供應商"
+          }
         }
       }
     },
@@ -4118,6 +4502,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "기본값 · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "預設 · %@"
           }
         }
       }
@@ -4179,6 +4569,12 @@
             "state": "translated",
             "value": "삭제"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刪除"
+          }
         }
       }
     },
@@ -4238,6 +4634,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업을 삭제할까요?"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要刪除備份嗎？"
           }
         }
       }
@@ -4299,6 +4701,12 @@
             "state": "translated",
             "value": "완료"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
+          }
         }
       }
     },
@@ -4358,6 +4766,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "각 기능에 별도 AI 제공업체를 사용할 수 있습니다. 기능을 탭하여 기본값을 변경하세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每項功能都能使用各自的 AI 供應商。點一下功能即可覆寫預設設定。"
           }
         }
       }
@@ -4419,6 +4833,12 @@
             "state": "translated",
             "value": "이 NavigationStack에 CHLocalLLM의 `CHAIProviderPickerView(appIdentifier:)`를 넣어 기본 제공업체를 전환하세요."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此 NavigationStack 中嵌入 CHLocalLLM 的 `CHAIProviderPickerView(appIdentifier:)`，即可切換預設供應商。"
+          }
         }
       }
     },
@@ -4478,6 +4898,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "자동 백업을 켜서 데이터를 자동으로 저장하세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "啟用自動備份，即可自動保存你的資料。"
           }
         }
       }
@@ -4539,6 +4965,12 @@
             "state": "translated",
             "value": "활성화됨"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已啟用"
+          }
         }
       }
     },
@@ -4598,6 +5030,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업 내보내기"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出備份"
           }
         }
       }
@@ -4659,6 +5097,12 @@
             "state": "translated",
             "value": "내보내기 실패. %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯出失敗。%@"
+          }
         }
       }
     },
@@ -4718,6 +5162,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "기본 제공업체(%@)를 사용합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "跟隨預設供應商（%@）。"
           }
         }
       }
@@ -4779,6 +5229,12 @@
             "state": "translated",
             "value": "강제 재동기화"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "強制重新同步"
+          }
         }
       }
     },
@@ -4838,6 +5294,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "무료"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費"
           }
         }
       }
@@ -4899,6 +5361,12 @@
             "state": "translated",
             "value": "주기"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻率"
+          }
         }
       }
     },
@@ -4958,6 +5426,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키 받기"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取得 API 金鑰"
           }
         }
       }
@@ -5019,6 +5493,12 @@
             "state": "translated",
             "value": "API 키 발급:"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取得 API 金鑰："
+          }
         }
       }
     },
@@ -5078,6 +5558,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키 숨기기"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱藏 API 金鑰"
           }
         }
       }
@@ -5139,6 +5625,12 @@
             "state": "translated",
             "value": "이미지 토큰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖片 Token"
+          }
         }
       }
     },
@@ -5199,6 +5691,12 @@
             "state": "translated",
             "value": "백업 가져오기"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入備份"
+          }
         }
       }
     },
@@ -5258,6 +5756,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "가져오기 실패. %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入失敗。%@"
           }
         }
       }
@@ -5433,6 +5937,18 @@
               }
             }
           }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "已匯入 %lld 筆記錄。"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -5492,6 +6008,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "입력:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入："
           }
         }
       }
@@ -5553,6 +6075,12 @@
             "state": "translated",
             "value": "입력 토큰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸入 Token"
+          }
         }
       }
     },
@@ -5612,6 +6140,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키가 잘못되었습니다. 설정에서 키를 확인하세요."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 金鑰無效，請在「設定」中檢查。"
           }
         }
       }
@@ -5787,6 +6321,18 @@
               }
             }
           }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "保留 %lld 份備份"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -5846,6 +6392,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "마지막 백업"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上次備份"
           }
         }
       }
@@ -5907,6 +6459,12 @@
             "state": "translated",
             "value": "iCloud Drive에서 백업 불러오는 중…"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在從 iCloud 雲碟載入備份⋯"
+          }
         }
       }
     },
@@ -5966,6 +6524,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "로그"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "記錄"
           }
         }
       }
@@ -6027,6 +6591,12 @@
             "state": "translated",
             "value": "수동만"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "僅手動"
+          }
         }
       }
     },
@@ -6086,6 +6656,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "모델"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型"
           }
         }
       }
@@ -6147,6 +6723,12 @@
             "state": "translated",
             "value": "모델 가격 참고"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型價格參考"
+          }
         }
       }
     },
@@ -6206,6 +6788,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "매월"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每月"
           }
         }
       }
@@ -6267,6 +6855,12 @@
             "state": "translated",
             "value": "네트워크 오류: %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網路錯誤：%@"
+          }
         }
       }
     },
@@ -6326,6 +6920,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "없음"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "從未"
           }
         }
       }
@@ -6387,6 +6987,12 @@
             "state": "translated",
             "value": "AI 제공업체가 설정되지 않음"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未設定 AI 供應商"
+          }
         }
       }
     },
@@ -6446,6 +7052,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "백업 없음"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "沒有備份"
           }
         }
       }
@@ -6507,6 +7119,12 @@
             "state": "translated",
             "value": "이번 실행에서 아직 동기화 활동이 없습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本次執行期間尚無同步活動。"
+          }
         }
       }
     },
@@ -6566,6 +7184,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "없음"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無"
           }
         }
       }
@@ -6627,6 +7251,12 @@
             "state": "translated",
             "value": "설정되지 않음"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未設定"
+          }
         }
       }
     },
@@ -6686,6 +7316,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "확인"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
           }
         }
       }
@@ -6747,6 +7383,12 @@
             "state": "translated",
             "value": "온디바이스 AI"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裝置端 AI"
+          }
         }
       }
     },
@@ -6806,6 +7448,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "온디바이스 AI · %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裝置端 AI · %@"
           }
         }
       }
@@ -6867,6 +7515,12 @@
             "state": "translated",
             "value": "온디바이스"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裝置端"
+          }
         }
       }
     },
@@ -6926,6 +7580,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 플랫폼은 온디바이스 AI를 지원하지 않습니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此平台不支援裝置端 AI。"
           }
         }
       }
@@ -6987,6 +7647,12 @@
             "state": "translated",
             "value": "온디바이스 · %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "裝置端 · %@"
+          }
         }
       }
     },
@@ -7047,6 +7713,12 @@
             "state": "translated",
             "value": "기기에서 무료로 비공개 실행되며 데이터가 기기 밖으로 나가지 않습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在裝置端執行，免費又私密，資料不會離開你的裝置。"
+          }
         }
       }
     },
@@ -7103,6 +7775,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "OpenAI"
@@ -7168,6 +7846,12 @@
             "state": "translated",
             "value": "OpenAI 호환 API(Ollama, vLLM, LMStudio 등)\nAPI 키는 기기 키체인에 안전하게 저장됩니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "相容 OpenAI 的 API（Ollama、vLLM、LMStudio 等）\nAPI 金鑰會安全地儲存在裝置的鑰匙圈中。"
+          }
         }
       }
     },
@@ -7227,6 +7911,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "출력:"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出："
           }
         }
       }
@@ -7288,6 +7978,12 @@
             "state": "translated",
             "value": "출력 토큰"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "輸出 Token"
+          }
         }
       }
     },
@@ -7347,6 +8043,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 기능이 %@에서 사용하는 모델을 변경합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改此功能在 %@ 上使用的模型。"
           }
         }
       }
@@ -7408,6 +8110,12 @@
             "state": "translated",
             "value": "재정의 · %@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已自訂 · %@"
+          }
         }
       }
     },
@@ -7467,6 +8175,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "개요"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "總覽"
           }
         }
       }
@@ -7528,6 +8242,12 @@
             "state": "translated",
             "value": "API 키 붙여 넣기"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼上 API 金鑰"
+          }
         }
       }
     },
@@ -7587,6 +8307,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "소스별 마지막 쓰기, 외부 업데이트 및 동기화 왕복 기록입니다. 앱을 다시 시작하면 초기화됩니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "各來源的最近寫入、外部更新與同步往返記錄。重新啟動 App 後會重置。"
           }
         }
       }
@@ -7648,6 +8374,12 @@
             "state": "translated",
             "value": "색상을 선택하면 모든 기기와 앱에 동기화됩니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇配色，會同步到你所有的裝置與 App。"
+          }
         }
       }
     },
@@ -7707,6 +8439,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "가격은 100만 토큰 기준입니다. 비전 요청은 이미지 처리에 추가 토큰을 사용합니다. 비용은 추정치이며 실제 청구액과 다를 수 있습니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "價格以每 100 萬個 Token 計。視覺請求處理圖片時會額外使用 Token。費用為估算值，可能與實際帳單不同。"
           }
         }
       }
@@ -7768,6 +8506,12 @@
             "state": "translated",
             "value": "가격"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "價格"
+          }
         }
       }
     },
@@ -7827,6 +8571,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "개인정보 처리방침"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隱私權政策"
           }
         }
       }
@@ -7888,6 +8638,12 @@
             "state": "translated",
             "value": "제공업체"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "供應商"
+          }
         }
       }
     },
@@ -7947,6 +8703,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "가져옴"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已拉取"
           }
         }
       }
@@ -8008,6 +8770,12 @@
             "state": "translated",
             "value": "요청 한도에 도달했습니다. 잠시 후 다시 시도하세요."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請求過於頻繁，請稍後再試。"
+          }
         }
       }
     },
@@ -8067,6 +8835,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "최근 요청"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近的請求"
           }
         }
       }
@@ -8128,6 +8902,12 @@
             "state": "translated",
             "value": "%@ 필요"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 %@"
+          }
         }
       }
     },
@@ -8187,6 +8967,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "재설정"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置"
           }
         }
       }
@@ -8248,6 +9034,12 @@
             "state": "translated",
             "value": "사용량 통계 초기화"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重置用量統計"
+          }
         }
       }
     },
@@ -8307,6 +9099,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "모든 사용량 통계를 초기화할까요?"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要重置所有用量統計嗎？"
           }
         }
       }
@@ -8368,6 +9166,12 @@
             "state": "translated",
             "value": "기본 제공업체로 재설정"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢復為預設供應商"
+          }
         }
       }
     },
@@ -8427,6 +9231,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "재동기화 요청됨"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已要求重新同步"
           }
         }
       }
@@ -8488,6 +9298,12 @@
             "state": "translated",
             "value": "파일 앱에서 보기…"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在「檔案」中顯示⋯"
+          }
         }
       }
     },
@@ -8547,6 +9363,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "일정"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "排程"
           }
         }
       }
@@ -8608,6 +9430,12 @@
             "state": "translated",
             "value": "로그 검색"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜尋記錄"
+          }
         }
       }
     },
@@ -8667,6 +9495,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "API 키 표시"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示 API 金鑰"
           }
         }
       }
@@ -8728,6 +9562,12 @@
             "state": "translated",
             "value": "일부 AI 제공업체에서 선택한 모델이 종료되었습니다:"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部分 AI 供應商已停用你選擇的模型："
+          }
         }
       }
     },
@@ -8787,6 +9627,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "저장 공간"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存空間"
           }
         }
       }
@@ -8848,6 +9694,12 @@
             "state": "translated",
             "value": "동기화 상태"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同步狀態"
+          }
         }
       }
     },
@@ -8907,6 +9759,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "동기화됨"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已同步"
           }
         }
       }
@@ -8968,6 +9826,12 @@
             "state": "translated",
             "value": "테스트"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "測試"
+          }
         }
       }
     },
@@ -9027,6 +9891,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "연결 테스트"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "測試連線"
           }
         }
       }
@@ -9088,6 +9958,12 @@
             "state": "translated",
             "value": "테마"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題"
+          }
         }
       }
     },
@@ -9147,6 +10023,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이번 달"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本月"
           }
         }
       }
@@ -9208,6 +10090,12 @@
             "state": "translated",
             "value": "이 앱에 아직 등록된 AI 기능이 없습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 App 尚未註冊任何 AI 功能。"
+          }
         }
       }
     },
@@ -9267,6 +10155,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 기능은 기본값 대신 %@를 사용합니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此功能使用 %@，而非預設供應商。"
           }
         }
       }
@@ -9328,6 +10222,12 @@
             "state": "translated",
             "value": "파일이 아직 동기화 중이면 잠시 걸릴 수 있습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若檔案仍在同步中，可能需要稍候片刻。"
+          }
         }
       }
     },
@@ -9387,6 +10287,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 제공업체는 비전/이미지 입력을 지원하지 않습니다"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此供應商不支援視覺或圖片輸入"
           }
         }
       }
@@ -9448,6 +10354,12 @@
             "state": "translated",
             "value": "“%@”을(를) 영구 삭제합니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這會永久刪除「%@」。"
+          }
         }
       }
     },
@@ -9507,6 +10419,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "오늘"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今天"
           }
         }
       }
@@ -9568,6 +10486,12 @@
             "state": "translated",
             "value": "토큰 사용량"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 用量"
+          }
         }
       }
     },
@@ -9627,6 +10551,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "총 토큰"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Token 總數"
           }
         }
       }
@@ -9688,6 +10618,12 @@
             "state": "translated",
             "value": "알 수 없음"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知"
+          }
         }
       }
     },
@@ -9747,6 +10683,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "날짜 알 수 없음"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日期不明"
           }
         }
       }
@@ -9808,6 +10750,12 @@
             "state": "translated",
             "value": "별도 설정이 없는 기능에서 사용합니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用於未另行指定供應商的功能。"
+          }
         }
       }
     },
@@ -9867,6 +10815,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "매주"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "每週"
           }
         }
       }
@@ -9928,6 +10882,12 @@
             "state": "translated",
             "value": "끄면 이 기능은 AI 요청을 보내지 않습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "關閉後，此功能不會發出 AI 請求。"
+          }
         }
       }
     },
@@ -9987,6 +10947,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "기록됨"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已寫入"
           }
         }
       }
@@ -10048,6 +11014,12 @@
             "state": "translated",
             "value": "API 키는 기기 키체인에 안전하게 저장됩니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API 金鑰會安全地儲存在裝置的鑰匙圈中。"
+          }
         }
       }
     },
@@ -10107,6 +11079,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "키는 키체인에 저장되며 요청은 %1$@로 직접 전송됩니다. 사용 요금은 %2$@ 계정에 청구됩니다."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰儲存在鑰匙圈中，請求會直接傳送至 %1$@。用量會向你的 %2$@ 帳號計費。"
           }
         }
       }
@@ -10168,6 +11146,12 @@
             "state": "translated",
             "value": "키는 키체인에 저장됩니다. 사용 요금은 %@ 계정에 청구됩니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "金鑰儲存在鑰匙圈中。用量會向你的 %@ 帳號計費。"
+          }
         }
       }
     },
@@ -10228,6 +11212,12 @@
             "state": "translated",
             "value": "이전에 선택한 모델(%1$@)이 종료되어 %2$@로 변경했습니다."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你先前選擇的模型（%1$@）已停用，現已切換為 %2$@。"
+          }
         }
       }
     },
@@ -10284,6 +11274,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "console.anthropic.com"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "console.anthropic.com"
@@ -10349,6 +11345,12 @@
             "state": "translated",
             "value": "http://localhost:11434/v1"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "http://localhost:11434/v1"
+          }
         }
       },
       "shouldTranslate": false
@@ -10410,6 +11412,12 @@
             "state": "translated",
             "value": "방금"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剛剛"
+          }
         }
       }
     },
@@ -10466,6 +11474,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "llava"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "llava"
@@ -10531,6 +11545,12 @@
             "state": "translated",
             "value": "platform.openai.com"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "platform.openai.com"
+          }
         }
       },
       "shouldTranslate": false
@@ -10588,6 +11608,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sk-..."
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "sk-..."
@@ -10653,6 +11679,12 @@
             "state": "translated",
             "value": "sk-ant-..."
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sk-ant-..."
+          }
         }
       },
       "shouldTranslate": false
@@ -10710,6 +11742,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "•"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "•"
@@ -10775,6 +11813,12 @@
             "state": "translated",
             "value": "• %1$@: %2$@ → %3$@"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• %1$@: %2$@ → %3$@"
+          }
         }
       },
       "shouldTranslate": false
@@ -10836,6 +11880,12 @@
             "state": "translated",
             "value": "✓ 연결 성공"
           }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✓ 連線成功"
+          }
         }
       }
     },
@@ -10892,6 +11942,12 @@
           }
         },
         "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✗ %@"
+          }
+        },
+        "zh-Hant": {
           "stringUnit": {
             "state": "translated",
             "value": "✗ %@"
@@ -10956,6 +12012,12 @@
           "stringUnit": {
             "state": "translated",
             "value": "✗ 연결 실패"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✗ 連線失敗"
           }
         }
       }
