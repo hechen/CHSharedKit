@@ -293,6 +293,7 @@ public struct CHAISettingsContent: View {
                     showsDownloadableModels: showsDownloadableModels,
                     isPurchasing: false,
                     pulseTrigger: pulseTrigger,
+                    productName: CHIAPGateRegistry.shared?.unlockProductDisplayName,
                     onPurchase: { Task { await runPurchase() } },
                     onRestore: { Task { await runRestore() } }
                 )
@@ -311,6 +312,7 @@ public struct CHAISettingsContent: View {
                     showsDownloadableModels: showsDownloadableModels,
                     isPurchasing: true,
                     pulseTrigger: pulseTrigger,
+                    productName: CHIAPGateRegistry.shared?.unlockProductDisplayName,
                     onPurchase: {},
                     onRestore: {}
                 )

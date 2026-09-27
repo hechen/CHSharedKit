@@ -22,12 +22,19 @@ public struct CHAIProviderUnlockBanner: View {
     /// brief scale + tint flash on increment.
     public let pulseTrigger: Int
 
+    /// 2.19.11: the app's name for the purchase (CHIAPGate
+    /// `unlockProductDisplayName`, e.g. "Premium AI Providers"). The title
+    /// reads "Unlock <name>" so it matches the product the App Store and the
+    /// ownership card show; nil keeps the generic "Unlock AI providers".
+    public let productName: String?
+
     public init(
         priceLabel: String?,
         lockedProviderNames: [String],
         showsDownloadableModels: Bool = true,
         isPurchasing: Bool,
         pulseTrigger: Int,
+        productName: String? = nil,
         onPurchase: @escaping () -> Void,
         onRestore: @escaping () -> Void
     ) {
@@ -36,6 +43,7 @@ public struct CHAIProviderUnlockBanner: View {
         self.showsDownloadableModels = showsDownloadableModels
         self.isPurchasing = isPurchasing
         self.pulseTrigger = pulseTrigger
+        self.productName = productName
         self.onPurchase = onPurchase
         self.onRestore = onRestore
     }
@@ -59,7 +67,7 @@ public struct CHAIProviderUnlockBanner: View {
                 Image(systemName: "lock.fill")
                     .font(.title3)
                     .foregroundStyle(.indigo)
-                Text(Self.localizedTitle)
+                Text(Self.title(productName: productName))
                     .font(.headline)
                 Spacer()
             }
@@ -215,6 +223,13 @@ public struct CHAIProviderUnlockBanner: View {
 
     static var localizedTitle: String {
         return String(localized: "Unlock AI providers", bundle: .module)
+    }
+
+    static func title(productName: String?) -> String {
+        if let productName, !productName.isEmpty {
+            return String(localized: "Unlock \(productName)", bundle: .module)
+        }
+        return localizedTitle
     }
 
     static var localizedAlwaysFreeCaption: String {
