@@ -369,7 +369,8 @@ public final class LocalModelStore {
             downloadURL: model.downloadURL, sha256: model.sha256, minRAM_GB: model.minRAM_GB,
             license: model.license, quality: model.quality,
             requiresAcknowledgment: model.requiresAcknowledgment, chatTemplate: model.chatTemplate,
-            languages: model.languages, strengths: model.strengths, isCustom: model.isCustom
+            languages: model.languages, strengths: model.strengths, isCustom: model.isCustom,
+            replyLanguages: model.replyLanguages
         )
     }
 

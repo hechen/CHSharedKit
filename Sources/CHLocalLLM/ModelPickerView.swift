@@ -397,13 +397,11 @@ private struct ModelCard: View {
         VStack(alignment: .leading, spacing: 10) {
             headerRow
             chipsRow
-            if !displayModel.strengths.isEmpty {
+            if showsStrengthsRow {
                 strengthsRow
             }
-            if !model.isCustom {
-                Text(displayModel.release == nil
-                     ? String(localized: "Not yet evaluated for \(appIdentifier.displayName)", bundle: .module)
-                     : displayModel.taskHint(for: appIdentifier))
+            if let hint = CHLocalModelPresentation.hint(for: displayModel, app: appIdentifier) {
+                Text(hint)
                     .font(.caption)
                     .foregroundStyle(.indigo)
             }
@@ -478,11 +476,31 @@ private struct ModelCard: View {
         }
     }
 
+    /// 2.19.13: strengths are English prose (shown to English apps only);
+    /// the row still carries the translated language facts.
+    private var showsStrengthsRow: Bool {
+        !CHLocalModelPresentation.strengths(for: displayModel).isEmpty
+            || displayModel.languages.count > 1
+            || CHLocalModelPresentation.speaksAppLanguage(displayModel)
+    }
+
+    private var speaksLanguageChip: some View {
+        Label(String(localized: "Speaks your language", bundle: .module), systemImage: "globe")
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(Color.green.opacity(0.12))
+            .foregroundStyle(.green)
+            .clipShape(Capsule())
+    }
+
     @ViewBuilder
     private var strengthsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(displayModel.strengths, id: \.self) { strength in
+                if CHLocalModelPresentation.speaksAppLanguage(displayModel) {
+                    speaksLanguageChip
+                }
+                ForEach(CHLocalModelPresentation.strengths(for: displayModel), id: \.self) { strength in
                     Text(strength)
                         .font(.caption2)
                         .padding(.horizontal, 7).padding(.vertical, 3)
@@ -512,7 +530,7 @@ private struct ModelCard: View {
             case .highest: return .indigo
             }
         }()
-        Text(displayModel.quality.rawValue)
+        Text(displayModel.quality.localizedName)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(color.opacity(0.15))

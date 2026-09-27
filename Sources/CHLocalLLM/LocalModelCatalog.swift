@@ -74,6 +74,31 @@ public struct LocalModelInfo: Codable, Sendable, Identifiable, Equatable {
     public let isCustom: Bool
     /// Exact downloadable release and catalog policy; nil for legacy/custom entries.
     public let release: LocalModelRelease?
+    /// 2.19.13: BCP 47 languages the model answered in during a recorded
+    /// `local-model-conformance --languages` run (catalog revision 3). Nil
+    /// when not measured; unlike `languages`, not the vendor's claim.
+    public let replyLanguages: [String]?
+
+    /// Whether the model was measured replying in `identifier` (an app
+    /// language such as `zh-Hans`, `pt-BR` or `de`). Chinese scripts must
+    /// match; other languages match on the language code.
+    public func speaksLanguage(_ identifier: String) -> Bool {
+        guard let replyLanguages else { return false }
+        let wanted = Locale.Language(identifier: identifier)
+        return replyLanguages.contains { measured in
+            let language = Locale.Language(identifier: measured)
+            guard language.languageCode == wanted.languageCode else { return false }
+            if wanted.languageCode?.identifier == "zh" {
+                return Self.chineseScript(language) == Self.chineseScript(wanted)
+            }
+            return true
+        }
+    }
+
+    private static func chineseScript(_ language: Locale.Language) -> String {
+        if let script = language.script?.identifier { return script }
+        return ["TW", "HK", "MO"].contains(language.region?.identifier ?? "") ? "Hant" : "Hans"
+    }
 
     public var licenseDisplayName: String { release?.licenseName ?? license.rawValue }
 
@@ -105,6 +130,16 @@ public struct LocalModelInfo: Codable, Sendable, Identifiable, Equatable {
         case balanced = "Balanced"
         case higher = "Higher Quality"
         case highest = "Highest Quality"
+
+        /// 2.19.13: shown in the picker; `rawValue` is the catalog's value.
+        public var localizedName: String {
+            switch self {
+            case .fast: String(localized: "Fast", bundle: .module)
+            case .balanced: String(localized: "Balanced", bundle: .module)
+            case .higher: String(localized: "Higher Quality", bundle: .module)
+            case .highest: String(localized: "Highest Quality", bundle: .module)
+            }
+        }
     }
 
     public enum ChatTemplate: String, Sendable, Codable {
@@ -140,7 +175,8 @@ public struct LocalModelInfo: Codable, Sendable, Identifiable, Equatable {
         languages: [String] = [],
         strengths: [String] = [],
         isCustom: Bool = false,
-        release: LocalModelRelease? = nil
+        release: LocalModelRelease? = nil,
+        replyLanguages: [String]? = nil
     ) {
         self.id = id
         self.displayName = displayName
@@ -158,6 +194,7 @@ public struct LocalModelInfo: Codable, Sendable, Identifiable, Equatable {
         self.strengths = strengths
         self.isCustom = isCustom
         self.release = release
+        self.replyLanguages = replyLanguages
     }
 
     // MARK: Per-app recommendation score (higher = better fit)

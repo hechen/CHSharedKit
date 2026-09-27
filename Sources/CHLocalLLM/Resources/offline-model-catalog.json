@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "revision": 2,
+  "revision": 3,
   "models": [
     {
       "chatTemplate": "chatML",
-      "description": "Alibaba Qwen 2.5 0.5B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Alibaba Qwen 2.5 · 0.5B · 4-bit",
       "displayName": "Qwen 2.5 0.5B",
       "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-0.5B-Instruct-4bit",
       "id": "qwen2.5-0.5b-q4km",
@@ -22,9 +22,8 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 287926944,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Fastest",
+        "Smallest download"
       ],
       "release": {
         "repoID": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
@@ -78,40 +77,50 @@
         "recommendations": {
           "closet": {
             "score": 5,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Quick item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 3,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Quick article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 4,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Quick meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 4,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "Quick workout summaries and short coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 5,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Quick transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 3,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Quick training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "ar",
+        "de",
+        "es",
+        "ja",
+        "pt-BR",
+        "zh-Hans",
+        "zh-Hant"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "Alibaba Qwen 2.5 1.5B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Alibaba Qwen 2.5 · 1.5B · 4-bit",
       "displayName": "Qwen 2.5 1.5B",
       "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-1.5B-Instruct-4bit",
       "id": "qwen2.5-1.5b-q4km",
@@ -130,9 +139,9 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 878497944,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Fast",
+        "Small download",
+        "Multilingual"
       ],
       "release": {
         "repoID": "mlx-community/Qwen2.5-1.5B-Instruct-4bit",
@@ -186,40 +195,53 @@
         "recommendations": {
           "closet": {
             "score": 10,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Quick item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 5,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Quick article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 8,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Quick meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 6,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "Quick workout summaries and short coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 10,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Quick transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 6,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Quick training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "zh-Hans",
+        "zh-Hant",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "es",
+        "pt-BR",
+        "ru",
+        "ar"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "Qwen 2.5 3B Instruct · MLX 4-bit · Retired from new downloads; Qwen Research license",
+      "description": "Alibaba Qwen 2.5 · 3B · 4-bit · no longer offered",
       "displayName": "Qwen 2.5 3B",
       "downloadURL": "https://huggingface.co/mlx-community/Qwen2.5-3B-Instruct-4bit",
       "id": "qwen2.5-3b-q4km",
@@ -239,8 +261,7 @@
       "requiresAcknowledgment": true,
       "sizeBytes": 1746177197,
       "strengths": [
-        "Existing installation metadata",
-        "Separate commercial permission required"
+        "Installed copies keep working"
       ],
       "release": {
         "repoID": "mlx-community/Qwen2.5-3B-Instruct-4bit",
@@ -294,32 +315,32 @@
         "recommendations": {
           "closet": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           },
           "distill": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 0,
-            "reason": "Retired from new downloads; separate commercial permission required.",
+            "reason": "No longer offered for download; installed copies keep working.",
             "verification": "unverified"
           }
         }
@@ -327,7 +348,7 @@
     },
     {
       "chatTemplate": "llama3",
-      "description": "Meta Llama 3.2 1B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Meta Llama 3.2 · 1B · 4-bit",
       "displayName": "Llama 3.2 1B",
       "downloadURL": "https://huggingface.co/mlx-community/Llama-3.2-1B-Instruct-4bit",
       "id": "llama3.2-1b-q4km",
@@ -346,9 +367,8 @@
       "requiresAcknowledgment": true,
       "sizeBytes": 712575975,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Fast",
+        "Small download"
       ],
       "release": {
         "repoID": "mlx-community/Llama-3.2-1B-Instruct-4bit",
@@ -392,40 +412,52 @@
         "recommendations": {
           "closet": {
             "score": 4,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Quick item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 4,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Quick article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 4,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Quick meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 4,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "Quick workout summaries and short coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 4,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Quick transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 5,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Quick training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "pt-BR",
+        "ru",
+        "zh-Hans",
+        "zh-Hant"
+      ]
     },
     {
       "chatTemplate": "llama3",
-      "description": "Meta Llama 3.2 3B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Meta Llama 3.2 · 3B · 4-bit",
       "displayName": "Llama 3.2 3B",
       "downloadURL": "https://huggingface.co/mlx-community/Llama-3.2-3B-Instruct-4bit",
       "id": "llama3.2-3b-q4km",
@@ -446,9 +478,8 @@
       "requiresAcknowledgment": true,
       "sizeBytes": 1824807894,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "More detailed answers",
+        "Larger download"
       ],
       "release": {
         "repoID": "mlx-community/Llama-3.2-3B-Instruct-4bit",
@@ -492,40 +523,52 @@
         "recommendations": {
           "closet": {
             "score": 8,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "More detailed item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 7,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "More detailed article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 9,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "More detailed meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 9,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "More detailed workout summaries and coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 7,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "More detailed spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 7,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "More detailed training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt-BR",
+        "ru",
+        "zh-Hans",
+        "zh-Hant"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "Microsoft Phi-3 Mini 4k Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Microsoft Phi-3 Mini · 3.8B · 4-bit",
       "displayName": "Phi-3 Mini",
       "downloadURL": "https://huggingface.co/mlx-community/Phi-3-mini-4k-instruct-4bit",
       "id": "phi3-mini-4k-q4",
@@ -540,9 +583,9 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 2151578230,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Accurate with numbers",
+        "Strong reasoning",
+        "Larger download"
       ],
       "release": {
         "repoID": "mlx-community/Phi-3-mini-4k-instruct-4bit",
@@ -586,40 +629,54 @@
         "recommendations": {
           "closet": {
             "score": 7,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "More detailed item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 9,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "More detailed article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 8,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "More detailed meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 8,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
-            "verification": "unverified"
+            "reason": "More detailed workout summaries and coaching answers.",
+            "verification": "passed",
+            "evidence": "local-model-conformance, CHSharedKit 2.19.12, Apple Silicon Mac, 2026-09-27: clean coaching answers (plain and streamed) that read the week's volume against the 4-week average correctly, strict JSON, and replies in the tested languages listed in replyLanguages."
           },
           "spendwisely": {
             "score": 8,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "More detailed spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 9,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "More detailed training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "zh-Hans",
+        "zh-Hant",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "es",
+        "pt-BR",
+        "ru",
+        "ar"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "Microsoft Phi-3.5 Mini Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Microsoft Phi-3.5 Mini · 3.8B · 4-bit",
       "displayName": "Phi-3.5 Mini",
       "downloadURL": "https://huggingface.co/mlx-community/Phi-3.5-mini-instruct-4bit",
       "id": "phi3.5-mini-q4km",
@@ -634,9 +691,9 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 2152081350,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Accurate with numbers",
+        "Strong reasoning",
+        "Larger download"
       ],
       "release": {
         "repoID": "mlx-community/Phi-3.5-mini-instruct-4bit",
@@ -690,40 +747,53 @@
         "recommendations": {
           "closet": {
             "score": 11,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "More detailed item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 11,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "More detailed article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 11,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "More detailed meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 11,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
-            "verification": "unverified"
+            "reason": "More detailed workout summaries and coaching answers.",
+            "verification": "passed",
+            "evidence": "local-model-conformance, CHSharedKit 2.19.12, Apple Silicon Mac, 2026-09-27: clean coaching answers (plain and streamed) that read the week's volume against the 4-week average correctly, strict JSON, and replies in the tested languages listed in replyLanguages."
           },
           "spendwisely": {
             "score": 11,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "More detailed spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 11,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "More detailed training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ko",
+        "pt-BR",
+        "ru",
+        "zh-Hans",
+        "zh-Hant"
+      ]
     },
     {
       "chatTemplate": "gemma",
-      "description": "Google Gemma 2 2B Instruct · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "Google Gemma 2 · 2B · 4-bit",
       "displayName": "Gemma 2 2B",
       "downloadURL": "https://huggingface.co/mlx-community/gemma-2-2b-it-4bit",
       "id": "gemma2-2b-q4km",
@@ -738,9 +808,8 @@
       "requiresAcknowledgment": true,
       "sizeBytes": 1492850373,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Friendly tone",
+        "Mid-size download"
       ],
       "release": {
         "repoID": "mlx-community/gemma-2-2b-it-4bit",
@@ -789,40 +858,52 @@
         "recommendations": {
           "closet": {
             "score": 8,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 6,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 7,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 7,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "Workout summaries and coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 6,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 7,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ja",
+        "ko",
+        "pt-BR",
+        "ru",
+        "zh-Hans"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "DeepSeek-R1 Distill Qwen 1.5B · MLX 4-bit · Text model candidate; app inference unverified",
+      "description": "DeepSeek-R1 Distill · 1.5B · 4-bit",
       "displayName": "DeepSeek-R1 1.5B",
       "downloadURL": "https://huggingface.co/mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
       "id": "deepseek-r1-1.5b-q4km",
@@ -838,9 +919,8 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 1011384346,
       "strengths": [
-        "Text generation candidate",
-        "MLX 4-bit",
-        "App inference unverified"
+        "Thinks before answering",
+        "Small download"
       ],
       "release": {
         "repoID": "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
@@ -884,40 +964,52 @@
         "recommendations": {
           "closet": {
             "score": 5,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 9,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 8,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 7,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
+            "reason": "Workout summaries and coaching answers.",
             "verification": "unverified"
           },
           "spendwisely": {
             "score": 9,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 9,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "ar",
+        "de",
+        "es",
+        "fr",
+        "ko",
+        "pt-BR",
+        "ru",
+        "zh-Hans",
+        "zh-Hant"
+      ]
     },
     {
       "chatTemplate": "chatML",
-      "description": "Alibaba Qwen3 1.7B · MLX 4-bit · Fast, multilingual, thinking mode off by default",
+      "description": "Alibaba Qwen3 · 1.7B · 4-bit",
       "displayName": "Qwen3 1.7B",
       "downloadURL": "https://huggingface.co/mlx-community/Qwen3-1.7B-4bit",
       "id": "qwen3-1.7b-q4",
@@ -940,9 +1032,9 @@
       "requiresAcknowledgment": false,
       "sizeBytes": 984013244,
       "strengths": [
-        "Newer than Qwen 2.5",
-        "119 languages",
-        "MLX 4-bit"
+        "Multilingual",
+        "Fast",
+        "Accurate with numbers"
       ],
       "release": {
         "repoID": "mlx-community/Qwen3-1.7B-4bit",
@@ -1001,36 +1093,50 @@
         "recommendations": {
           "closet": {
             "score": 14,
-            "reason": "Candidate for item descriptions and outfit suggestions; app inference and quality are unverified.",
+            "reason": "Item descriptions and outfit ideas.",
             "verification": "unverified"
           },
           "distill": {
             "score": 8,
-            "reason": "Candidate for article summaries; app inference and quality are unverified.",
+            "reason": "Article summaries.",
             "verification": "unverified"
           },
           "eatwisely": {
             "score": 12,
-            "reason": "Candidate for text meal summaries; app inference and quality are unverified.",
+            "reason": "Meal summaries.",
             "verification": "unverified"
           },
           "liftcoach": {
             "score": 9,
-            "reason": "Candidate for workout text and coaching; loading, generation quality, and device memory use are unverified.",
-            "verification": "unverified"
+            "reason": "Workout summaries and coaching answers.",
+            "verification": "passed",
+            "evidence": "local-model-conformance, CHSharedKit 2.19.12, Apple Silicon Mac, 2026-09-27: clean coaching answers (plain and streamed) that read the week's volume against the 4-week average correctly, strict JSON, and replies in the tested languages listed in replyLanguages."
           },
           "spendwisely": {
             "score": 14,
-            "reason": "Candidate for transaction categorization and spending summaries; app inference and quality are unverified.",
+            "reason": "Transaction categories and spending summaries.",
             "verification": "unverified"
           },
           "traininsight": {
             "score": 9,
-            "reason": "Candidate for training summaries; app inference and quality are unverified.",
+            "reason": "Training summaries.",
             "verification": "unverified"
           }
         }
-      }
+      },
+      "replyLanguages": [
+        "en",
+        "zh-Hans",
+        "zh-Hant",
+        "ja",
+        "ko",
+        "de",
+        "fr",
+        "es",
+        "pt-BR",
+        "ru",
+        "ar"
+      ]
     }
   ]
 }
