@@ -701,9 +701,19 @@ public struct CHAppleIntelligenceProvider: CHAIProvider, Sendable {
             guard SystemLanguageModel.default.isAvailable else {
                 throw CHAIError.appleIntelligenceUnavailable
             }
-            let session = LanguageModelSession()
-            let fullPrompt = systemPrompt.map { "\($0)\n\n\(prompt)" } ?? prompt
-            let response = try await session.respond(to: fullPrompt)
+            // 2.19.7: the system prompt goes in as the session's
+            // instructions, as the streaming path already does. Pasting it
+            // into the user turn made the on-device model treat an app's
+            // rules and data as conversation, so it ignored the rules and
+            // misread the data (Closet's stylist listed owned items as
+            // "missing"). Instructions are what the model actually obeys.
+            let session: LanguageModelSession = {
+                if let systemPrompt, !systemPrompt.isEmpty {
+                    return LanguageModelSession(instructions: systemPrompt)
+                }
+                return LanguageModelSession()
+            }()
+            let response = try await session.respond(to: prompt)
             return response.content
         }
         #endif
