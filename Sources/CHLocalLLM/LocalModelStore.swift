@@ -441,7 +441,9 @@ public final class LocalModelStore {
             do {
                 try Task.checkCancellation()
                 if model.release != nil {
+                    let throttle = DownloadProgressThrottle()
                     let staged = try await OfflineModelInstaller.stage(model, baseDirectory: baseDirectory, progress: { [weak self] received, total in
+                        guard throttle.admit(isFinal: total > 0 && received >= total) else { return }
                         Task { @MainActor [weak self] in
                             guard let self, self.downloadGeneration == generation else { return }
                             self.applyDownloadProgress(
@@ -469,8 +471,10 @@ public final class LocalModelStore {
                     // Custom repositories use Hub without a verified manifest,
                     // but each download still stages away from working snapshots.
                     let repoID = CHLocalMLXRepoID.from(model.downloadURL)!
+                    let throttle = DownloadProgressThrottle()
                     let progressHandler: @Sendable (Progress) -> Void = { [weak self] progress in
                         let fraction = progress.fractionCompleted
+                        guard throttle.admit(isFinal: fraction >= 1) else { return }
                         Task { @MainActor [weak self] in
                             guard let self, self.downloadGeneration == generation else { return }
                             self.applyDownloadProgress(fraction: fraction, received: Int64(Double(model.sizeBytes) * fraction), total: model.sizeBytes)
@@ -984,5 +988,30 @@ public final class BackgroundDownloadDelegate: NSObject, @unchecked Sendable {
         let stripped = appGroupID.hasPrefix("group.")
             ? String(appGroupID.dropFirst("group.".count)) : appGroupID
         self.sessionIdentifier = "\(stripped).llm-download"
+    }
+}
+
+/// 2.19.9: at most one download-progress hop to the main actor per
+/// `interval`. Since 2.19.8 a model file reports `didWriteData` for every
+/// buffer written, hundreds to thousands of times a second; one main-actor
+/// task per callback re-rendered every view watching the store at that rate
+/// (the picker could not scroll) and the queued tasks grew memory until iOS
+/// killed the app. The final count always passes, so the bar reaches 100%
+/// before installation starts.
+final class DownloadProgressThrottle: @unchecked Sendable {
+    private let lock = NSLock()
+    private let interval: UInt64
+    private var lastAdmitted: UInt64?
+
+    init(interval: TimeInterval = 0.1) {
+        self.interval = UInt64(interval * 1_000_000_000)
+    }
+
+    func admit(isFinal: Bool, now: UInt64 = DispatchTime.now().uptimeNanoseconds) -> Bool {
+        lock.withLock {
+            if !isFinal, let last = lastAdmitted, now &- last < interval { return false }
+            lastAdmitted = now
+            return true
+        }
     }
 }

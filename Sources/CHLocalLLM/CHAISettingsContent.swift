@@ -41,6 +41,7 @@ import CHSharedKit
 /// Use ``CHAISettingsContent`` (this view's body inlined) for that case.
 public struct CHAIProviderPickerView: View {
     public let appIdentifier: AppIdentifier
+    @StateObject private var modelPicker = CHModelPickerPresenter()
 
     public init(appIdentifier: AppIdentifier) {
         self.appIdentifier = appIdentifier
@@ -60,6 +61,14 @@ public struct CHAIProviderPickerView: View {
                 CHAISettingsContent(appIdentifier: appIdentifier)
             }
             #endif
+        }
+        // 2.19.9: the model catalog is presented from the List, not from a
+        // row inside it. List rows are lazy and rebuilt whenever the store
+        // or the provider selection changes, and a sheet attached to one
+        // dismissed and re-presented itself with them.
+        .environment(\.chModelPickerPresenter, modelPicker)
+        .sheet(isPresented: $modelPicker.isPresented) {
+            CHModelPickerSheet(appIdentifier: appIdentifier) { modelPicker.isPresented = false }
         }
         .themedListBackground()
         .themedNavigationBar()
@@ -177,6 +186,9 @@ public struct CHAISettingsContent: View {
     @State private var showingAPIKey = false
     private enum ModelPickerSource { case provider, detail }
     @State private var modelPickerSource: ModelPickerSource?
+    /// Set by ``CHAIProviderPickerView``; nil when this content is embedded
+    /// in another List, which then presents the catalog from its sections.
+    @Environment(\.chModelPickerPresenter) private var hostedModelPicker
 
     // Resolve the singleton only while local models are offered. Its initializer
     // restores installations and cleans staging files, which is unnecessary for
@@ -602,7 +614,10 @@ public struct CHAISettingsContent: View {
                 refreshUnlockState()
             }
             .onChange(of: showsDownloadableModels) { _, isAvailable in
-                if !isAvailable { modelPickerSource = nil }
+                if !isAvailable {
+                    modelPickerSource = nil
+                    hostedModelPicker?.isPresented = false
+                }
             }
             // One provider's test result must not show on the next one's row.
             .onChange(of: selectedProvider) { _, _ in connectionTest = .idle }
@@ -689,7 +704,7 @@ public struct CHAISettingsContent: View {
         // The Mac has no provider row to present from; the detail
         // section below does, so a first-time pick opens its catalog.
         if id == CHLocalLLMProvider.providerID, activeModel == nil {
-            modelPickerSource = .detail
+            presentModelPicker(from: .detail)
         }
     }
 
@@ -738,7 +753,7 @@ public struct CHAISettingsContent: View {
             // just leave it selected — the detail section below exposes
             // "Change Model" which jumps straight to the catalog.
             if activeModel == nil {
-                modelPickerSource = .provider
+                presentModelPicker(from: .provider)
             }
         } label: {
             HStack(spacing: 12) {
@@ -797,7 +812,7 @@ public struct CHAISettingsContent: View {
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Button(String(localized: "Change Model", bundle: .module)) { modelPickerSource = .detail }
+                Button(String(localized: "Change Model", bundle: .module)) { presentModelPicker(from: .detail) }
                     .foregroundStyle(.tint)
             } else if modelStore?.activeDownloadModelID != nil {
                 LocalModelDownloadView()
@@ -807,7 +822,7 @@ public struct CHAISettingsContent: View {
                     Text(String(localized: "No model downloaded yet", bundle: .module))
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
-                Button(String(localized: "Download a Model", bundle: .module)) { modelPickerSource = .detail }
+                Button(String(localized: "Download a Model", bundle: .module)) { presentModelPicker(from: .detail) }
                     .foregroundStyle(.tint)
             }
         } header: {
@@ -821,9 +836,18 @@ public struct CHAISettingsContent: View {
         }
     }
 
+    private func presentModelPicker(from source: ModelPickerSource) {
+        guard showsDownloadableModels else { return }
+        if let hostedModelPicker {
+            hostedModelPicker.isPresented = true
+        } else {
+            modelPickerSource = source
+        }
+    }
+
     private func modelPickerPresentation(from source: ModelPickerSource) -> Binding<Bool> {
         Binding(
-            get: { showsDownloadableModels && modelPickerSource == source },
+            get: { hostedModelPicker == nil && showsDownloadableModels && modelPickerSource == source },
             set: { isPresented in
                 if isPresented && showsDownloadableModels { modelPickerSource = source }
                 else if modelPickerSource == source { modelPickerSource = nil }
@@ -834,13 +858,7 @@ public struct CHAISettingsContent: View {
     @ViewBuilder
     private var modelPickerSheet: some View {
         if showsDownloadableModels {
-            #if os(iOS)
-            NavigationStack {
-                ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
-            }
-            #else
-            ModelPickerView(appIdentifier: appIdentifier) { modelPickerSource = nil }
-            #endif
+            CHModelPickerSheet(appIdentifier: appIdentifier) { modelPickerSource = nil }
         }
     }
 
@@ -1206,6 +1224,44 @@ private extension View {
         buttonStyle(.plain)
         #else
         self
+        #endif
+    }
+}
+
+// MARK: - Model catalog presentation (2.19.9)
+
+/// Whether the on-device model catalog is showing. ``CHAIProviderPickerView``
+/// owns one and presents the catalog from its List; ``CHAISettingsContent``
+/// only asks it to open.
+@MainActor
+final class CHModelPickerPresenter: ObservableObject {
+    @Published var isPresented = false
+}
+
+private struct CHModelPickerPresenterKey: EnvironmentKey {
+    static let defaultValue: CHModelPickerPresenter? = nil
+}
+
+extension EnvironmentValues {
+    var chModelPickerPresenter: CHModelPickerPresenter? {
+        get { self[CHModelPickerPresenterKey.self] }
+        set { self[CHModelPickerPresenterKey.self] = newValue }
+    }
+}
+
+/// The catalog as a sheet: in its own navigation stack on iOS for the title
+/// and Done button, bare on the Mac.
+struct CHModelPickerSheet: View {
+    let appIdentifier: AppIdentifier
+    let onDone: () -> Void
+
+    var body: some View {
+        #if os(iOS)
+        NavigationStack {
+            ModelPickerView(appIdentifier: appIdentifier, onDismiss: onDone)
+        }
+        #else
+        ModelPickerView(appIdentifier: appIdentifier, onDismiss: onDone)
         #endif
     }
 }
