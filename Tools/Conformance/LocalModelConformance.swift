@@ -4,6 +4,7 @@
 //   swift run local-model-conformance              # every active model
 //   swift run local-model-conformance qwen3-1.7b-q4 llama3.2-1b-q4km
 //   swift run local-model-conformance --fresh qwen3-1.7b-q4   # delete, download again
+//   swift run local-model-conformance --languages              # also: reply-language matrix
 //
 // Each model is downloaded through `LocalModelStore` (the same path the apps
 // use, so download progress is checked too), then asked a coaching question
@@ -16,6 +17,7 @@
 // directories there, including a download in progress.
 
 import Foundation
+import NaturalLanguage
 import CHSharedKit
 import CHLocalLLM
 
@@ -48,6 +50,7 @@ struct LocalModelConformance {
     static func main() async {
         let arguments = CommandLine.arguments.dropFirst()
         let fresh = arguments.contains("--fresh")
+        let checkLanguages = arguments.contains("--languages")
         let requested = Set(arguments.filter { !$0.hasPrefix("--") })
         let models = LocalModelCatalog.all.filter { model in
             guard let release = model.release, release.status == "active" else { return false }
@@ -61,6 +64,7 @@ struct LocalModelConformance {
         print("=== Offline model conformance: \(models.count) model(s) ===")
 
         var results: [ModelResult] = []
+        var languageMatrix: [String: [String: Bool]] = [:]
         for model in models {
             print("\n--- \(model.displayName) (\(model.id)) ---")
             if fresh {
@@ -84,6 +88,12 @@ struct LocalModelConformance {
                                     detail: String(format: "%d hops in %.0f s (%.1f/s)", hops, seconds, rate)))
             }
             checks += await run(provider)
+            if checkLanguages {
+                let matrix = await languages(provider)
+                languageMatrix[model.id] = matrix
+                let followed = matrix.filter { $0.value }.keys.sorted()
+                print("  languages followed \(followed.count)/\(matrix.count): \(followed.joined(separator: " "))")
+            }
             let result = ModelResult(id: model.id, modelType: model.release?.modelType ?? "?",
                                      downloadProgressTicks: ticks, checks: checks)
             for check in checks {
@@ -100,6 +110,20 @@ struct LocalModelConformance {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         if let data = try? encoder.encode(results) {
             try? data.write(to: URL(fileURLWithPath: "local-model-conformance.json"))
+        }
+        if checkLanguages {
+            // Informational: which models answer in which language. Apps can
+            // use it to point users at a model that speaks their language.
+            print("\n=== Reply language (question asked in the language, with the reply rule) ===")
+            let codes = languageSamples.map(\.code)
+            print("model".padding(toLength: 24, withPad: " ", startingAt: 0) + codes.map { $0.padding(toLength: 8, withPad: " ", startingAt: 0) }.joined())
+            for id in languageMatrix.keys.sorted() {
+                let row = codes.map { (languageMatrix[id]?[$0] == true ? "yes" : "-").padding(toLength: 8, withPad: " ", startingAt: 0) }
+                print(id.padding(toLength: 24, withPad: " ", startingAt: 0) + row.joined())
+            }
+            if let data = try? encoder.encode(languageMatrix) {
+                try? data.write(to: URL(fileURLWithPath: "local-model-languages.json"))
+            }
         }
         exit(results.allSatisfy(\.passed) ? 0 : 1)
     }
@@ -194,5 +218,48 @@ struct LocalModelConformance {
             return Check(name: name, passed: false, detail: "contains \(leak): \(trimmed.prefix(120))")
         }
         return Check(name: name, passed: true, detail: String(trimmed.prefix(100)).replacingOccurrences(of: "\n", with: " "))
+    }
+
+    // MARK: Reply language
+
+    /// A coaching question in each language, with the language it expects
+    /// back. The rule mirrors what apps add to their system prompts.
+    static let languageSamples: [(code: String, name: String, question: String, expected: [NLLanguage])] = [
+        ("zh-Hans", "Simplified Chinese", "我这周的训练负荷怎么样？", [.simplifiedChinese]),
+        ("zh-Hant", "Traditional Chinese", "我這週的訓練負荷如何？", [.traditionalChinese]),
+        ("ja", "Japanese", "今週のトレーニング負荷はどう？", [.japanese]),
+        ("ko", "Korean", "이번 주 운동 부하는 어때?", [.korean]),
+        ("de", "German", "Wie ist meine Trainingsbelastung diese Woche?", [.german]),
+        ("fr", "French", "Quelle est ma charge d’entraînement cette semaine ?", [.french]),
+        ("es", "Spanish", "¿Cómo va mi carga de entrenamiento esta semana?", [.spanish]),
+        ("pt-BR", "Brazilian Portuguese", "Como está minha carga de treino nesta semana?", [.portuguese]),
+        ("ru", "Russian", "Какая у меня тренировочная нагрузка на этой неделе?", [.russian]),
+        ("ar", "Arabic", "ما مستوى حمل تدريبي هذا الأسبوع؟", [.arabic]),
+    ]
+
+    static func languages(_ provider: CHLocalLLMProvider) async -> [String: Bool] {
+        var matrix: [String: Bool] = [:]
+        for sample in languageSamples {
+            let rule = "Language: write every reply in \(sample.name). If the user writes in another language, reply in that language instead."
+            do {
+                let answer = try await provider.sendMessage(
+                    prompt: "\(context)\n\n\(sample.question)",
+                    systemPrompt: system + "\n\n" + rule
+                )
+                let recognizer = NLLanguageRecognizer()
+                recognizer.processString(answer)
+                let detected = recognizer.dominantLanguage
+                // Traditional vs Simplified Chinese can be close; either
+                // counts as Chinese, the exact script is reported separately.
+                var ok = detected.map { sample.expected.contains($0) } ?? false
+                if !ok, sample.code.hasPrefix("zh"), detected == .simplifiedChinese || detected == .traditionalChinese {
+                    ok = true
+                }
+                matrix[sample.code] = ok
+            } catch {
+                matrix[sample.code] = false
+            }
+        }
+        return matrix
     }
 }

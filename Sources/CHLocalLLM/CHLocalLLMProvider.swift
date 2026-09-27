@@ -320,13 +320,25 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         return nil
     }
 
+    /// 2.19.11: instructions and prompt as this model's template can take
+    /// them. A template without a system role gets the instructions at the
+    /// top of the user turn rather than not at all.
+    static func turn(prompt: String, systemPrompt: String?, template: String?) -> (instructions: String?, prompt: String) {
+        guard let systemPrompt, !systemPrompt.isEmpty,
+              !CHLocalLLMOutputFilter.templateAcceptsSystemRole(template)
+        else { return (systemPrompt, prompt) }
+        return (nil, systemPrompt + "\n\n" + prompt)
+    }
+
     fileprivate func runChat(
         prompt: String, systemPrompt: String?
     ) async throws -> String {
         let container = try await container()
+        let turn = Self.turn(prompt: prompt, systemPrompt: systemPrompt, template: Self.chatTemplate(at: modelURL))
+        let prompt = turn.prompt
         let session = ChatSession(
             container,
-            instructions: systemPrompt,
+            instructions: turn.instructions,
             generateParameters: generateParameters,
             additionalContext: Self.templateContext
         )
@@ -338,9 +350,11 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         prompt: String, systemPrompt: String?
     ) async throws -> AsyncThrowingStream<String, Error> {
         let container = try await container()
+        let turn = Self.turn(prompt: prompt, systemPrompt: systemPrompt, template: Self.chatTemplate(at: modelURL))
+        let prompt = turn.prompt
         let session = ChatSession(
             container,
-            instructions: systemPrompt,
+            instructions: turn.instructions,
             generateParameters: generateParameters,
             additionalContext: Self.templateContext
         )

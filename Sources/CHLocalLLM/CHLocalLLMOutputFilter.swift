@@ -98,6 +98,16 @@ struct CHLocalLLMOutputFilter {
             || compact.contains("<think>\n'}}") || compact.contains("<think>\n\"}}")
     }
 
+    /// 2.19.11: whether a chat template accepts a system message. Gemma's
+    /// raises "System role not supported"; MLX then renders without it, so
+    /// the model never saw its instructions (persona, length, reply
+    /// language). Callers fold the instructions into the user turn instead.
+    static func templateAcceptsSystemRole(_ template: String?) -> Bool {
+        guard let template else { return true }
+        if template.contains("System role not supported") { return false }
+        return template.contains("system")
+    }
+
     // MARK: Streaming core
 
     private mutating func drain(final: Bool) -> String {

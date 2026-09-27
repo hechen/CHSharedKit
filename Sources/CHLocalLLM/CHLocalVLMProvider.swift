@@ -178,9 +178,13 @@ extension CHLocalVLMProvider: CHAIProvider {
 
     public func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
         let container = try await container()
+        let turn = CHLocalLLMProvider.turn(
+            prompt: prompt, systemPrompt: systemPrompt, template: CHLocalLLMProvider.chatTemplate(at: modelURL)
+        )
+        let prompt = turn.prompt
         let session = ChatSession(
             container,
-            instructions: systemPrompt,
+            instructions: turn.instructions,
             generateParameters: generateParameters,
             additionalContext: CHLocalLLMProvider.templateContext
         )
@@ -217,9 +221,13 @@ extension CHLocalVLMProvider: CHAIProvider {
 
     public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
         let container = try await container()
+        let turn = CHLocalLLMProvider.turn(
+            prompt: prompt, systemPrompt: systemPrompt, template: CHLocalLLMProvider.chatTemplate(at: modelURL)
+        )
+        let prompt = turn.prompt
         let session = ChatSession(
             container,
-            instructions: systemPrompt,
+            instructions: turn.instructions,
             generateParameters: generateParameters,
             additionalContext: CHLocalLLMProvider.templateContext
         )

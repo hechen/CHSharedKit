@@ -63,6 +63,21 @@ struct CHLocalLLMOutputFilterTests {
         }
     }
 
+    @Test("Instructions reach models whose template has no system role (Gemma)")
+    func systemRole() {
+        let gemma = "{{ bos_token }}{% if messages[0]['role'] == 'system' %}{{ raise_exception('System role not supported') }}{% endif %}"
+        let chatML = "{% for message in messages %}{{'<|im_start|>' + message['role'] }}{% endfor %}{% if messages[0]['role'] == 'system' %}{% endif %}"
+        #expect(!CHLocalLLMOutputFilter.templateAcceptsSystemRole(gemma))
+        #expect(CHLocalLLMOutputFilter.templateAcceptsSystemRole(chatML))
+        #expect(CHLocalLLMOutputFilter.templateAcceptsSystemRole(nil))
+        let folded = CHLocalLLMProvider.turn(prompt: "How's my week?", systemPrompt: "Reply in German.", template: gemma)
+        #expect(folded.instructions == nil)
+        #expect(folded.prompt == "Reply in German.\n\nHow's my week?")
+        let kept = CHLocalLLMProvider.turn(prompt: "How's my week?", systemPrompt: "Reply in German.", template: chatML)
+        #expect(kept.instructions == "Reply in German.")
+        #expect(kept.prompt == "How's my week?")
+    }
+
     @Test("Chat templates that pre-fill reasoning are recognized")
     func templateDetection() {
         let deepSeek = "{% if add_generation_prompt %}{{'<｜Assistant｜><think>\\n'}}{% endif %}"
