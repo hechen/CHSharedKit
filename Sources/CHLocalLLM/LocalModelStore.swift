@@ -42,6 +42,10 @@ public final class LocalModelStore {
 
     // Published state
     public private(set) var downloadState: ModelDownloadState = .idle
+    /// Main-actor progress updates since the current download started. Lets
+    /// `local-model-conformance` check that progress stays bounded (2.19.9);
+    /// not observed, so counting never redraws anything.
+    @ObservationIgnored public private(set) var progressHopCount = 0
     public private(set) var activeDownloadModelID: String?
     /// ID of the model the user has chosen as active (persisted across launches).
     public private(set) var activeModelID: String?
@@ -428,6 +432,7 @@ public final class LocalModelStore {
         activeDownloadModelID = model.id
         activeDownloadModel = model
         downloadState = .downloading(progress: 0, bytesReceived: 0, totalBytes: model.sizeBytes)
+        progressHopCount = 0
         speedRing.removeAll()
         lastTickTime = Date()
         lastTickBytes = 0
@@ -612,6 +617,7 @@ public final class LocalModelStore {
 
     @MainActor
     private func applyDownloadProgress(fraction: Double, received: Int64, total: Int64) {
+        progressHopCount += 1
         // A queued final network callback must not turn runtime validation back
         // into a download after the stage has completed.
         guard case .downloading = downloadState else { return }

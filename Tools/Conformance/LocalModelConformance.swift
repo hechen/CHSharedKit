@@ -3,6 +3,7 @@
 //
 //   swift run local-model-conformance              # every active model
 //   swift run local-model-conformance qwen3-1.7b-q4 llama3.2-1b-q4km
+//   swift run local-model-conformance --fresh qwen3-1.7b-q4   # delete, download again
 //
 // Each model is downloaded through `LocalModelStore` (the same path the apps
 // use, so download progress is checked too), then asked a coaching question
@@ -45,7 +46,9 @@ struct LocalModelConformance {
     """
 
     static func main() async {
-        let requested = Set(CommandLine.arguments.dropFirst())
+        let arguments = CommandLine.arguments.dropFirst()
+        let fresh = arguments.contains("--fresh")
+        let requested = Set(arguments.filter { !$0.hasPrefix("--") })
         let models = LocalModelCatalog.all.filter { model in
             guard let release = model.release, release.status == "active" else { return false }
             return requested.isEmpty || requested.contains(model.id)
@@ -60,13 +63,26 @@ struct LocalModelConformance {
         var results: [ModelResult] = []
         for model in models {
             print("\n--- \(model.displayName) (\(model.id)) ---")
+            if fresh {
+                await MainActor.run { LocalModelStore.shared.deleteModel(model) }
+            }
+            let started = Date()
             let ticks = await ensureInstalled(model)
+            let seconds = Date().timeIntervalSince(started)
+            let hops = await MainActor.run { LocalModelStore.shared.progressHopCount }
             let url = await MainActor.run { LocalModelStore.shared.modelURL(for: model) }
             let provider = CHLocalLLMProvider(modelURL: url, modelInfo: model)
             var checks: [Check] = [
                 Check(name: "download progress", passed: ticks >= 3 || ticks == -1,
                       detail: ticks == -1 ? "already installed" : "\(ticks) progress updates"),
             ]
+            if ticks != -1 {
+                // 2.19.9 bounds main-actor work to ~10 progress hops a second;
+                // 2.19.8 sent one per URLSession callback and froze iPhones.
+                let rate = Double(hops) / max(seconds, 1)
+                checks.append(Check(name: "progress hops bounded", passed: rate <= 15,
+                                    detail: String(format: "%d hops in %.0f s (%.1f/s)", hops, seconds, rate)))
+            }
             checks += await run(provider)
             let result = ModelResult(id: model.id, modelType: model.release?.modelType ?? "?",
                                      downloadProgressTicks: ticks, checks: checks)
