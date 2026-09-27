@@ -153,7 +153,8 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
             let session = ChatSession(
                 container,
                 instructions: nil,
-                generateParameters: GenerateParameters(maxTokens: 8, maxKVSize: 1024, temperature: 0)
+                generateParameters: GenerateParameters(maxTokens: 8, maxKVSize: 1024, temperature: 0),
+                additionalContext: Self.templateContext
             )
             let response = try await session.respond(to: "Reply with OK.")
             try Task.checkCancellation()
@@ -294,6 +295,31 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
 
     // MARK: - Inference
 
+    /// 2.19.8: chat-template variables for every model. Templates with a
+    /// thinking switch (Qwen3) answer directly; the others ignore it.
+    static let templateContext: [String: any Sendable] = ["enable_thinking": false]
+
+    /// 2.19.8: whether this model's template opens a reasoning block the
+    /// reply is expected to close (DeepSeek-R1 distills). Read once from the
+    /// installed tokenizer files (small, and read once per request).
+    private var startsInsideReasoning: Bool {
+        CHLocalLLMOutputFilter.templatePrefillsReasoning(Self.chatTemplate(at: modelURL))
+    }
+
+    static func chatTemplate(at directory: URL) -> String? {
+        let jinja = directory.appendingPathComponent("chat_template.jinja")
+        if let text = try? String(contentsOf: jinja, encoding: .utf8) { return text }
+        guard let data = try? Data(contentsOf: directory.appendingPathComponent("tokenizer_config.json")),
+              let config = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        if let template = config["chat_template"] as? String { return template }
+        // Named templates: [{"name": "default", "template": "..."}].
+        if let named = config["chat_template"] as? [[String: Any]] {
+            return named.compactMap { $0["template"] as? String }.joined(separator: "\n")
+        }
+        return nil
+    }
+
     fileprivate func runChat(
         prompt: String, systemPrompt: String?
     ) async throws -> String {
@@ -301,9 +327,11 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         let session = ChatSession(
             container,
             instructions: systemPrompt,
-            generateParameters: generateParameters
+            generateParameters: generateParameters,
+            additionalContext: Self.templateContext
         )
-        return try await session.respond(to: prompt)
+        let raw = try await session.respond(to: prompt)
+        return CHLocalLLMOutputFilter.clean(raw, startsInsideReasoning: startsInsideReasoning)
     }
 
     fileprivate func runStream(
@@ -313,7 +341,8 @@ public final class CHLocalLLMProvider: @unchecked Sendable {
         let session = ChatSession(
             container,
             instructions: systemPrompt,
-            generateParameters: generateParameters
+            generateParameters: generateParameters,
+            additionalContext: Self.templateContext
         )
         return session.streamResponse(to: prompt)
     }
@@ -448,13 +477,22 @@ extension CHLocalLLMProvider: CHAIProvider {
 
     public func stream(prompt: String, systemPrompt: String?) async throws -> AsyncThrowingStream<String, Error> {
         let upstream = try await runStream(prompt: prompt, systemPrompt: systemPrompt)
+        // 2.19.8: reasoning and turn markers never reach the caller, and an
+        // end-of-turn marker ends the stream (leaving the loop cancels
+        // generation).
+        let startsInsideReasoning = startsInsideReasoning
         return AsyncThrowingStream { continuation in
             let task = Task {
+                var filter = CHLocalLLMOutputFilter(startsInsideReasoning: startsInsideReasoning)
                 do {
                     for try await chunk in upstream {
                         try Task.checkCancellation()
-                        continuation.yield(chunk)
+                        let shown = filter.feed(chunk)
+                        if !shown.isEmpty { continuation.yield(shown) }
+                        if filter.isFinished { break }
                     }
+                    let rest = filter.finish()
+                    if !rest.isEmpty { continuation.yield(rest) }
                     continuation.finish()
                 } catch is CancellationError {
                     continuation.finish(throwing: CancellationError())

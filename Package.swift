@@ -79,6 +79,14 @@ let package = Package(
             name: "mlx-smoke",
             dependencies: ["CHLocalLLM"],
             path: "Tools/SmokeTest"
+        ),
+        // Every active offline catalog model must hand a chat UI a plain
+        // answer: `swift run local-model-conformance [model-id ...]`.
+        // Downloads each model (about 11 GB for the whole catalog).
+        .executableTarget(
+            name: "local-model-conformance",
+            dependencies: ["CHSharedKit", "CHLocalLLM"],
+            path: "Tools/Conformance"
         )
     ]
 )

@@ -181,11 +181,12 @@ extension CHLocalVLMProvider: CHAIProvider {
         let session = ChatSession(
             container,
             instructions: systemPrompt,
-            generateParameters: generateParameters
+            generateParameters: generateParameters,
+            additionalContext: CHLocalLLMProvider.templateContext
         )
         let result = try await session.respond(to: prompt)
         try Task.checkCancellation()
-        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = CHLocalLLMOutputFilter.clean(result)
         if trimmed.isEmpty { throw CHAIError.invalidResponse }
         return trimmed
     }
@@ -197,11 +198,12 @@ extension CHLocalVLMProvider: CHAIProvider {
         let container = try await container()
         let session = ChatSession(
             container,
-            generateParameters: generateParameters
+            generateParameters: generateParameters,
+            additionalContext: CHLocalLLMProvider.templateContext
         )
         let result = try await session.respond(to: prompt, image: .ciImage(ciImage))
         try Task.checkCancellation()
-        let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = CHLocalLLMOutputFilter.clean(result)
         if trimmed.isEmpty { throw CHAIError.invalidResponse }
         return trimmed
     }
@@ -218,16 +220,22 @@ extension CHLocalVLMProvider: CHAIProvider {
         let session = ChatSession(
             container,
             instructions: systemPrompt,
-            generateParameters: generateParameters
+            generateParameters: generateParameters,
+            additionalContext: CHLocalLLMProvider.templateContext
         )
         let upstream = session.streamResponse(to: prompt)
         return AsyncThrowingStream { continuation in
             let task = Task {
+                var filter = CHLocalLLMOutputFilter()
                 do {
                     for try await chunk in upstream {
                         try Task.checkCancellation()
-                        continuation.yield(chunk)
+                        let shown = filter.feed(chunk)
+                        if !shown.isEmpty { continuation.yield(shown) }
+                        if filter.isFinished { break }
                     }
+                    let rest = filter.finish()
+                    if !rest.isEmpty { continuation.yield(rest) }
                     continuation.finish()
                 } catch is CancellationError {
                     continuation.finish(throwing: CancellationError())

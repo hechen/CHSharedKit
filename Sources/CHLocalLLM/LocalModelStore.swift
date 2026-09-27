@@ -166,7 +166,10 @@ public final class LocalModelStore {
     /// while injected defaults avoid reading or migrating the host's selection.
     init(defaults: UserDefaults?) {
         _sharedDefaults = defaults
-        notificationsEnabled = defaults == nil
+        // 2.19.8: no notifications outside an app bundle (command-line
+        // tools such as local-model-conformance), where UserNotifications
+        // raises instead of failing.
+        notificationsEnabled = defaults == nil && Bundle.main.bundleIdentifier != nil
         installations = OfflineModelInstaller.readRegistry(baseDirectory: CHLocalMLXStorage.baseDirectory)
         do {
             try OfflineModelInstaller.cleanAbandonedStaging(baseDirectory: CHLocalMLXStorage.baseDirectory)

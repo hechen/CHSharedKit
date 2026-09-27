@@ -341,9 +341,17 @@ enum OfflineModelInstaller {
         else { throw OfflineModelInstallationError.incompleteSnapshot }
     }
 
+    /// 2.19.8: a download task on a session that owns the delegate. The async
+    /// `URLSession.download(from:delegate:)` never calls `didWriteData` on a
+    /// task delegate, so a model file reported no progress until it had
+    /// finished: the bar sat at the size of the small files already done
+    /// (about 17% for Qwen3 1.7B) and the speed stayed "calculating".
     static func downloadFile(_ url: URL, progress: @escaping @Sendable (Int64) -> Void) async throws -> URL {
-        let delegate = ModelFileDownloadProgress(progress: progress)
-        let (temporary, response) = try await URLSession.shared.download(from: url, delegate: delegate)
+        let delegate = ModelFileDownloadDelegate(progress: progress)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        // The session retains its delegate until invalidated.
+        defer { session.finishTasksAndInvalidate() }
+        let (temporary, response) = try await delegate.download(url, in: session)
         guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
             try? FileManager.default.removeItem(at: temporary)
             throw OfflineModelInstallationError.invalidResponse((response as? HTTPURLResponse)?.statusCode ?? 0)
@@ -359,17 +367,65 @@ enum OfflineModelInstaller {
     }
 }
 
-private final class ModelFileDownloadProgress: NSObject, URLSessionDownloadDelegate, Sendable {
-    let progress: @Sendable (Int64) -> Void
+final class ModelFileDownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    private let progress: @Sendable (Int64) -> Void
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<(URL, URLResponse), Error>?
+    private var downloaded: Result<URL, Error>?
 
     init(progress: @escaping @Sendable (Int64) -> Void) { self.progress = progress }
 
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
+    func download(_ url: URL, in session: URLSession) async throws -> (URL, URLResponse) {
+        let task = session.downloadTask(with: url)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                lock.withLock { self.continuation = continuation }
+                task.resume()
+            }
+        } onCancel: {
+            task.cancel()
+        }
+    }
 
     func urlSession(
         _ session: URLSession, downloadTask: URLSessionDownloadTask,
         didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64
     ) {
         progress(totalBytesWritten)
+    }
+
+    /// The system deletes `location` when this returns, so move it first.
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        let kept = FileManager.default.temporaryDirectory
+            .appendingPathComponent("chlocalllm-\(UUID().uuidString)")
+        let result = Result { try FileManager.default.moveItem(at: location, to: kept); return kept }
+        lock.withLock { downloaded = result }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        let (continuation, downloaded) = lock.withLock { () -> (CheckedContinuation<(URL, URLResponse), Error>?, Result<URL, Error>?) in
+            defer { self.continuation = nil }
+            return (self.continuation, self.downloaded)
+        }
+        guard let continuation else { return }
+        if let error {
+            if case .success(let url) = downloaded { try? FileManager.default.removeItem(at: url) }
+            let cancelled = (error as? URLError)?.code == .cancelled
+            continuation.resume(throwing: cancelled ? CancellationError() : error)
+            return
+        }
+        switch downloaded {
+        case .success(let url):
+            guard let response = task.response else {
+                try? FileManager.default.removeItem(at: url)
+                continuation.resume(throwing: URLError(.badServerResponse))
+                return
+            }
+            continuation.resume(returning: (url, response))
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        case nil:
+            continuation.resume(throwing: URLError(.cannotCreateFile))
+        }
     }
 }
