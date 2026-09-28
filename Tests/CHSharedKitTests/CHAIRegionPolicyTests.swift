@@ -15,6 +15,30 @@ final class CHAIRegionPolicyTests: XCTestCase {
         XCTAssertEqual(CHAIRegionPolicy.mode(storefront: "chn", restricted: ["CHN"], appleIntelligenceAvailable: true), .appleIntelligenceOnly)
     }
 
+    /// 2.19.14: the default covers every storefront where an AI unlock would
+    /// buy nothing (no OpenAI, no Anthropic), not only China mainland. The
+    /// apps' unlock purchases are removed from the same storefronts in App
+    /// Store Connect, so changing this list means changing those too.
+    func testTheDefaultListCoversStorefrontsWithoutAnyCloudProvider() {
+        let restricted = CHAIRegionPolicy.defaultRestrictedStorefronts
+        XCTAssertEqual(restricted, ["CHN", "HKG", "MAC", "RUS", "BLR", "VEN"])
+        for code in restricted {
+            XCTAssertEqual(CHAIRegionPolicy.mode(storefront: code, restricted: restricted, appleIntelligenceAvailable: true),
+                           .appleIntelligenceOnly, code)
+            XCTAssertEqual(CHAIRegionPolicy.mode(storefront: code, restricted: restricted, appleIntelligenceAvailable: false),
+                           .off, code)
+        }
+        // Neighbours that both providers do serve stay open.
+        for code in ["TWN", "SGP", "JPN", "KAZ", "UKR", "COL"] {
+            XCTAssertEqual(CHAIRegionPolicy.mode(storefront: code, restricted: restricted, appleIntelligenceAvailable: false), .full, code)
+        }
+    }
+
+    @MainActor
+    func testTheSharedPolicyStartsFromTheDefaultList() {
+        XCTAssertTrue(CHAIRegionPolicy.shared.restrictedStorefronts.isSuperset(of: CHAIRegionPolicy.defaultRestrictedStorefronts))
+    }
+
     @MainActor
     func testTheProviderFilterOnlyEverRemovesCloudProviders() {
         let policy = CHAIRegionPolicy.shared

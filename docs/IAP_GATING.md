@@ -225,10 +225,30 @@ do {
   exactly like 2.5.x. Setting `gatedProviderIDs` without registering a gate
   is a no-op.
 
+## Where the unlock cannot be sold (2.19.0; list widened in 2.19.14)
+
+`CHAIRegionPolicy` reads the account's App Store storefront
+(`Storefront.current`). In a storefront from
+`CHAIRegionPolicy.defaultRestrictedStorefronts` the picker hides the cloud
+providers and the unlock banner and the app offers Apple Intelligence only
+(`.appleIntelligenceOnly`); where Apple Intelligence is unavailable too, the
+app shows no AI feature (`.off`). The default list is China mainland (App
+Review Guideline 5: no OpenAI references without a mainland permit) plus
+Hong Kong, Macau, Russia, Belarus and Venezuela, where neither OpenAI nor
+Anthropic serves API keys, so an unlock would buy nothing.
+
+Keep App Store Connect in step: remove the unlock product from the same
+territories (`helm-asc inAppPurchase <id> availability update --territory …`)
+so nobody can buy it there before the app update lands. Apps call
+`CHAIRegionPolicy.shared.refresh()` at launch and when they become active.
+Debug builds can rehearse the layouts with the launch arguments
+`-ch.ai.storefrontOverride HKG` and `-ch.ai.appleIntelligenceOverride NO`.
+
 ## What CHSharedKit does NOT do
 
-- Talk to StoreKit. The kit never imports `StoreKit` — every transaction
-  call goes through your `CHIAPGate` conformance. This keeps the kit
+- Sell or verify purchases. Every transaction call goes through your
+  `CHIAPGate` conformance; the kit's only StoreKit use is reading
+  `Storefront.current` for the region policy. This keeps the kit
   product-agnostic (your ASC product IDs, your sandbox vs production
   config, your error reporting) while standardizing the picker UX.
 - Persist unlock state. Your IAPManager owns transaction state via

@@ -22,6 +22,12 @@ import StoreKit
 // not, whatever the device language. When Apple Intelligence later becomes
 // available on a device in a restricted storefront, the mode moves to
 // `.appleIntelligenceOnly` by itself; no app update is needed.
+//
+// 2.19.14: the default list grew from China mainland alone to every
+// storefront where an AI unlock would buy nothing, because neither OpenAI
+// nor Anthropic serves API keys there (`defaultRestrictedStorefronts`). The
+// App Store side is kept in step by removing the unlock purchase from the
+// same storefronts in App Store Connect.
 
 /// Where AI features can be offered on this device, for the App Store
 /// storefront the user's account belongs to.
@@ -36,8 +42,25 @@ public final class CHAIRegionPolicy: ObservableObject {
     }
 
     /// Storefronts (ISO 3166-1 alpha-3, as StoreKit reports them) where
-    /// third-party cloud AI cannot be offered.
-    public var restrictedStorefronts: Set<String> = ["CHN"]
+    /// third-party cloud AI cannot be offered. Starts as
+    /// ``defaultRestrictedStorefronts``; an app may add to it before the
+    /// first `refresh()`.
+    public var restrictedStorefronts: Set<String> = CHAIRegionPolicy.defaultRestrictedStorefronts
+
+    /// Where no cloud provider can be sold, as of 2026-09-27:
+    /// - China mainland (CHN): App Review Guideline 5 does not allow the
+    ///   OpenAI references without a mainland permit, and Apple Intelligence
+    ///   is not offered there either.
+    /// - Hong Kong (HKG), Macau (MAC), Russia (RUS), Belarus (BLR) and
+    ///   Venezuela (VEN): neither OpenAI nor Anthropic serves API keys there
+    ///   (developers.openai.com/api/docs/supported-countries,
+    ///   anthropic.com/supported-countries). Apple Intelligence is available,
+    ///   so these storefronts get `.appleIntelligenceOnly`.
+    /// Recheck the provider lists before changing this; the apps' unlock
+    /// purchases in App Store Connect must exclude the same storefronts.
+    nonisolated public static let defaultRestrictedStorefronts: Set<String> = [
+        "CHN", "HKG", "MAC", "RUS", "BLR", "VEN",
+    ]
 
     /// The filter the app would use without any regional restriction.
     /// Apps that are on-device-only set this to `.onDeviceOnly` before the
