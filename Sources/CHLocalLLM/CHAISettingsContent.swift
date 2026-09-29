@@ -193,6 +193,8 @@ public struct CHAISettingsContent: View {
     /// "Locked — purchase required" wear the banner's accent.
     @Environment(\.chAIAccentColor) private var hostAccent
     private var lockAccent: Color { CHAIProviderUnlockBanner.resolvedAccent(hostAccent) }
+    /// 2.19.17: set when the host sells the unlock on its own screen.
+    @Environment(\.chAIUnlockAction) private var hostUnlock
 
     // Resolve the singleton only while local models are offered. Its initializer
     // restores installations and cleans staging files, which is unnecessary for
@@ -289,7 +291,19 @@ public struct CHAISettingsContent: View {
         // mysterious "tap does nothing" failure.
         // 2.19.4: nothing to unlock where the policy hides cloud providers
         // (a restricted storefront): no banner, no ownership card.
-        if offersCloudProviders, case .locked(let priceLabel) = unlockState {
+        // 2.19.17: a host that sells the unlock itself gets one row that
+        // opens its screen, and no ownership card: that screen shows it.
+        if offersCloudProviders, let hostUnlock {
+            if case .locked = unlockState {
+                Section {
+                    CHAIHostUnlockRow(
+                        productName: CHIAPGateRegistry.shared?.unlockProductDisplayName,
+                        lockedProviderNames: lockedProviderDisplayNames,
+                        action: hostUnlock
+                    )
+                }
+            }
+        } else if offersCloudProviders, case .locked(let priceLabel) = unlockState {
             Section {
                 CHAIProviderUnlockBanner(
                     priceLabel: priceLabel,
@@ -701,7 +715,7 @@ public struct CHAISettingsContent: View {
     private func selectMacProvider(_ id: String) {
         // A locked choice points at the unlock card instead of switching.
         if aiManager.isLocked(providerID: id) {
-            pulseTrigger += 1
+            pointToUnlock()
             return
         }
         if id == CHAppleIntelligenceProvider.providerID,
@@ -740,7 +754,7 @@ public struct CHAISettingsContent: View {
         Button {
             guard showsDownloadableModels else { return }
             if isLocked {
-                pulseTrigger += 1
+                pointToUnlock()
                 #if os(iOS)
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 #endif
@@ -987,7 +1001,7 @@ public struct CHAISettingsContent: View {
         return Button {
             guard available else { return }
             if isLocked {
-                pulseTrigger += 1
+                pointToUnlock()
                 #if os(iOS)
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 #endif
@@ -1050,6 +1064,17 @@ public struct CHAISettingsContent: View {
     }
 
     // MARK: - 2.6.0 IAP gating helpers
+
+    /// A locked provider points at the unlock: the host's purchase screen
+    /// when it sells the unlock itself (2.19.17), otherwise the banner,
+    /// which pulses.
+    private func pointToUnlock() {
+        if let hostUnlock {
+            hostUnlock()
+        } else {
+            pulseTrigger += 1
+        }
+    }
 
     /// Snapshots the registered gate's state and assigns to `unlockState`.
     /// Called on view-appear and whenever the gate publishes a change.

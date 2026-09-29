@@ -324,6 +324,20 @@ As of 2.19.16 the lock and "Locked — purchase required" on locked provider row
 
 LiftCoach and EatWisely can move to 2.19.16 with no code change. Their banner stays indigo, with its label untouched, until they add `.chAIAccentColor(_:)`.
 
+### Selling the unlock on your own screen (2.19.17)
+
+When the purchase covers more than AI, the kit's banner pitches only the AI half and the app ends up with two sales pitches for one product. Closet Pro, for example, also lifts Closet's item limit. Pass the action that opens your purchase screen:
+
+```swift
+@State private var showingPro = false
+
+CHAIProviderPickerView(appIdentifier: .closet)
+    .chAIUnlockAction { [showingPro = $showingPro] in showingPro.wrappedValue = true }
+    .sheet(isPresented: $showingPro) { ClosetProSheet() }
+```
+
+While providers are locked, the picker shows one row in place of the banner: the locked providers, "Included with <unlockProductDisplayName>", and Learn More. Tapping it, or any locked provider, runs the action. Once the unlock is owned the picker shows nothing, because your screen shows the ownership and keeps Restore. Without the modifier the banner and ownership card are unchanged.
+
 ### Locked providers fall back to Apple Intelligence (2.18.0)
 
 When the saved provider is locked (the unlock was never bought, or was refunded or revoked), requests run on Apple Intelligence if it is available, otherwise on another unlocked provider, never on another locked one. `effectiveActiveProviderID`, `activeProvider`, per-feature overrides and `send`/`stream`/`sendWithVision` all follow the same rule. The saved choice and its API key are kept, so a restore or re-purchase resumes the user's provider on the next request. The pickers select the provider in use and explain it ("OpenAI is locked. Apple Intelligence is used until you unlock."); `activeProviderLockedFallbackNotice` exposes that line for custom UI. Registering a gate now also re-renders every view observing `CHAIManager` when the entitlement changes. See [docs/IAP_GATING.md](docs/IAP_GATING.md#runtime-gating).

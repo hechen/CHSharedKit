@@ -144,6 +144,12 @@ struct YourApp: App {
    From 2.19.16 the locked rows' lock icons follow it too, and the Unlock
    label is white or black, whichever reads on that accent in the current
    color scheme.
+7. **Your own purchase screen (2.19.17)** — when the unlock is sold on
+   the host's own screen, pass the action that opens it:
+   `.chAIUnlockAction { showingPro = true }`. The banner becomes one row
+   (locked providers, "Included with <product>", Learn More) that runs the
+   action, locked rows run it too, and there is no ownership card: the
+   host's screen shows ownership and Restore.
 
 ## Runtime gating
 
