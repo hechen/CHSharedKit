@@ -138,6 +138,11 @@ struct YourApp: App {
 5. **Spring animation** on the banner-to-Restore-link collapse after
    purchase succeeds. The Restore link stays in the section footer so users
    on a fresh install can recover their purchase.
+6. **Your accent on the banner (2.19.15)** — the banner is indigo unless
+   the host passes its accent:
+   `CHAIProviderPickerView(appIdentifier:).chAIAccentColor(theme.accent)`.
+   Pick a color that carries white text; the Unlock button is
+   `.borderedProminent`.
 
 ## Runtime gating
 

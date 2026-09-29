@@ -307,6 +307,21 @@ Test Connection now sits in the provider's own section, is disabled when there i
 
 On macOS, `CHAIProviderPickerView` is a grouped `Form` like the rest of Mac Settings, and the provider is chosen from a single Provider pop-up menu. That replaces the iOS-style lists of icon rows, which drew as tinted push buttons on the Mac. The layout on iOS is unchanged, except that a selected cloud provider with no key now says so on its row.
 
+### Unlock banner accent (2.19.15)
+
+The unlock banner at the top of `CHAIProviderPickerView` / `CHAISettingsContent` was always indigo, so in an app with its own accent it was the one off-palette card on the screen. Pass your accent to color its lock icon, bullets, fill, border and Unlock button:
+
+```swift
+@Environment(\.theme) private var theme
+
+CHAIProviderPickerView(appIdentifier: .closet)
+    .chAIAccentColor(theme.accent)
+```
+
+The modifier sets `EnvironmentValues.chAIAccentColor`. SwiftUI does not let a package read the environment's `.tint`, so the host passes the color. Use one that carries white text, because the Unlock button is `.borderedProminent`. Without the modifier the banner stays indigo, so nothing changes for apps that don't adopt it. The ownership card keeps its green, which says the purchase is owned.
+
+LiftCoach and EatWisely can move to 2.19.15 with no code change. Their banner stays indigo until they add `.chAIAccentColor(_:)`.
+
 ### Locked providers fall back to Apple Intelligence (2.18.0)
 
 When the saved provider is locked (the unlock was never bought, or was refunded or revoked), requests run on Apple Intelligence if it is available, otherwise on another unlocked provider, never on another locked one. `effectiveActiveProviderID`, `activeProvider`, per-feature overrides and `send`/`stream`/`sendWithVision` all follow the same rule. The saved choice and its API key are kept, so a restore or re-purchase resumes the user's provider on the next request. The pickers select the provider in use and explain it ("OpenAI is locked. Apple Intelligence is used until you unlock."); `activeProviderLockedFallbackNotice` exposes that line for custom UI. Registering a gate now also re-renders every view observing `CHAIManager` when the entitlement changes. See [docs/IAP_GATING.md](docs/IAP_GATING.md#runtime-gating).
