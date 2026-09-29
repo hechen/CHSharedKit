@@ -63,13 +63,27 @@ struct CHAIHostUnlockTests {
         #expect(host.lowerBound < card.lowerBound)
     }
 
+    @Test("VoiceOver hears which provider rows are locked")
+    func lockedRowsAreAnnounced() throws {
+        let source = try String(
+            contentsOf: sourceURL("Sources/CHLocalLLM/CHAISettingsContent.swift"),
+            encoding: .utf8
+        )
+        let locks = source.components(separatedBy: "Image(systemName: \"lock.fill\")").dropFirst()
+        #expect(!locks.isEmpty)
+        for lock in locks {
+            let modifiers = lock.prefix(while: { $0 != "}" })
+            #expect(modifiers.contains(".accessibilityLabel(String(localized: \"Locked\", bundle: .module))"))
+        }
+    }
+
     @Test("The new strings are translated in every kit language")
     func stringsTranslated() throws {
         let data = try Data(contentsOf: sourceURL("Sources/CHLocalLLM/Resources/Localizable.xcstrings"))
         let catalog = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try #require(catalog["strings"] as? [String: Any])
         let languages = ["en", "de", "es", "fr", "it", "ja", "ko", "pt-BR", "zh-Hans", "zh-Hant"]
-        for key in ["Included with %@", "Requires a purchase", "Learn More"] {
+        for key in ["Included with %@", "Requires a purchase", "Learn More", "Locked"] {
             let entry = try #require(strings[key] as? [String: Any], "\(key) missing")
             let localizations = try #require(entry["localizations"] as? [String: Any])
             for language in languages {

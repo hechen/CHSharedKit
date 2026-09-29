@@ -790,6 +790,9 @@ public struct CHAISettingsContent: View {
                                 .font(.subheadline)
                                 .imageScale(.small)
                                 .foregroundStyle(lockAccent)
+                                // 2.19.17: VoiceOver read a locked row like
+                                // any other; the lock was its only sign.
+                                .accessibilityLabel(String(localized: "Locked", bundle: .module))
                         }
                         badge(String(localized: "Private", bundle: .module), color: .indigo)
                         badge(String(localized: "Offline", bundle: .module), color: .orange)
@@ -1030,6 +1033,9 @@ public struct CHAISettingsContent: View {
                                 .font(.subheadline)
                                 .imageScale(.small)
                                 .foregroundStyle(lockAccent)
+                                // 2.19.17: VoiceOver read a locked row like
+                                // any other; the lock was its only sign.
+                                .accessibilityLabel(String(localized: "Locked", bundle: .module))
                         }
                         if let badge {
                             self.badge(badge, color: badgeColor)
