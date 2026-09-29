@@ -307,7 +307,7 @@ Test Connection now sits in the provider's own section, is disabled when there i
 
 On macOS, `CHAIProviderPickerView` is a grouped `Form` like the rest of Mac Settings, and the provider is chosen from a single Provider pop-up menu. That replaces the iOS-style lists of icon rows, which drew as tinted push buttons on the Mac. The layout on iOS is unchanged, except that a selected cloud provider with no key now says so on its row.
 
-### Unlock banner accent (2.19.15)
+### Unlock banner accent (2.19.15, readable label 2.19.16)
 
 The unlock banner at the top of `CHAIProviderPickerView` / `CHAISettingsContent` was always indigo, so in an app with its own accent it was the one off-palette card on the screen. Pass your accent to color its lock icon, bullets, fill, border and Unlock button:
 
@@ -318,9 +318,11 @@ CHAIProviderPickerView(appIdentifier: .closet)
     .chAIAccentColor(theme.accent)
 ```
 
-The modifier sets `EnvironmentValues.chAIAccentColor`. SwiftUI does not let a package read the environment's `.tint`, so the host passes the color. Use one that carries white text, because the Unlock button is `.borderedProminent`. Without the modifier the banner stays indigo, so nothing changes for apps that don't adopt it. The ownership card keeps its green, which says the purchase is owned.
+The modifier sets `EnvironmentValues.chAIAccentColor`. SwiftUI does not let a package read the environment's `.tint`, so the host passes the color. Without the modifier the banner stays indigo, so nothing changes for apps that don't adopt it. The ownership card keeps its green, which says the purchase is owned.
 
-LiftCoach and EatWisely can move to 2.19.15 with no code change. Their banner stays indigo until they add `.chAIAccentColor(_:)`.
+As of 2.19.16 the lock and "Locked — purchase required" on locked provider rows take the same accent, and the Unlock button's label on a host accent is white or black, whichever has the higher contrast in the current color scheme. In 2.19.15 it kept the system label, which inherits a themed host's foreground style and vanished on pale dark-mode accents. Use 2.19.16 rather than 2.19.15. On an inactive Mac window the system draws the button neutral, so the label is left to the system there.
+
+LiftCoach and EatWisely can move to 2.19.16 with no code change. Their banner stays indigo, with its label untouched, until they add `.chAIAccentColor(_:)`.
 
 ### Locked providers fall back to Apple Intelligence (2.18.0)
 

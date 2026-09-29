@@ -189,6 +189,10 @@ public struct CHAISettingsContent: View {
     /// Set by ``CHAIProviderPickerView``; nil when this content is embedded
     /// in another List, which then presents the catalog from its sections.
     @Environment(\.chModelPickerPresenter) private var hostedModelPicker
+    /// 2.19.16: locked rows point at the unlock banner, so their lock and
+    /// "Locked — purchase required" wear the banner's accent.
+    @Environment(\.chAIAccentColor) private var hostAccent
+    private var lockAccent: Color { CHAIProviderUnlockBanner.resolvedAccent(hostAccent) }
 
     // Resolve the singleton only while local models are offered. Its initializer
     // restores installations and cleans staging files, which is unnecessary for
@@ -771,7 +775,7 @@ public struct CHAISettingsContent: View {
                             Image(systemName: "lock.fill")
                                 .font(.subheadline)
                                 .imageScale(.small)
-                                .foregroundStyle(.indigo)
+                                .foregroundStyle(lockAccent)
                         }
                         badge(String(localized: "Private", bundle: .module), color: .indigo)
                         badge(String(localized: "Offline", bundle: .module), color: .orange)
@@ -779,7 +783,7 @@ public struct CHAISettingsContent: View {
                     if isActiveLocked {
                         Text(String(localized: "Locked — purchase required", bundle: .module))
                             .font(.caption)
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(lockAccent)
                     } else {
                         Text(activeModel.map { $0.displayName } ?? String(localized: "Runs fully offline · No API key", bundle: .module))
                             .font(.caption)
@@ -1011,7 +1015,7 @@ public struct CHAISettingsContent: View {
                             Image(systemName: "lock.fill")
                                 .font(.subheadline)
                                 .imageScale(.small)
-                                .foregroundStyle(.indigo)
+                                .foregroundStyle(lockAccent)
                         }
                         if let badge {
                             self.badge(badge, color: badgeColor)
@@ -1020,7 +1024,7 @@ public struct CHAISettingsContent: View {
                     if isActiveLocked {
                         Text(String(localized: "Locked — purchase required", bundle: .module))
                             .font(.caption)
-                            .foregroundStyle(.indigo)
+                            .foregroundStyle(lockAccent)
                     } else if let reason = unavailableReason, !available {
                         Text(reason).font(.caption).foregroundStyle(.tertiary)
                     } else if let warning {

@@ -51,8 +51,26 @@ public struct CHAIProviderUnlockBanner: View {
     /// 2.19.15: the host's accent from ``SwiftUI/View/chAIAccentColor(_:)``;
     /// nil keeps the kit's indigo.
     @Environment(\.chAIAccentColor) private var hostAccent
+    @Environment(\.colorScheme) private var colorScheme
+    #if os(macOS)
+    @Environment(\.controlActiveState) private var controlActiveState
+    #endif
 
     private var accent: Color { Self.resolvedAccent(hostAccent) }
+
+    /// 2.19.16: the Unlock label on a host accent: white or black, whichever
+    /// reads on it in this color scheme. Themed hosts set a foreground style
+    /// on their chrome that the prominent label inherits, and their dark
+    /// accents are often pale, where white vanishes. nil — the indigo
+    /// default, or an inactive Mac window, which draws the fill neutral —
+    /// leaves the label to the system as before.
+    private var unlockLabelColor: Color? {
+        guard let hostAccent else { return nil }
+        #if os(macOS)
+        if controlActiveState == .inactive { return nil }
+        #endif
+        return Self.readableLabel(on: hostAccent, in: colorScheme)
+    }
 
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseHighlighted = false
@@ -102,7 +120,7 @@ public struct CHAIProviderUnlockBanner: View {
                 Button(action: onPurchase) {
                     HStack(spacing: 6) {
                         if isPurchasing {
-                            ProgressView().controlSize(.small).tint(.white)
+                            ProgressView().controlSize(.small).tint(unlockLabelColor ?? .white)
                             Text(Self.localizedProcessing)
                         } else {
                             Image(systemName: "lock.open.fill")
@@ -122,6 +140,7 @@ public struct CHAIProviderUnlockBanner: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(CHAIUnlockStrings.actionControlSize)
                 .tint(accent)
+                .modifier(CHAIOptionalForegroundStyle(color: unlockLabelColor))
                 // 2.7.0: enable the button after 1 s even if the price
                 // hasn't loaded — StoreKit's purchase sheet will fetch it.
                 .disabled(isPurchasing || (priceLabel == nil && !priceWaitElapsed))
@@ -280,6 +299,36 @@ public struct CHAIProviderUnlockBanner: View {
     nonisolated static func resolvedAccent(_ hostAccent: Color?) -> Color {
         hostAccent ?? .indigo
     }
+
+    /// 2.19.16: white or black, whichever has the higher WCAG contrast on
+    /// `background` once it is resolved for `scheme` (a dynamic accent has
+    /// a different value in each).
+    nonisolated static func readableLabel(on background: Color, in scheme: ColorScheme) -> Color {
+        var environment = EnvironmentValues()
+        environment.colorScheme = scheme
+        let resolved = background.resolve(in: environment)
+        let luminance = 0.2126 * Double(resolved.linearRed)
+            + 0.7152 * Double(resolved.linearGreen)
+            + 0.0722 * Double(resolved.linearBlue)
+        let contrastWithWhite = 1.05 / (luminance + 0.05)
+        let contrastWithBlack = (luminance + 0.05) / 0.05
+        return contrastWithWhite >= contrastWithBlack ? .white : .black
+    }
+}
+
+/// Applies a foreground style only when there is one, so the default
+/// banner's button keeps exactly the styling it had before 2.19.16.
+private struct CHAIOptionalForegroundStyle: ViewModifier {
+    let color: Color?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let color {
+            content.foregroundStyle(color)
+        } else {
+            content
+        }
+    }
 }
 
 // MARK: - Accent (2.19.15)
@@ -300,7 +349,9 @@ public extension EnvironmentValues {
 public extension View {
     /// 2.19.15: colors the unlock banner in ``CHAIProviderPickerView`` and
     /// ``CHAISettingsContent`` — its lock icon, bullets, fill, border and
-    /// Unlock button — with the host app's accent instead of indigo.
+    /// Unlock button — with the host app's accent instead of indigo. Since
+    /// 2.19.16 the locked provider rows' lock and "Locked — purchase
+    /// required" follow it too.
     ///
     /// ```swift
     /// CHAIProviderPickerView(appIdentifier: .closet)
@@ -308,10 +359,11 @@ public extension View {
     /// ```
     ///
     /// SwiftUI does not expose the environment's `.tint` for reading, so
-    /// the host passes its accent. Pass one that carries white text, as
-    /// the Unlock button is `.borderedProminent`. Apps that never call
-    /// this keep the indigo banner. The ownership card stays green: it
-    /// signals that the purchase is owned, not the host's brand.
+    /// the host passes its accent. Since 2.19.16 the Unlock label is white
+    /// or black, whichever reads on the accent, so pale dark-mode accents
+    /// work. Apps that never call this keep the indigo banner. The
+    /// ownership card stays green: it signals that the purchase is owned,
+    /// not the host's brand.
     func chAIAccentColor(_ color: Color?) -> some View {
         environment(\.chAIAccentColor, color)
     }

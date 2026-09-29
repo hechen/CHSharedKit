@@ -25,6 +25,25 @@ struct CHAIUnlockBannerAccentTests {
         #expect(environment.chAIAccentColor == cordovan)
     }
 
+    /// 2.19.16 — a fixed white label vanished on pale dark-mode accents
+    /// (Closet House dark: white on coral is about 2.3:1).
+    @Test("The Unlock label reads on the accent in both schemes")
+    func readableUnlockLabel() {
+        let houseLight = Color(red: 0.56, green: 0.22, blue: 0.17)
+        let houseDark = Color(red: 0.91, green: 0.58, blue: 0.48)
+        let galleryDark = Color(red: 0.90, green: 0.89, blue: 0.87)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: houseLight, in: .light) == .white)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: houseDark, in: .dark) == .black)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: galleryDark, in: .dark) == .black)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: .black, in: .dark) == .white)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: .white, in: .light) == .black)
+        // Contrast decides, not the default banner's look: dark-mode system
+        // indigo (109, 124, 255) gives white 3.5:1 and black 6.0:1. The
+        // default banner never takes this path; only a host accent does.
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: .indigo, in: .light) == .white)
+        #expect(CHAIProviderUnlockBanner.readableLabel(on: .indigo, in: .dark) == .black)
+    }
+
     @Test("Indigo appears only as the fallback, not in the banner's views")
     func noOtherIndigoLiterals() throws {
         let source = try String(contentsOf: bannerSourceURL(), encoding: .utf8)
@@ -35,8 +54,24 @@ struct CHAIUnlockBannerAccentTests {
         #expect(indigoLines.first?.contains("hostAccent ?? .indigo") == true)
     }
 
+    /// 2.19.16 — the locked rows' lock and "Locked — purchase required"
+    /// stayed indigo beside a cordovan banner. Provider identity colors
+    /// (the on-device chip and its Private badge) are not purchase chrome.
+    @Test("Locked provider rows use the banner's accent")
+    func lockedRowsFollowAccent() throws {
+        let source = try String(
+            contentsOf: sourceURL("Sources/CHLocalLLM/CHAISettingsContent.swift"),
+            encoding: .utf8
+        )
+        #expect(!source.contains(".foregroundStyle(.indigo)"))
+        #expect(source.contains("CHAIProviderUnlockBanner.resolvedAccent(hostAccent)"))
+    }
+
     private func bannerSourceURL() -> URL {
-        let relative = "Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift"
+        sourceURL("Sources/CHLocalLLM/CHAIProviderUnlockBanner.swift")
+    }
+
+    private func sourceURL(_ relative: String) -> URL {
         var directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         for _ in 0..<8 {
             if FileManager.default.fileExists(

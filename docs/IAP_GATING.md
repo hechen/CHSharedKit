@@ -141,8 +141,9 @@ struct YourApp: App {
 6. **Your accent on the banner (2.19.15)** — the banner is indigo unless
    the host passes its accent:
    `CHAIProviderPickerView(appIdentifier:).chAIAccentColor(theme.accent)`.
-   Pick a color that carries white text; the Unlock button is
-   `.borderedProminent`.
+   From 2.19.16 the locked rows' lock icons follow it too, and the Unlock
+   label is white or black, whichever reads on that accent in the current
+   color scheme.
 
 ## Runtime gating
 
