@@ -6,7 +6,6 @@ public struct CHBackupListView: View {
 
     @StateObject private var loader: CHBackupLoader
     @State private var selectedBackup: BackupFileInfo?
-    @State private var showingShareSheet = false
     @State private var showingDeleteConfirmation = false
     @State private var backupToDelete: BackupFileInfo?
 
@@ -44,10 +43,7 @@ public struct CHBackupListView: View {
                         isUsingiCloud: CHBackupStorage.isUsingiCloudDrive(iCloudContainerId: config.iCloudContainerId)
                     )
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedBackup = backup
-                        showingShareSheet = true
-                    }
+                    .onTapGesture { selectedBackup = backup }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
                             backupToDelete = backup
@@ -66,12 +62,13 @@ public struct CHBackupListView: View {
         .onAppear { loader.start() }
         .onDisappear { loader.stop() }
         .refreshable { loader.refresh() }
-        .sheet(isPresented: $showingShareSheet) {
-            if let backup = selectedBackup {
-                #if os(iOS)
-                ShareSheet(activityItems: [backup.url])
-                #endif
-            }
+        // `sheet(item:)`, not `isPresented` plus a separate selection: the
+        // isPresented content was built with the selection still nil, which
+        // opened an empty sheet.
+        .sheet(item: $selectedBackup) { backup in
+            #if os(iOS)
+            ShareSheet(activityItems: [backup.url])
+            #endif
         }
         .confirmationDialog(
             String(localized: "Delete Backup?", bundle: .module),
