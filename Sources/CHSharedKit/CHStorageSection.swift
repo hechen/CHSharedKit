@@ -141,34 +141,33 @@ public struct CHStorageSection: View {
         CHBackupFrequency(rawValue: frequencyRaw) ?? defaultFrequency
     }
 
+    // The sections go straight into the host's Form. Presentations hang on one
+    // row each: a modifier on a Group is copied onto every section, and three
+    // sheets bound to one item fight, dismissing the host's own sheet instead.
     public var body: some View {
-        Group {
-            scheduleSection
-            backupSection
-            storageSection
-        }
-        .fileImporter(
-            isPresented: $showImportFilePicker,
-            allowedContentTypes: [.data],
-            allowsMultipleSelection: false
-        ) { result in
-            Task { await handleImportPicked(result) }
-        }
-        .alert(String(localized: "Backup", bundle: .module), isPresented: $showResult) {
-            Button(String(localized: "OK", bundle: .module)) {}
-        } message: {
-            Text(resultMessage ?? "Done")
-        }
-        #if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
-        .sheet(item: $shareableBackup) { share in
-            CHShareSheet(url: share.url) {
-                try? FileManager.default.removeItem(at: share.url)
-                shareableBackup = nil
+        scheduleSection
+        backupSection
+        storageSection
+    }
+
+    /// The share sheet, the result alert and the backup count, on the Export row.
+    private func exportPresentations(_ row: some View) -> some View {
+        row
+            .alert(String(localized: "Backup", bundle: .module), isPresented: $showResult) {
+                Button(String(localized: "OK", bundle: .module)) {}
+            } message: {
+                Text(resultMessage ?? "Done")
             }
-            .presentationDetents([.medium, .large])
-        }
-        #endif
-        .onAppear { refreshBackupCount() }
+            #if canImport(UIKit) && !os(macOS) && !os(watchOS) && !os(tvOS)
+            .sheet(item: $shareableBackup) { share in
+                CHShareSheet(url: share.url) {
+                    try? FileManager.default.removeItem(at: share.url)
+                    shareableBackup = nil
+                }
+                .presentationDetents([.medium, .large])
+            }
+            #endif
+            .onAppear { refreshBackupCount() }
     }
 
     // MARK: - Sections
@@ -256,18 +255,20 @@ public struct CHStorageSection: View {
                 }
             }
 
-            Button {
-                Task { await runExport() }
-            } label: {
-                HStack {
-                    Label(String(localized: "Export Backup", bundle: .module), systemImage: "arrow.down.doc")
-                    Spacer()
-                    if isExporting {
-                        ProgressView().scaleEffect(0.8)
+            exportPresentations(
+                Button {
+                    Task { await runExport() }
+                } label: {
+                    HStack {
+                        Label(String(localized: "Export Backup", bundle: .module), systemImage: "arrow.down.doc")
+                        Spacer()
+                        if isExporting {
+                            ProgressView().scaleEffect(0.8)
+                        }
                     }
                 }
-            }
-            .disabled(isExporting || itemCount == 0)
+                .disabled(isExporting || itemCount == 0)
+            )
 
             Button {
                 showImportFilePicker = true
@@ -281,6 +282,13 @@ public struct CHStorageSection: View {
                 }
             }
             .disabled(isImporting)
+            .fileImporter(
+                isPresented: $showImportFilePicker,
+                allowedContentTypes: [.data],
+                allowsMultipleSelection: false
+            ) { result in
+                Task { await handleImportPicked(result) }
+            }
         } header: {
             Text(String(localized: "Backup", bundle: .module))
         } footer: {
