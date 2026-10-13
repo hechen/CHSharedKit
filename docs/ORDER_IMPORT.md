@@ -1,6 +1,6 @@
 # CHOrderImport
 
-Retailer order import for any of Chen's apps that track purchases (Closet, Keeps, and future apps). It ships as its own product so an app can use it without pulling in the AI or on-device model targets.
+Retailer order-import helpers for apps that track purchases. It ships as its own product so an app can use it without pulling in the AI or on-device model targets.
 
 ```yaml
 dependencies:
@@ -29,13 +29,13 @@ Depends on Foundation, CryptoKit, and WebKit only.
 ## Host responsibilities
 
 1. Own the web view. Create it with `AmazonBrowserSession.makeWebView`, load `AmazonOrderPage.orderHistoryURL`, and call `AmazonOrderReader` after each page finishes loading.
-2. Present the review. Nothing is saved by the package. Map each selected `OrderLineDraft` onto the app's model, create `quantity` records, and persist `draft.sourceKey(forUnit: index)` on each so later imports can skip it through `OrderImportDuplicateIndex`.
+2. Present the review. The package does not persist records into the host data model; optional import archives can save draft recovery state. Map each selected `OrderLineDraft` onto the app's model, create `quantity` records, and persist `draft.sourceKey(forUnit: index)` on each so later imports can skip it through `OrderImportDuplicateIndex`.
 3. Download images with the app's own bounded downloader. `imageURL` has passed `PublicWebURL.isAllowed`, but no cookies from the Amazon session should be reused.
 4. Explain the sign-in. The Amazon cookies stay in the app's local profile; offer a "Clear Amazon sign-in" action that calls `AmazonBrowserSession.clear()`.
 
 ## Scope and limits
 
-- Verified against the English and Spanish amazon.com desktop layouts. Other marketplaces are not covered.
+- Parser fixtures cover English and Spanish amazon.com desktop layouts. Live pages can change; other marketplaces are not covered.
 - This is a user-driven browser importer, not an Amazon API. It reads only order containers; recommendations and order totals are never purchase rows.
 - Refunds are surfaced as ownership warnings, not netted against prices.
 

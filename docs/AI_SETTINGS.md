@@ -1,134 +1,60 @@
-# AI Provider settings — three integration patterns (CHSharedKit 2.7.1+)
+# AI settings presentation
 
-The kit ships three views for the AI Provider settings surface. Pick based
-on how you present them.
+The core product's `CHAISettingsView` provides provider settings without linking `CHLocalLLM`. The richer picker, modal wrapper, and section content below belong to `CHLocalLLM` and include its downloadable-model integration.
 
-## Pattern A: Push from your app's NavigationStack (most common)
+Import `CHLocalLLM` to use these views. Their `appIdentifier` parameter is an existing `AppIdentifier` value supplied by the host. That enum currently contains the original named app profiles; `.yourapp` is not a supported case. See [platform notes](MACOS_SUPPORT.md) for feature requirements.
 
-Use `CHAIProviderPickerView`. It sets `.navigationTitle("AI Provider")` and
-relies on the caller's `NavigationStack` for the nav bar.
+## Push within a navigation stack
+
+Use `CHAIProviderPickerView` as a destination. It supplies its title and uses the caller's navigation stack.
 
 ```swift
-NavigationStack {
-    List {
-        NavigationLink {
-            CHAIProviderPickerView(appIdentifier: .yourapp)
-        } label: {
-            Label("AI Provider", systemImage: "sparkles")
+import CHLocalLLM
+import SwiftUI
+
+struct ProviderDestination: View {
+    let appIdentifier: AppIdentifier
+
+    var body: some View {
+        NavigationStack {
+            CHAIProviderPickerView(appIdentifier: appIdentifier)
         }
     }
 }
 ```
 
-**Do NOT wrap `CHAIProviderPickerView` in another `NavigationStack` here.**
-That's the source of the double-nav-bar bug Chen reported in SpendWisely:
+When pushing from an existing stack, pass the picker directly to `NavigationLink` rather than adding a second stack around the destination.
 
-```swift
-// ❌ Wrong — causes double nav bar
-NavigationLink {
-    NavigationStack {                              // ← extra wrap
-        CHAIProviderPickerView(appIdentifier: .x)
-    }
-}
+## Present a sheet
 
-// ✅ Correct
-NavigationLink {
-    CHAIProviderPickerView(appIdentifier: .x)
-}
-```
-
-## Pattern B: Modal sheet presentation
-
-Use `CHAISettingsSheet` (new in 2.7.1). It wraps the picker in its own
-`NavigationStack` + a top-trailing Done button that dismisses the sheet.
+`CHAISettingsSheet` owns navigation, a Done action, semantic surfaces, and the standard macOS sheet size. Do not nest another navigation stack inside it.
 
 ```swift
 .sheet(isPresented: $showAISettings) {
-    CHAISettingsSheet(appIdentifier: .yourapp)
+    CHAISettingsSheet(appIdentifier: appIdentifier, onDismiss: {
+        refreshHostSettings()
+    })
 }
 ```
 
-**Do NOT hand-roll your own NavigationStack wrap inside a `.sheet { ... }`
-calling `CHAIProviderPickerView`** — `CHAISettingsSheet` exists exactly so
-you don't have to. Hand-rolling is the same bug class as Pattern A's
-double-wrap.
+The `onDismiss` callback is optional.
+
+## Embed sections in a host settings screen
+
+`CHAISettingsContent` supplies sections without a navigation stack or title. Place it in your own `List` or `Form`:
 
 ```swift
-// ❌ Wrong — same double-nav-bar bug, different presentation
-.sheet(isPresented: $show) {
-    NavigationStack {                                 // ← hand-rolled
-        CHAIProviderPickerView(appIdentifier: .x)
-    }
-}
-
-// ✅ Correct
-.sheet(isPresented: $show) {
-    CHAISettingsSheet(appIdentifier: .x)
+Form {
+    Section("Account") { AccountSettings() }
+    CHAISettingsContent(appIdentifier: appIdentifier)
+    Section("About") { AboutSettings() }
 }
 ```
 
-`CHAISettingsSheet` accepts an optional `onDismiss` callback if you need
-to react to Done:
+The picker uses a grouped `Form` on macOS. For custom sheets, `CHSettingsSheet` in the core product supplies the same modal boundary. `CHAIFeaturesSettingsSheet` and `CHAIUsageSheet` wrap the core feature-settings and usage screens.
 
-```swift
-CHAISettingsSheet(appIdentifier: .yourapp, onDismiss: {
-    refreshActiveProvider()
-})
-```
+## Host configuration
 
-## Pattern C: Embed inside an existing settings `List`
+Built-in providers register when the manager initializes. Register any custom providers before use and set `CHAIManager.shared.disabledProviderIDs` or `availableProvidersFilter` to match your app's supported providers. Hiding downloadable models also requires omitting host-owned local-model initialization if your app should not initialize that storage. Apple Intelligence is a separate provider.
 
-Use `CHAISettingsContent` directly when you want the AI Provider rows to
-appear as one section inside a larger settings view (alongside your app's
-other sections):
-
-```swift
-NavigationStack {
-    List {
-        Section("Account") { … }
-        CHAISettingsContent(appIdentifier: .yourapp)
-        Section("About") { … }
-    }
-    .navigationTitle("Settings")
-}
-```
-
-`CHAISettingsContent` returns plain `Section { ... }` content with no
-NavigationStack and no `.navigationTitle` — it composes naturally inside
-the caller's List + nav stack.
-
-## Decision matrix
-
-| You want… | Use |
-|---|---|
-| A pushed AI Provider screen with its own title bar | `CHAIProviderPickerView` |
-| A modal sheet with Done button + own title bar | `CHAISettingsSheet` |
-| AI Provider rows inside your existing settings List | `CHAISettingsContent` |
-
-## Migration from 2.6.x / 2.7.0
-
-If you previously hand-rolled a sheet:
-
-```swift
-// Before (still works but susceptible to double-nav-bar if mixed with push):
-.sheet(isPresented: $show) {
-    NavigationStack {
-        CHAIProviderPickerView(appIdentifier: .x)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { show = false }
-                }
-            }
-    }
-}
-
-// After (2.7.1+):
-.sheet(isPresented: $show) {
-    CHAISettingsSheet(appIdentifier: .x)
-}
-```
-
-The kit's `CHAISettingsSheet` does exactly what your hand-rolled wrap did,
-so the swap is a wash visually. The win is that future kit-side picker
-chrome (back-button gestures, large-title dropdown, etc.) ships in one
-place.
+Provider credential sections use Keychain storage and show connection-test results inline. The host remains responsible for provider availability, disclosure, and purchase configuration. See [purchase gating](IAP_GATING.md) for `chAIAccentColor(_:)` and `chAIUnlockAction(_:)` customization.

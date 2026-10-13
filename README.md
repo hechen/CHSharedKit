@@ -1,738 +1,146 @@
 # CHSharedKit
 
-Shared Swift package providing the theme system, AI provider infrastructure, on-device LLM support, logging, and backup utilities used across all of Chen's iOS apps.
+Reusable Swift components for Apple-platform apps, maintained by [Chen He](https://github.com/hechen). The package contains backup and settings utilities, a theme system, AI provider interfaces, optional on-device inference, and order-import helpers. Each host app owns its data model, navigation, feature workflows, purchases, and branding.
 
-**Apps:** Closet · EatWisely · LiftCoach · SpendWisely · Distill · TrainInsight
+## Products
 
-Products: `CHSharedKit` (theme, AI providers, logging, backup, IAP gating), `CHLocalLLM` (on-device models), and `CHOrderImport` (Amazon order-page and order-CSV import with review drafts; see [docs/ORDER_IMPORT.md](docs/ORDER_IMPORT.md)).
+| Product | Contents |
+|---|---|
+| `CHSharedKit` | Themes and SwiftUI settings components; backup storage; synchronized preferences and Keychain helpers; logging; AI providers, request routing, usage tracking, and purchase-gating interfaces. |
+| `CHLocalLLM` | MLX model downloads and inference, model selection UI, and Markdown chat views. Depends on `CHSharedKit`. |
+| `CHOrderImport` | Amazon order-page reading, CSV parsing, duplicate detection, and review drafts. Uses Foundation, CryptoKit, and WebKit; independent of the other two targets. |
 
----
+Select only the products your app uses. MLX, Hugging Face libraries, and MarkdownUI are dependencies of the `CHLocalLLM` target. Swift Package Manager may still resolve the package's full dependency graph.
 
 ## Requirements
 
-| | Version |
-|---|---|
-| Swift | 6.0+ |
-| iOS | 18.0+ |
-| macOS | 15.0+ |
-| Xcode | 16.0+ |
+[Package.swift](Package.swift) declares Swift tools **6.1** and these deployment minimums:
 
----
+- iOS / iPadOS 17
+- macOS 14
+- visionOS 1
+
+Individual features have additional requirements. Apple Intelligence needs a supported OS and device; its integration uses Foundation Models on OS 26 or later. MLX inference needs compatible Apple Silicon hardware and enough memory for the selected model. Mac Catalyst is explicitly excluded from local MLX inference. A deployment minimum is not a claim that every feature has been tested on every device; see [platform notes](docs/MACOS_SUPPORT.md).
 
 ## Installation
 
-**XcodeGen (`project.yml`):**
+Add `https://github.com/hechen/CHSharedKit` using Xcode's package dependency editor, select the release tag you intend to use, and link the appropriate library product to your target.
 
-```yaml
-packages:
-  CHSharedKit:
-    url: https://github.com/hechen/CHSharedKit
-    from: "2.0.0"
-
-targets:
-  MyApp:
-    dependencies:
-      - package: CHSharedKit
-        product: CHSharedKit
-      # Optionally, for on-device LLM:
-      - package: CHSharedKit
-        product: CHLocalLLM
-```
-
-**Package.swift:**
+For Swift Package Manager:
 
 ```swift
-.package(url: "https://github.com/hechen/CHSharedKit", from: "2.0.0")
+// In Package.dependencies:
+.package(url: "https://github.com/hechen/CHSharedKit", from: "2.19.20")
+
+// In your target's dependencies:
+.product(name: "CHSharedKit", package: "CHSharedKit")
 ```
 
----
+The examples below are integration fragments. App-owned types such as `ContentView` and data models belong to your app.
 
-## Modules
+## Back up app-owned data
 
-- [Theme System](#theme-system) — 11 pre-designed palettes, iCloud sync, alternate icons
-- [Themed View Modifiers](#themed-view-modifiers) — screen, nav bar, list, tab bar
-- [Settings Sheet Presentation](#settings-sheet-presentation) — shared modal chrome and stable macOS geometry
-- [AI Provider System](#ai-provider-system) — OpenAI, Claude, Apple Intelligence, custom endpoints
-- [On-Device LLM (CHLocalLLM)](#on-device-llm) — GGUF model download and inference via llama.cpp
-- [Logging](#logging) — structured in-memory logger with SwiftUI viewer
-- [Backup & Storage](#backup--storage) — iCloud Drive-aware backup utilities
-
----
-
-## Theme System
-
-A shared palette system synced via `NSUbiquitousKeyValueStore`. Picking a theme in one app applies it across all apps on the next launch.
-
-### Setup
+`CHBackupFile` wraps an opaque payload with a version and export date. The host defines serialization and restore behavior. Pass your own entitled iCloud container to use iCloud Drive, or `nil` for local Documents storage.
 
 ```swift
 import CHSharedKit
-
-@main struct MyApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .themed(ThemeManager.shared)  // injects theme, sets tint, syncs tab bar
-        }
-    }
-}
-```
-
-### Reading the theme
-
-```swift
-struct MyView: View {
-    @Environment(\.theme) private var theme
-
-    var body: some View {
-        Text("Hello")
-            .foregroundStyle(theme.textPrimary)
-            .background(theme.background)
-    }
-}
-```
-
-### Changing the theme
-
-```swift
-ThemeManager.shared.apply(themeId: "midnight")
-ThemeManager.shared.apply(ThemePalette.ocean)
-```
-
-### Theme picker
-
-```swift
-ThemePickerView()  // grid picker, drop-in settings screen
-```
-
-### Available themes
-
-| ID | Name | Description | Accent |
-|---|---|---|---|
-| `default` | Default | System look — crisp and familiar | Blue |
-| `midnight` | Midnight | Pure OLED black with vibrant purple/cyan | Purple |
-| `ocean` | Ocean | Deep blue depths with cyan tide accents | Cyan |
-| `sunset` | Sunset | Warm orange-pink horizon | Coral |
-| `forest` | Forest | Deep moss greens with earthy sage | Green |
-| `paper` | Paper | Warm cream with sepia ink | Sepia |
-| `aurora` | Aurora | Northern lights — purple to teal | Magenta |
-| `monochrome` | Monochrome | Pure grayscale | White |
-| `editorial` | Editorial | Airy neutrals like a magazine spread | Stone |
-| `boutique` | Boutique | Bright retail polish with blush tones | Pink |
-
-Themes that set `associatedIconName` (Midnight, Ocean, Sunset, Forest, Paper, Aurora, Monochrome) automatically swap the app icon when selected. Register the corresponding `CFBundleAlternateIcons` entries in the host app (e.g. `AppIcon-Midnight`).
-
-### App palettes (2.18.0)
-
-An app with its own visual identity can replace the shared palette:
-
-```swift
-init() {
-    // Before anything touches ThemeManager.shared.
-    ThemePalette.useAppThemes([.myHouse, .myNoir])
-    ThemePalette.useSharedThemes() // restores the shared palette (tests)
-}
-```
-
-`ThemePalette.all`, `theme(for:)` and `ThemePickerView` then use the app's list. The first theme is the fallback for any id the app does not offer, including one chosen in another app and synced through iCloud. Reuse a shared id (`default`, `midnight`, …) where a theme plays the same role, so a synced choice lands on its counterpart; a theme with id `default` and a `nil` `associatedIconName` keeps the primary app icon. `ThemePickerView(caption:)` replaces the "syncs across all your devices and apps" line for apps that keep the theme on the device.
-
----
-
-## Themed View Modifiers
-
-```swift
-// Fill screen with theme.background (ignores safe area)
-ContentView()
-    .themedScreen()
-
-// Style a List or Form background
-List { ... }
-    .themedListBackground()
-
-// Configure navigation bar colors + color scheme
-NavigationStack { ... }
-    .themedNavigationBar()
-
-// Tint tab bar to theme.backgroundElevated
-TabView { ... }
-    .themedTabBar()
-
-// Themed card surface
-VStack { ... }
-    .themedCard(cornerRadius: 12, elevated: true)
-```
-
----
-
-## Settings Sheet Presentation
-
-Use `CHSettingsSheet` at a modal boundary to keep settings sheets visually
-consistent across apps. It owns the navigation stack, title, Done action,
-semantic theme surfaces, and a stable 560×600 macOS window. Its content remains
-adaptive on iOS and visionOS.
-
-```swift
-.sheet(isPresented: $showUsage) {
-    CHSettingsSheet("AI Usage") {
-        MyAppUsageView() // Custom content and data remain app-owned.
-    }
-}
-```
-
-Content-only views such as `CHAIProviderPickerView`, `CHAIUsageView`, and
-`CHAIFeaturesSettingsContent` remain suitable for pushed navigation. Do not add
-`CHSettingsSheet` around a view that is already inside a `NavigationStack` or a
-native Settings scene.
-
-For standard modal AI surfaces, use the convenience wrappers:
-
-```swift
-CHAISettingsSheet(appIdentifier: .closet) // CHLocalLLM product
-CHAIFeaturesSettingsSheet(appName: "MyApp")
-CHAIUsageSheet()
-```
-
-If a custom presentation root already owns its navigation and dismissal UI,
-apply `.chSettingsPresentation()` to receive the same semantic surfaces
-without adding another stack or changing its size. Use
-`.chSettingsPresentation(sizing: .standardSheet)` only when that custom modal
-root owns scrolling and should adopt the stable 560×600 macOS geometry.
-
----
-
-## AI Provider System
-
-Plug-in AI architecture. All providers conform to `CHAIProvider` and can be swapped at runtime.
-
-### Setup
-
-```swift
-import CHSharedKit
-
-// At app startup — registers Apple Intelligence, OpenAI, Claude, and custom endpoint
-CHAIManager.shared.registerBuiltInProviders()
-
-// Optional: refresh model names, defaults, retirements, and pricing now.
-// CHAISettingsView also does this automatically when opened.
-Task { await CHAICloudModelCatalog.shared.refreshIfNeeded() }
-
-// Optional: disable a provider on this device without overwriting a
-// cross-device active-provider preference.
-CHAIManager.shared.disabledProviderIDs = [
-    CHCustomEndpointProvider.providerID
-]
-```
-
-As of 2.15.3, disabling `"on-device-llm"` also hides the downloadable-model
-row, installed-model details, and download sheets in `CHAIProviderPickerView`
-and `CHAISettingsContent`. These surfaces respect `availableProvidersFilter`
-and do not initialize local model storage when local models are hidden. Apple
-Intelligence remains a separate provider. Hosts that disable downloads should
-also omit their own `LocalModelStore` startup and offline-catalog refreshes.
-The manager preserves the saved provider choice and resolves its usual enabled
-fallback; migrate that preference explicitly if the app must avoid a cloud
-fallback for users who previously chose local models.
-As of 2.15.4, the purchase banner also omits the offline-model benefit when
-downloads are disabled and describes Apple Intelligence as included without
-the optional unlock.
-
-### Sending requests
-
-```swift
-let response = try await CHAIManager.shared.send(
-    prompt: "Summarize this article",
-    systemPrompt: "You are a concise summarizer."
-)
-
-// Vision request
-let response = try await CHAIManager.shared.sendWithVision(
-    prompt: "What's in this image?",
-    imageData: jpegData
-)
-```
-
-### Settings & usage UI
-
-```swift
-// Content-only settings screen for pushed navigation.
-CHAISettingsView()
-
-// Content-only usage dashboard for pushed navigation.
-CHAIUsageView()
-
-// Modal wrappers with shared title, Done action, theme, and macOS geometry.
-CHAIUsageSheet()
-CHSettingsSheet("My App Usage") { MyAppUsageView() }
-```
-
-### Built-in providers
-
-| Provider | Default Model | Vision | Notes |
-|---|---|---|---|
-| `CHOpenAIProvider` | Catalog-defined | Yes | Remotely refreshed, bundled fallback |
-| `CHClaudeProvider` | Catalog-defined | Yes | Remotely refreshed, bundled fallback |
-| `CHAppleIntelligenceProvider` | System default | — | iOS 26+, free, on-device |
-| `CHCustomEndpointProvider` | `llava` | — | Ollama, vLLM, LMStudio; OpenAI-compatible |
-
-### Updating the cloud model catalog
-
-The authoritative catalog lives in
-[`hechen/ai-model-catalog`](https://github.com/hechen/ai-model-catalog).
-Edit `cloud-model-catalog.json` there, increase the lexicographically sortable
-`revision`, validate it, and push to `main`. Routine catalog updates require
-neither a CHSharedKit release nor an app rebuild.
-
-The default endpoint is
-`https://raw.githubusercontent.com/hechen/ai-model-catalog/main/cloud-model-catalog.json`.
-Clients load their last validated cached copy immediately, refresh the public
-file with normal HTTP caching, and fall back to the package resource offline.
-When preparing an SDK release, copy the canonical JSON into
-`Sources/CHSharedKit/Resources/cloud-model-catalog.json` for the offline fallback.
-
-Shipped apps using `https://hechen.github.io/apps/closet/cloud-model-catalog.json`
-remain supported: the blog's Pages workflow generates that compatibility copy
-from the catalog repository and checks hourly for changes. No app SDK bump is
-required just to migrate hosting. New SDK releases use the direct URL above.
-
-The schema validates unique provider/model IDs, recommendation and migration
-targets, and nonnegative prices before replacing the active catalog. Add a
-retired ID and its fallback in the manifest to move users away from a removed
-API model without publishing a new package or app build.
-
-### Provider credentials (2.17.0)
-
-`CHAIProviderCredentialSection` is the one section every bring-your-own-key provider now uses: OpenAI, Claude, and catalog providers through `CHAICatalogProviderSettings`. It has a labelled key field (bordered on macOS, with a reveal toggle), the model picker you pass in, and a Test Connection row. The footer wraps and says the key is stored in the Keychain, names the host that requests go to and who bills them, and links to where to get a key and to the privacy policy. `CHAIConnectionTestRow` and `CHAIConnectionTestState` are public too, so a host-specific section can show the same row.
-
-Test Connection now sits in the provider's own section, is disabled when there is no key to test, and shows its result inline. Editing the key or switching provider clears the result. To add the row to a catalog provider, use `CHAICatalogProviderSettings(provider:connectionTest:onTestConnection:onAPIKeyChange:)`. The `init(provider:)` initializer still works.
-
-On macOS, `CHAIProviderPickerView` is a grouped `Form` like the rest of Mac Settings, and the provider is chosen from a single Provider pop-up menu. That replaces the iOS-style lists of icon rows, which drew as tinted push buttons on the Mac. The layout on iOS is unchanged, except that a selected cloud provider with no key now says so on its row.
-
-### Unlock banner accent (2.19.15, readable label 2.19.16)
-
-The unlock banner at the top of `CHAIProviderPickerView` / `CHAISettingsContent` was always indigo, so in an app with its own accent it was the one off-palette card on the screen. Pass your accent to color its lock icon, bullets, fill, border and Unlock button:
-
-```swift
-@Environment(\.theme) private var theme
-
-CHAIProviderPickerView(appIdentifier: .closet)
-    .chAIAccentColor(theme.accent)
-```
-
-The modifier sets `EnvironmentValues.chAIAccentColor`. SwiftUI does not let a package read the environment's `.tint`, so the host passes the color. Without the modifier the banner stays indigo, so nothing changes for apps that don't adopt it. The ownership card keeps its green, which says the purchase is owned.
-
-As of 2.19.16 the lock and "Locked — purchase required" on locked provider rows take the same accent, and the Unlock button's label on a host accent is white or black, whichever has the higher contrast in the current color scheme. In 2.19.15 it kept the system label, which inherits a themed host's foreground style and vanished on pale dark-mode accents. Use 2.19.16 rather than 2.19.15. On an inactive Mac window the system draws the button neutral, so the label is left to the system there.
-
-LiftCoach and EatWisely can move to 2.19.16 with no code change. Their banner stays indigo, with its label untouched, until they add `.chAIAccentColor(_:)`.
-
-### Selling the unlock on your own screen (2.19.17)
-
-When the purchase covers more than AI, the kit's banner pitches only the AI half and the app ends up with two sales pitches for one product. Closet Pro, for example, also lifts Closet's item limit. Pass the action that opens your purchase screen:
-
-```swift
-@State private var showingPro = false
-
-CHAIProviderPickerView(appIdentifier: .closet)
-    .chAIUnlockAction { [showingPro = $showingPro] in showingPro.wrappedValue = true }
-    .sheet(isPresented: $showingPro) { ClosetProSheet() }
-```
-
-While providers are locked, the picker shows one row in place of the banner: the locked providers, "Included with <unlockProductDisplayName>", and Learn More. Tapping it, or any locked provider, runs the action. Once the unlock is owned the picker shows nothing, because your screen shows the ownership and keeps Restore. Without the modifier the banner and ownership card are unchanged.
-
-### Locked providers fall back to Apple Intelligence (2.18.0)
-
-When the saved provider is locked (the unlock was never bought, or was refunded or revoked), requests run on Apple Intelligence if it is available, otherwise on another unlocked provider, never on another locked one. `effectiveActiveProviderID`, `activeProvider`, per-feature overrides and `send`/`stream`/`sendWithVision` all follow the same rule. The saved choice and its API key are kept, so a restore or re-purchase resumes the user's provider on the next request. The pickers select the provider in use and explain it ("OpenAI is locked. Apple Intelligence is used until you unlock."); `activeProviderLockedFallbackNotice` exposes that line for custom UI. Registering a gate now also re-renders every view observing `CHAIManager` when the entitlement changes. See [docs/IAP_GATING.md](docs/IAP_GATING.md#runtime-gating).
-
-### Purchase ownership and restore (2.16.0)
-
-Once the unlock is owned, `CHAIProviderPickerView` shows a `CHAIProviderOwnershipCard` at the top of the picker instead of hiding the purchase entirely. It states the ownership and carries Restore Purchases as a full-size bordered button. Restore no longer appears as a caption-size link in the Cloud APIs footer.
-
-As of 2.16.1 the card puts Restore beside the status when the row fits on one line and beneath it when it does not, so the button never wraps on a phone.
-
-Restore now reports its result rather than only its failures: purchases restored, purchase already confirmed, or no purchase found for this Apple Account. Purchase and restore buttons use `.large` controls on macOS.
-
-Name your unlock on the card by implementing the new optional `CHIAPGate` requirement:
-
-```swift
-var unlockProductDisplayName: String? { "AI Pro" }
-```
-
-It defaults to `nil`, which keeps generic wording, so existing gates compile unchanged. The restore outcome logic is exposed as `CHAIRestoreOutcome.after(wasUnlocked:isUnlocked:)` for hosts that build their own purchase UI.
-
-### Immediate offline model picker presentation (2.15.2)
-
-The on-device provider row and its lower Change Model / Download a Model section now present the picker from their own visible location. Scrolling the provider row offscreen no longer delays the lower action's sheet. The detail presenter stays mounted until dismissal when deleting the active model changes the selected provider.
-
-### Offline model picker fixes (2.15.1)
-
-Catalog refresh now preserves in-progress download controls, and selecting an installed model cancels any pending automatic switch. Failed custom entries can be removed, repository checks reject stale responses, and errors retain their actual cause. Installed license labels describe the installed revision. Deleting a model preserves its files if updating the installation registry fails.
-
-### Remote offline model catalog (2.15.0)
-
-CHLocalLLM model listings now refresh from the same public catalog repository as
-cloud providers, with a bundled fallback and a validated cache. Installed model
-revisions remain device-owned; changing listings never downloads weights or
-switches the active provider. Explicit updates verify pinned files and run a
-local smoke test before replacing the installed release. Recommendations require
-an app-specific evaluation record. See [offline catalog integration and update
-semantics](docs/OFFLINE_MODEL_CATALOG.md).
-
-### Catalog-defined providers (2.14.0)
-
-`CHAICatalogProvider` registers providers whose optional catalog `api` descriptor
-uses `openai-chat-completions`. Shared pickers render their key and model settings
-automatically. Grok is included as the first example. See the
-[catalog format guide](https://github.com/hechen/ai-model-catalog#catalog-defined-providers-chsharedkit-2140)
-for adding another provider without an SDK release.
-
-Supported transport: HTTPS bearer authentication, text/image Chat Completions,
-and SSE streaming. Unknown formats are skipped. Keys are scoped to provider and
-endpoint; redirects are blocked. Host-registered providers take precedence.
-Withdrawn providers fail closed, and on-device-only filters exclude dispatch as
-well as picker rows. `gateAllExceptAppleIntelligence()` includes future providers
-through `allProvidersGateID` (`*`); `effectiveGatedProviderIDs` expands that policy
-for display. Explicit ID sets remain explicit.
-
-Hosts with custom inference code must bridge `CHAICatalogProvider` into that code.
-Hosts offering key-sync controls should include `CHAICatalogProvider.storedCredentialIDs`
-when moving tokens between Keychain tiers. Shared credentials never cross apps.
-One app release adopting this SDK is required; later compatible providers/models
-arrive through a catalog refresh. New API protocols or capabilities still need
-an SDK update.
-
-
-### Which changes need an SDK update?
-
-The catalog supports multiple providers, but runtime compatibility depends on
-an implemented API adapter. CHSharedKit 2.14.0 supports these cases:
-
-| Change | JSON only? | Requirement |
-| --- | --- | --- |
-| Add/update OpenAI or Claude models, prices, or retirement rules | Yes | The model must work with the existing built-in adapter. |
-| Add a provider such as Grok using OpenAI-compatible Chat Completions | Yes | HTTPS, bearer API-key authentication, and the supported request/response format. |
-| Add a provider using a native Anthropic Messages or another API format | No | Add a catalog runtime adapter to CHSharedKit first. Built-in Claude support does not make arbitrary Messages-compatible providers catalog-configurable. |
-| Use OpenAI Responses, a different authentication scheme, or audio/tool-calling features | No | These are outside the current generic adapter and need SDK support. |
-
-The generic adapter currently supports text, image input, and SSE text streaming;
-each model must declare the capabilities it actually supports. An
-“OpenAI-compatible” label alone is insufficient: the provider must support the
-Chat Completions subset used by this adapter.
-
-Each app must ship one update adopting SDK 2.14.0 and route requests through the
-shared manager or an appropriate host bridge. After that, compatible additions
-arrive on catalog refresh without another SDK or app release. Users still select
-the provider and supply their own key. App capability filters, purchase gates,
-and consent rules continue to apply; on-device-only apps do not expose cloud
-providers.
-
-When a new API adapter is implemented and shipped, later providers using that
-supported format can also be added through JSON alone.
-
-### BYOK — storing API keys
-
-Keys are stored in the system Keychain:
-
-```swift
-CHAIKeychain.save(apiKey: "sk-...", service: CHOpenAIProvider.keychainService)
-let key = CHAIKeychain.load(service: CHOpenAIProvider.keychainService)
-```
-
-### Custom provider
-
-```swift
-struct MyProvider: CHAIProvider {
-    let id = "myprovider"
-    let displayName = "My Backend"
-    let supportsVision = false
-
-    func sendMessage(prompt: String, systemPrompt: String?) async throws -> String {
-        // call your API
-    }
-
-    func validate() async throws -> Bool { true }
-}
-
-CHAIManager.shared.registerProvider(MyProvider())
-```
-
-### Usage tracking
-
-`CHAIUsageTracker` captures every request automatically. Access via:
-
-```swift
-let tracker = CHAIUsageTracker.shared
-print(tracker.totalRequests)
-print(tracker.thisMonthCost)   // estimated USD
-print(tracker.requestHistory)  // [CHAIRequestLog]
-```
-
----
-
-## On-Device LLM
-
-`CHLocalLLM` is a separate library product. Import it only in targets that need on-device inference (llama.cpp via [LLM.swift](https://github.com/eastriverlee/LLM.swift)).
-
-```swift
-import CHLocalLLM
-```
-
-### Download & activate a model
-
-```swift
-let store = LocalModelStore.shared
-store.appGroupID = "group.app.chen.sharedllm"
-store.appIdentifier = .liftcoach
-
-// Download the recommended model
-let model = LocalModelCatalog.defaultModel
-await store.downloadModel(model)
-
-// Set as active provider (registers with CHAIManager automatically)
-await store.setActiveModel(model.id)
-```
-
-### Observe download state
-
-```swift
-switch store.downloadState {
-case .idle:            break
-case .downloading(let progress, _, _): progressBar(progress)
-case .installing:      spinner()
-case .installed:       checkmark()
-case .failed(let msg): errorView(msg)
-case .paused:          resumeButton()
-}
-```
-
-### Model picker UI
-
-```swift
-ModelPickerView()  // shows curated catalog with per-app recommendations
-```
-
-### Curated model catalog
-
-| Model | Size | License |
-|---|---|---|
-| Qwen 2.5 0.5B (Q4_K_M) | ~400 MB | Apache 2.0 |
-| Qwen 2.5 1.5B (Q4_K_M) | ~900 MB | Apache 2.0 |
-| Qwen 2.5 3B (Q4_K_M) | ~1.9 GB | Apache 2.0 |
-| Llama 3.2 1B (Q4_K_M) | ~770 MB | Llama Community |
-| Llama 3.2 3B (Q4_K_M) | ~1.9 GB | Llama Community |
-| Phi-3 Mini 4K (Q4) | ~2.3 GB | MIT |
-| Phi-3.5 Mini (Q4_K_M) | ~2.2 GB | MIT |
-| Gemma 2 2B (Q4_K_M) | ~1.6 GB | Gemma ToU |
-| SmolLM2 1.7B (Q4_K_M) | ~1.0 GB | Apache 2.0 |
-| DeepSeek-R1 1.5B (Q4_K_M) | ~1.0 GB | MIT |
-
-Models are stored in an App Group container so they can be shared across apps.
-
----
-
-## Logging
-
-```swift
-import CHSharedKit
-
-let log = CHLogger.shared
-log.debug("Cache hit", category: "Storage")
-log.info("Sync started", category: "iCloud")
-log.warning("Rate limit approaching", category: "AI")
-log.error("Request failed", category: "AI", details: error.localizedDescription)
-```
-
-Persists the last 500 entries to `Documents/clawd-logs.json`. Max 2000 in-memory entries.
-
-```swift
-// Drop-in log viewer with search and level filtering
-CHLogViewerView()
-
-// Hidden dev menu revealed after N taps
-someView
-    .chDeveloperMenu(tapCount: $taps, visible: $showMenu, threshold: 5) {
-        DevMenuContent()
-    }
-```
-
----
-
-## Backup & Storage
-
-iCloud Drive-aware backup utilities. Falls back to local Documents if iCloud is unavailable.
-
-```swift
-import CHSharedKit
-
-// Export
-let payload = try JSONEncoder().encode(myAppData)
-try CHBackupStorage.write(
-    payload: payload,
-    iCloudContainerId: "iCloud.app.chen.myapp",
-    fallbackFolderName: "MyAppBackups",
-    appVersion: "2.1"
-)
-
-// List available backups
-let backups = CHBackupStorage.list(
-    iCloudContainerId: "iCloud.app.chen.myapp",
+import Foundation
+
+let payload = try JSONEncoder().encode(["example": "Saved by the host app"])
+let backup = CHBackupFile(appVersion: "1.0", payload: payload)
+let data = try JSONEncoder().encode(backup)
+let url = try CHBackupStorage.write(
+    fileExtension: "json",
+    appName: "MyApp",
+    data: data,
+    iCloudContainerId: nil,
     fallbackFolderName: "MyAppBackups"
 )
 
-// Decode
-let backup = try JSONDecoder().decode(CHBackupFile.self, from: backupData)
-let myAppData = try JSONDecoder().decode(MyAppData.self, from: backup.payload)
+let backups = CHBackupStorage.list(
+    fileExtension: "json",
+    iCloudContainerId: nil,
+    fallbackFolderName: "MyAppBackups"
+)
 ```
 
----
+`CHBackupSettingsView`, `CHBackupListView`, and `CHAutoBackupCoordinator` provide optional integration points. Review backup contents, error handling, and restore validation in the host app.
 
-## Per-feature provider override (2.10.0)
+## Themes and settings
 
-Each AI-powered surface in an app (AI Stylist, Outfit Suggestions,
-Smart Categorization, etc.) can now use a different provider than
-the global "Active Provider." Run lightweight text features on
-free Apple Intelligence; pin vision features to a paid OpenAI key;
-route a specific feature to a Custom Endpoint for privacy.
+```swift
+import CHSharedKit
+import SwiftUI
 
-### 1. Register features at app launch
+struct ExampleView: View {
+    var body: some View {
+        Text("Hello")
+            .themedScreen()
+            .themed(ThemeManager.shared)
+    }
+}
+```
+
+Descendant views read `@Environment(\.theme)` for semantic colors. `ThemePickerView` selects a palette; `ThemePalette.useAppThemes(_:)` lets a host supply its own themes before initializing `ThemeManager.shared`. See the [theme integration guide](Sources/CHSharedKit/Theme/THEME_MIGRATION.md) for tokens and modifiers.
+
+Theme preferences use `NSUbiquitousKeyValueStore` and a local fallback. Cross-device or cross-app synchronization depends on the host's entitlements and shared store configuration. Set the `CHThemeCloudSyncEnabledDefaultsKey` Info.plist entry to a UserDefaults Boolean key to gate theme sync with a per-device setting. Alternate icons require the host's own registered assets.
+
+`CHSettingsRow` supplies a reusable settings row. `CHSettingsSheet` owns navigation, dismissal, and modal sizing; use it at a sheet boundary:
+
+```swift
+.sheet(isPresented: $showSettings) {
+    CHSettingsSheet("Settings") {
+        MySettingsContent()
+    }
+}
+```
+
+## AI providers
+
+`CHAIProvider` defines text, vision, and streaming interfaces. `CHAIManager` handles registration, routing, optional per-feature overrides, and purchase gates. Built-in implementations include OpenAI, Anthropic Claude, Apple Intelligence, and custom endpoints; catalog entries can add OpenAI-compatible cloud providers.
 
 ```swift
 import CHSharedKit
 
-@main struct ClosetApp: App {
-    init() {
-        Task { @MainActor in
-            CHAIFeatureRegistry.register([
-                CHAIFeature(
-                    id: "closet.ai_stylist",
-                    displayName: "AI Stylist",
-                    symbol: "sparkles",
-                    tint: .blue,
-                    requiredCapabilities: [.textInput],
-                    footnote: "Personalized outfit recommendations from your wardrobe."
-                ),
-                CHAIFeature(
-                    id: "closet.item_description",
-                    displayName: "Item Description",
-                    symbol: "photo",
-                    tint: .purple,
-                    requiredCapabilities: [.textInput, .visionInput],
-                    footnote: "Auto-tags items from photos."
-                ),
-                // …
-            ], appName: "Closet")
-        }
-    }
-    var body: some Scene { … }
-}
-```
-
-### 2. Route AI requests through the featureID
-
-```swift
-// Pre-2.10.0 — all features hit the global active provider:
-let response = try await CHAIManager.shared.send(prompt: "Suggest an outfit")
-
-// 2.10.0+ — feature-aware dispatch:
-let response = try await CHAIManager.shared.send(
-    prompt: "Suggest an outfit",
-    featureID: "closet.ai_stylist"
-)
-```
-
-`stream(prompt:featureID:)` and `sendWithVision(prompt:imageData:featureID:)`
-have the same shape. When no override is set the resolver falls
-back to the global active provider — existing behavior is preserved
-for un-tagged calls.
-
-### 3. Embed the settings UI
-
-```swift
-NavigationStack {
-    CHAIFeaturesSettingsContent(appName: "Closet")
-}
-```
-
-Renders one row per registered feature with a tappable detail page
-that exposes: enabled toggle, provider override picker (filtered
-by capability + isCloudOnly), model override picker, reset-to-
-default button. Apps that need to inject extra sections (e.g.
-Closet's "Show Suggested Questions" toggle) pass a
-`displaySection:` closure.
-
-### 4. Migrate legacy per-feature toggles (one-shot)
-
-If your app already had its own enabled-toggle keys (e.g.
-`"closet_ai_stylist_enabled"`), wire a one-shot migration in your
-App init:
-
-```swift
-init() {
-    CHAIModelMigration.migrateLegacyFeatureToggles(
-        legacyKeyMap: [
-            "closet_ai_stylist_enabled":       "closet.ai_stylist",
-            "closet_item_description_enabled": "closet.item_description",
-        ],
-        appName: "Closet"
+@MainActor
+func summarize(_ text: String) async throws -> String {
+    return try await CHAIManager.shared.send(
+        prompt: text,
+        systemPrompt: "Summarize the supplied text."
     )
 }
 ```
 
-The helper is idempotent — flagged by
-`<appname>_feature_toggles_migrated_v_2_10_0` in
-`UserDefaults.standard`. Subsequent launches are no-ops.
+The shared manager registers built-in providers during initialization. Configure an available provider before sending requests. `CHAISettingsView` is available in the core product. Cloud calls require the user's provider credentials and may incur that provider's charges. The host decides which providers are enabled and obtains any required consent before sending data.
 
-### Capability matrix
+The bundled cloud catalog has a cache and a configurable remote source; the default is the public [AI model catalog](https://github.com/hechen/ai-model-catalog). Catalog pricing is metadata for estimates, not a billing statement.
 
-| Provider              | Text | Vision | Func calling | Streaming |
-|-----------------------|:----:|:------:|:------------:|:---------:|
-| OpenAI                | ✓    | ✓      | ✓            | ✓         |
-| Claude (Anthropic)    | ✓    | ✓      | ✓            | ✓         |
-| Custom Endpoint       | ✓    | ✓      | —            | —         |
-| On-Device LLM (MLX)   | ✓    | —      | —            | ✓         |
-| Apple Intelligence    | ✓    | —      | —            | —         |
+Optional integration guides:
 
-A feature registered with `requiredCapabilities: [.visionInput]`
-filters Apple Intelligence + On-Device LLM out of its picker
-automatically. A feature registered with `isCloudOnly: true`
-additionally filters out both on-device options regardless of
-capability.
+- [AI settings presentation](docs/AI_SETTINGS.md)
+- [Purchase gating and host responsibilities](docs/IAP_GATING.md)
+- [Chat views and context injection](docs/CHAT_UI.md)
+- [Offline model catalog and installation](docs/OFFLINE_MODEL_CATALOG.md)
+- [Order import](docs/ORDER_IMPORT.md)
 
-### Storage keys
+`CHLocalLLM` uses Apple's MLX libraries with Hugging Face model repositories. Model weights are downloaded separately and remain subject to their own licenses. Its existing `AppIdentifier` enum contains named profiles for the original consuming apps; those cases are retained for compatibility, and it does not currently accept arbitrary app identifiers. Generic core APIs do not require that enum.
 
-The kit owns three UserDefaults key shapes — apps must not write
-to these directly:
+## Privacy and integration boundaries
 
-```
-ch_ai_feature_provider_<featureID>
-    → providerID String, "" or missing means "use active"
-ch_ai_feature_model_<featureID>_<providerID>
-    → modelID String, missing means "use provider's global model"
-ch_ai_feature_enabled_<featureID>
-    → Bool, default true
+`CHSharedKit` and `CHLocalLLM` bundle target-owned privacy manifests. Inspect their [core](Sources/CHSharedKit/Resources/PrivacyInfo.xcprivacy) and [local model](Sources/CHLocalLLM/Resources/PrivacyInfo.xcprivacy) declarations together with your final app bundle. Hosts are responsible for their own data disclosures, entitlements, user consent, and the behavior of configured endpoints.
+
+Provider keys use Keychain helpers. The host controls access groups; installing the SDK alone does not grant access to another app's data. Model inference runs locally, while catalog refreshes and model downloads use the network. Cloud inference sends the supplied request to the selected provider.
+
+## Development
+
+Run package tests on a compatible Apple-platform development machine:
+
+```sh
+swift test
 ```
 
----
-
-## Privacy manifests
-
-Both library products bundle a target-owned `PrivacyInfo.xcprivacy` file:
-
-- `CHSharedKit` declares app-private preferences (`CA92.1`), backup-file
-  metadata and user-visible timestamps (`C617.1`, `DDA9.1`), and the
-  prompt/image data its cloud AI providers can send to the configured provider.
-- `CHLocalLLM` declares app-private and App Group preferences (`CA92.1`,
-  `1C8F.1`). Its model inference remains on device, so the target declares no
-  collected data.
-
-Apps remain responsible for declaring any additional semantic data types they
-place into an AI prompt (for example health, purchase, or financial data), the
-purposes for which they use the response, and the retention practices of a
-custom endpoint. A consuming app must also provide the required disclosure and
-permission before sending personal data to a third-party AI provider.
+Tests cover package contracts and synthetic fixtures. Native UI presentation, real-device synchronization, model execution, and purchases need separate host-app validation. The tools under `Tools/` run local model smoke/conformance checks and may download model weights; inspect their arguments and storage requirements before running them. [Optional validation scripts](Scripts/README.md) are available for host projects.
 
 ## License
 
-Private — for use in Chen's personal projects only.
-
-## Author
-
-Chen He — [github.com/hechen](https://github.com/hechen)
+[MIT](LICENSE), copyright 2026 Chen He. Dependencies and downloaded models retain their respective licenses.

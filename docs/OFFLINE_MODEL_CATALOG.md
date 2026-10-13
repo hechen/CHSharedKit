@@ -1,4 +1,4 @@
-# Offline model catalog (2.15.0)
+# Offline model catalog
 
 CHLocalLLM reads a versioned catalog from:
 
@@ -10,6 +10,9 @@ The public `hechen/ai-model-catalog` repository owns the live JSON and its valid
 
 ```swift
 import CHLocalLLM
+
+// Use an existing AppIdentifier profile. The enum currently contains the
+// original named app profiles; arbitrary identifiers are not yet supported.
 
 // Existing provider filtering, purchase and privacy boundaries still apply.
 LocalModelStore.shared.appIdentifier = .liftcoach

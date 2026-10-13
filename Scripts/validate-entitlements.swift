@@ -105,10 +105,9 @@ while let relative = enumerator.nextObject() as? String {
     if !source.contains("SecItemAdd(") { continue }
 
     // Coarse-grained check: file mentions SecItemAdd somewhere AND
-    // doesn't mention kSecAttrSynchronizable anywhere. False positive
-    // rate: low — this catches the actual regression Chen hit
-    // (callsites that forgot the flag entirely). For finer-grained
-    // function-scope checks we'd need a real parser; not worth it.
+    // doesn't mention kSecAttrSynchronizable anywhere. False positives
+    // remain possible; this catches files that omit the flag entirely.
+    // Function-scope checks would require a parser.
     if !source.contains("kSecAttrSynchronizable") {
         // Find the offending line numbers for the failure message.
         var offendingLines: [Int] = []

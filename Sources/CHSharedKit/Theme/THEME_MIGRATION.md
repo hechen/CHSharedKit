@@ -265,11 +265,6 @@ Button("Save") { … }
 
 ---
 
-## Per-app adoption notes
+## Host synchronization
 
-All six apps share the same theme palette via iCloud KVS — the user picks once and
-all apps follow. Each app's session should:
-
-1. Confirm `ThemeManager.shared` is initialized and `.themed(themeManager)` is applied at the root
-2. Run through the checklist above for the 3-5 highest-traffic screens first
-3. Extend to remaining screens in subsequent builds
+Theme preferences use `NSUbiquitousKeyValueStore` with a local fallback. Synchronization across devices or apps depends on the host entitlements and store configuration. The `CHThemeCloudSyncEnabledDefaultsKey` Info.plist entry can name a per-device Boolean setting that gates cloud access. Apps with custom palettes should configure them before `ThemeManager.shared` is initialized.

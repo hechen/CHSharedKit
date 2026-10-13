@@ -1,117 +1,27 @@
-# CHSharedKit Scripts
+# Optional host-project checks
 
-Build-time and developer-time tools that ship with the kit. Apps wire
-these into their own Xcode build phases or run them locally; nothing
-here is invoked from kit-internal code.
+These standalone Swift scripts can run locally or in a host app's Xcode build phase. The package does not invoke them automatically. They encode optional integration conventions, not prerequisites for using every product.
 
-## `validate-entitlements.swift`
+## Entitlements and Keychain conventions
 
-Build-phase guard that fails the build on:
-
-1. Missing iCloud / Keychain entitlements in the app's `.entitlements`
-   plist (CloudKit, CloudDocuments, non-empty `keychain-access-groups`,
-   non-empty `com.apple.developer.icloud-container-identifiers`).
-2. Direct `SecItemAdd(` calls in app source that don't pass
-   `kSecAttrSynchronizable` — i.e. callsites that bypass
-   `CHSyncedKeychain` and would silently break cross-device sync.
-
-Wire it into Xcode under **Build Phases → "+" → New Run Script Phase**:
-
-```
-"${BUILT_PRODUCTS_DIR}/../../SourcePackages/checkouts/CHSharedKit/Scripts/validate-entitlements.swift" \
-  "${PROJECT_DIR}/${INFOPLIST_FILE%/*}/<YourApp>.entitlements" \
-  "${SRCROOT}"
+```sh
+swift /path/to/CHSharedKit/Scripts/validate-entitlements.swift \
+  /path/to/MyApp.entitlements /path/to/MyApp/Sources
 ```
 
-(SwiftPM checkout path varies — adjust per your project layout. The
-script only needs absolute paths to the entitlements file and the
-source root.)
+`validate-entitlements.swift` checks for CloudKit and CloudDocuments services, nonempty iCloud container identifiers, and nonempty Keychain access groups. It also flags Swift files containing `SecItemAdd(` without `kSecAttrSynchronizable`, except known wrapper files.
 
-Exits 0 on success, 1 with a list of offenders on failure.
+Use this only for apps that deliberately adopt those iCloud and Keychain conventions. It is a coarse source/plist check: it does not validate provisioning, sandbox behavior, each individual Keychain call, or successful synchronization. Exit status is 0 on success, 1 on findings, and 64 for invalid arguments.
 
-## `validate-settings-rows.swift`
+## Settings row conventions
 
-Build-phase guard that flags Settings views in app source that bypass
-`CHSettingsRow`. Three rules:
-
-1. `HStack { … }` blocks under `*/Settings/*` containing both
-   `Image(systemName:)` and `Text(…)` — settings-row-shaped HStacks
-   that should be the kit primitive.
-2. `Label("…", systemImage: …)` inside a `Section { … }` block —
-   uses Apple's `Label` (no badge) instead of `CHSettingsRow`'s
-   squircle-badge convention.
-3. `NavigationLink` / `Button` with bare `Text` labels (no icon) in
-   a Settings section — every Settings row in the kit has an icon.
-
-Wire into Xcode under **Build Phases → "+" → New Run Script Phase**:
-
-```
-"${BUILT_PRODUCTS_DIR}/../../SourcePackages/checkouts/CHSharedKit/Scripts/validate-settings-rows.swift" \
-  "${SRCROOT}" \
-  --fail
+```sh
+swift /path/to/CHSharedKit/Scripts/validate-settings-rows.swift \
+  /path/to/MyApp/Sources --warn
 ```
 
-Default mode is `--warn` (prints findings, exits 0). Pass `--fail`
-once the app's existing flagged sites have been fixed; from then on
-new regressions break the build.
+`validate-settings-rows.swift` flags heuristic row patterns in Settings code that differ from `CHSettingsRow`: icon/text HStacks, system Labels, and bare-text button or navigation labels. These are style findings, not correctness errors, and may include false positives.
 
-Files containing `// CHSETTINGS_ROW_LINT_OFF` are skipped — escape
-hatch for genuine non-row uses inside Settings directories (custom
-cards, hero blocks, etc).
+The default `--warn` mode reports findings with exit status 0. `--fail` returns 1 when findings exist. Files containing `// CHSETTINGS_ROW_LINT_OFF` are skipped. Use that marker for intentional custom layouts after reviewing the result.
 
-## `check-consumer-versions.sh`
-
-Local script that reports CHSharedKit version drift across all known
-consumer apps. Run from the kit's repo root:
-
-```
-./Scripts/check-consumer-versions.sh
-```
-
-Output:
-
-```
-Latest CHSharedKit tag: 2.9.0
-
-CONSUMER               VERSION    DRIFT
----------------------  ---------- -----------------
-EatWisely              2.8.1      BEHIND 1 minor
-GymLog                 2.8.1      BEHIND 1 minor
-Distill                1.4.4      BEHIND 1 major
-…
-```
-
-Used to drive the **lockstep bump** policy: any minor tag of
-CHSharedKit should fan out to all active consumers within ~1 minor.
-The bump PR description should include the output of this script.
-
-Requires `gh` (authenticated) and `jq`.
-
-## What's NOT here, and why
-
-### Two-simulator iCloud sync CI harness
-
-Aspirational. Apple ID sign-in is interactive (2FA codes, no headless
-flow), shared test accounts get rate-limited / locked, and the iCloud
-KVS daemon's sync latency isn't deterministic enough to assert against
-in a 30s window. The realistic substitute lives in
-`Tests/CHSharedKitTests/CHSyncTests.swift` — those tests use a
-`FakeUbiquitousKVS` shared between two `CHSyncedSettingsStore`
-instances, exercising the propagation logic from a single process.
-Real-device verification is a manual protocol:
-
-1. Sign two physical devices into the same iCloud account.
-2. Install the app's TestFlight build on both.
-3. Make a synced change on device A; wait 30s; verify on device B.
-
-When a way to script this safely exists (e.g. a future Xcode Cloud
-hook for paired-device testing), revisit.
-
-### Cross-repo build matrix CI
-
-Aspirational. Spawning per-app builds from the kit's CI requires
-fine-grained PATs into each consumer's private repo and would need
-careful caching to stay under GitHub Actions minutes. The realistic
-substitute is `check-consumer-versions.sh` — surfacing drift weekly is
-cheaper than running 8 full builds on every kit PR. When we hit a
-drift-driven regression that this approach misses, revisit.
+For Xcode build phases, use the actual package checkout path and your app's source path; checkout locations depend on your build configuration. Neither script substitutes for native UI or device testing.

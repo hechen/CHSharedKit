@@ -18,8 +18,7 @@
 // What gets flagged
 // -----------------
 //
-// Heuristic — false-positive prone, but the goal is "catch the next
-// regression Chen would have to point at." Three patterns:
+// Heuristic style checks; false positives are possible. Three patterns:
 //
 //   1. `HStack` block where the body contains both `Image(systemName:)`
 //      and `Text(...)` AND the file path lives under `*/Settings/*`
